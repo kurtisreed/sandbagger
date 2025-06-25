@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sandbagger Scoring</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#006837">
+  <!-- Tell iOS to run in standalone mode -->
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <!-- Status bar style: default, black, or black-translucent -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <!-- Home-screen icon (180×180 PNG is a good size) -->
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <link rel="icon" 
+        href="favicon.png" 
+        type="image/png">
+</head>
+<body>
+<button id="btnInstall" style="display:none;">Install Sandbagger App</button>
+    
+<div id="auth-container" class="container">
+        <form id="auth-form">
+            <img class="form-logo" src="/images/tigerpaynelogo.png" alt="Sandbagger Logo">
+
+            <!--<h2>Sandbagger Scoring</h2>
+
+            <select id="selectTournament" name="tournament_id" required>
+              <option value="">-- Choose Tournament --</option>
+            </select>-->
+            <select id="chooseUser" name="golfer_id">
+                 <option value="Generic">-- Choose Golfer --</option>
+            </select>
+            <select id="selectRound" name="round_id" required>
+              <option value="">-- Choose Round --</option>
+            </select>
+
+            <!--<input type="password" id="pin" name="pin" required autocomplete="new-pin" placeholder="Enter PIN">-->
+            <button class="w3-btn w3-blue" type="submit">Tee it Up!</button>
+        </form>
+        <div id="auth-message"></div> <!-- To display any messages (success/error) -->
+</div>
+
+<div class="container" id="app-content" style="display: none;"> 
+
+  <header>
+      <div id="tournament-bar" class="tournament-bar">
+          <span id="tournament-name"></span>
+      </div>
+      <div id="user-bar" class="user-bar" style="display: none;">
+        <span id="user-name" class="auto-contrast"></span>
+        <button id="logout-button" class="btn-logout">Change Round</button>
+      </div>
+
+  </header>
+  <nav>
+    <div class="tabs">
+      <button data-page="my-match">My Match</button>
+      <button data-page="today">All Matches</button>
+      <button data-page="tournament">Tournament</button>
+    </div>
+
+  </nav>
+
+
+  <main id="content">
+    <div id="score-entry-content" style="padding-bottom: 2rem;"></div>
+  </main>
+</div>  
+  <script src="script.js"></script>
+</body>
+</html>

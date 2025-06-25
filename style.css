@@ -1,0 +1,506 @@
+:root {
+  --primary-team-color: #4F2683; /* Default value */
+  --secondary-team-color: #FFC62F; /* Default value */
+  --primary-text-color: #fff;
+  --secondary-text-color: #000;
+}
+
+body {
+  margin: 0;
+  font-family: sans-serif;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+header {
+  /* Keep header background behind scoreboard */
+  background: #2a9d8f;
+  padding: 0;
+}
+
+/*ensure that text is readable on any background
+.auto-contrast {
+    position: relative;
+    color: white;
+    mix-blend-mode: difference;
+      will-change: color, mix-blend-mode;
+}
+
+*/
+
+.scoreboard {
+  display: flex;
+  width: 100%;
+  border: 1px solid #000;
+  box-sizing: border-box; /* ensures border doesn't affect width */
+}
+
+.scoreboard > div {
+  width: 50%;
+  padding: 0.5rem 0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.team-name {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 0.3rem;
+  color: #fff;
+}
+
+.team-score {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #fff;
+}
+
+
+#teamA {
+  background: #4F2683;
+}
+
+#teamB {
+  background: #FFC62F;
+}
+
+.scoreboard span {
+  color: #000; /* numeric score color */
+}
+
+.team-golfer-table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0;
+  background: transparent;
+}
+.team-golfer-table td {
+  border-top: 1px solid #000;
+  border-bottom: 1px solid #000;
+  border-left: none;
+  border-right: none;
+  padding: 6px 0;
+  text-align: center;
+  font-size: 1.1rem;
+}
+
+nav {
+  background: var(--primary-team-color)
+
+}
+
+.tabs {
+  display: flex;
+}
+
+.tabs button {
+  flex: 1;
+  padding: 1rem;
+  background: transparent;
+  border: 1px solid black;
+  color: var(--primary-text-color);
+  font-size: 1rem;
+}
+
+.tabs button.active {
+  background: var(--secondary-team-color);
+  color: var(--secondary-text-color);
+}
+
+.user-bar {
+  padding: 0.7em 1em;
+  color: #000;
+  text-align: center;
+  border: 1px solid #000;
+  box-sizing: border-box;  
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#logout-button {
+  background: #fff;
+  color: var(--secondary-team-color);
+  border: 2px solid var(--secondary-team-color);
+  border-radius: 5px;
+  padding: 0.4em 1.1em;
+  font-weight: bold;
+  cursor: pointer;
+  margin-left: 1em;
+  transition: background 0.2s, color 0.2s;
+}
+#logout-button:hover {
+  background: var(--secondary-team-color);
+  color: #fff;
+}
+
+
+.tournament-bar {
+  background-color: #000;
+  color: #fff;
+  padding: 0.3rem;
+  text-align: center;
+  font-weight: bold;
+  box-sizing: border-box;  
+
+}
+
+
+main {
+  flex: 1;
+  overflow: auto;
+
+}
+
+
+
+.corner-dot {
+  position: absolute;
+  top: 3px;
+  right: 9px;
+  width: 6px;
+  height: 6px;
+  background: black; /* or any color you want */
+  border-radius: 50%;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.second-dot {
+  left: auto;
+  right: 2px;
+}
+
+/* for circle and square around scores */
+.score-birdie {
+  background-color: #d0e8ff !important; /* light blue */
+}
+.score-bogey {
+  background-color: #ffe0e0 !important; /* light red/pink for bogey */
+}
+.score-par {
+  background-color: #f7f7f7 !important; /* light gray for par, optional */
+}
+
+#score-entry-content {
+  overflow-y: auto;
+  max-height: 800px;
+}
+
+.score-table td {
+  position: relative;
+}
+
+.score-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1rem;
+  margin-top: 10px;
+}
+
+.score-table th,
+.score-table td {
+  border: 1px solid #ccc;
+  padding: 0.5rem;
+  text-align: center;
+}
+
+.score-table th {
+  background-color: #f0f0f0;
+  font-weight: bold;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+
+.score-table td select {
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 1rem;
+  border-radius: 4px;
+  border: 1px solid #aaa;
+}
+
+.score-table tr:nth-child(even) {
+  background-color: #fafafa;
+}
+
+.score-table tr:hover {
+  background-color: #f5f5f5;
+}
+
+#finalize-results-btn {
+  display: block;
+  width: 100vw;
+  max-width: 100%;
+  margin: 24px 0 0 0;
+  padding: 1rem 0;
+  font-size: 1.3rem;
+  font-weight: bold;
+  background: linear-gradient(90deg, #1976d2 0%, #42a5f5 100%);
+  color: #fff;
+  border: none;
+  border-radius: 0;
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.15);
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: background 0.2s, box-shadow 0.2s;
+
+}
+
+#finalize-results-btn:hover, #finalize-results-btn:focus {
+  background: linear-gradient(90deg, #1565c0 0%, #1976d2 100%);
+  box-shadow: 0 4px 16px rgba(25, 118, 210, 0.25);
+  outline: none;
+}
+
+@media (max-width: 600px) {
+  .score-table {
+    font-size: 0.9rem;
+  }
+
+  .score-table td select {
+    font-size: 1rem;
+    padding: 0.6rem;
+  }
+}
+
+
+
+
+
+/* Center and style the authentication container */
+#auth-container {
+  max-width: 400px;
+  margin: 4rem auto;        /* centers horizontally */
+  background-color: black;   /* purple */
+  padding: 2rem;
+  border: 2px solid #fff;   
+  border-radius: 8px;
+}
+
+/* Style the auth form itself */
+#auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  color: #fff;              /* light text against dark background */
+}
+
+/* Form heading */
+#auth-form h2 {
+  margin: 0;
+  margin-bottom: 1rem;
+  color: #fff;        /* match the room text color */
+}
+
+/* Labels, to ensure consistent spacing and color */
+#auth-form label {
+  font-size: 1rem;
+  margin-bottom: 0.2rem;
+}
+
+/* The select and input fields */
+#auth-form select,
+#auth-form input[type="password"] {
+  background-color: lightgray;
+  color: #000;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 0.5rem;
+  font-size: 1rem;
+  outline: none;
+  width: 100%;              /* makes them full-width in the container */
+}
+
+/* The submit button */
+#auth-form button[type="submit"] {
+  background-color: lightgray;
+  color: #000;
+  border: none;
+  border-radius: 4px;
+  padding: 0.7rem 1rem;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* The message below the form for errors or feedback */
+#auth-message {
+  margin-top: 1rem;
+  font-size: 0.95rem;
+  color: red;
+  text-align: center;
+}
+
+#auth-form select,
+#auth-form input[type="password"],
+#auth-form button[type="submit"] {
+  width: 100%;
+  box-sizing: border-box; /* Ensures padding doesn't expand total width */
+}
+
+
+
+.handicap-cell {
+  background-color: gray; 
+}
+
+
+
+
+
+.match-summary {
+  border: 1px solid #ccc;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  padding: 8px;
+
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.teams-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.team-box {
+  flex: 1;
+  padding: 6px 10px;
+  border-radius: 5px;
+  color: #fff;
+  font-weight: bold;
+  text-align: center;
+}
+
+.team-box.primary-team {
+  background-color: var(--primary-team-color);
+  color: var(--primary-text-color);
+}
+
+.team-box.secondary-team {
+  background-color: var(--secondary-team-color);
+  color: var(--secondary-text-color);
+
+}
+
+.vs {
+  margin: 0 8px;
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.match-status {
+  text-align: center;
+  font-weight: bold;
+  font-size: 0.95rem;
+  margin-top: 4px;
+}
+
+.match-status.primary-team-status {
+  background-color: var(--primary-team-color);
+  color: var(--primary-text-color);
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+
+.match-status.secondary-team-status {
+  background-color: var(--secondary-team-color);
+  color: var(--secondary-text-color);
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+
+.tied-status,
+.halved-status {
+  background-color: #333;
+  color: #fff;
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+
+
+
+.skins-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.skins-table th, .skins-table td {
+  border: 1px solid #ccc;
+  padding: 6px 8px;
+  text-align: center;
+}
+
+.skins-table th {
+  background-color: #f2f2f2;
+}
+
+
+.gross-leaderboard {
+  margin-top: 30px;
+  border-top: 2px solid #ccc;
+  padding-top: 15px;
+}
+
+.net-leaderboard {
+  margin-top: 30px;
+  border-top: 2px solid #ccc;
+  padding-top: 15px;
+}
+
+.leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: center;
+}
+
+.leaderboard-table th, .leaderboard-table td {
+  padding: 8px;
+  border: 1px solid #ccc;
+}
+
+.leaderboard-table th {
+  background-color: #f2f2f2;
+}
+
+.form-logo {
+  display: block;
+  margin: 0 auto 1rem;
+  max-width: 300px;
+}
+
+
+.handicap-explanation {
+  margin-top: 1.5em;
+  padding: 1em;
+  background: #f8f8e0;
+  border: 1px solid #e0e0b0;
+  border-radius: 6px;
+  font-size: 1em;
+}
+
+/* Add to your styles.css */
+.handicap-table-container {
+  margin-top: 1.5em;
+}
+.handicap-table {
+  border-collapse: collapse;
+  width: 100%;
+  background: #fff;
+}
+.handicap-table th, .handicap-table td {
+  border: 1px solid #ccc;
+  padding: 0.4em 0.7em;
+  text-align: center;
+}
+.handicap-table th {
+  background: #f2f2f2;
+}

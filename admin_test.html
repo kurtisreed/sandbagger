@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Admin Test</title>
+</head>
+<body>
+  <h1>Tournaments</h1>
+  <ul id="tournament-list">
+    <li>Loading…</li>
+  </ul>
+
+  <h2>Create Tournament</h2>
+  <form id="new-tournament-form">
+    <input type="text" id="t-name"          placeholder="Name"       required>
+    <input type="date" id="t-start"         required>
+    <input type="date" id="t-end"           required>
+    <input type="number" id="t-hcp-pct"     placeholder="Handicap %" value="100" required>
+    <button type="submit">Create</button>
+  </form>
+
+  <script src="/sandbaggerv2/js/admin.js"></script>
+</body>
+</html>
