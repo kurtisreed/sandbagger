@@ -362,6 +362,57 @@
   <div id="board" class="board"></div>
 </div>
 
+<!-- Tee times tab -->
+<div id="tab-tee-times" class="tab-content" hidden>
+  <h2 id="tee-times-title">Tee Time Assignments</h2>
+  <h3 id="tee-times-round-title"></h3> <!-- JS will populate this -->
+
+  <div class="actions">
+    <button id="newTeeTimeBtn" class="btn-primary">+ Add Tee Time</button>
+    <button id="saveTeeTimesBtn" class="btn-primary">Save Assignments</button>
+  </div>
+
+  <!-- The main workspace for assignments -->
+  <div class="tee-time-workspace">
+
+    <!-- Area for unassigned matches -->
+    <div class="match-pool-container">
+      <h4>Unassigned Matches</h4>
+      <div id="unassigned-matches-pool" class="match-pool">
+        <!-- JS will populate match cards here -->
+      </div>
+    </div>
+
+    <!-- Area for tee time slots -->
+    <div class="tee-time-slots-container">
+      <h4>Tee Times</h4>
+      <div id="tee-times-list">
+        <!-- JS will populate tee time slots here -->
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal for creating a new tee time -->
+<div id="tee-time-modal" class="modal hidden">
+  <div class="modal-backdrop"></div>
+  <div class="modal-content">
+    <button class="modal-close">×</button>
+    <h2>Create New Tee Time</h2>
+    <form id="tee-time-create-form" class="admin-form">
+      <div class="form-row">
+        <label for="tt-time">Tee Time</label>
+        <input type="time" id="tt-time" value="08:00" required> <!-- step 600 = 10 min increments -->
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">Create</button>
+        <button type="button" class="btn-secondary modal-close">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 
 
 
