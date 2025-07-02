@@ -234,25 +234,7 @@ document.addEventListener("DOMContentLoaded", function () {
           console.error("Error fetching golfers:", err);
         });
     
-    /* fetch("/api/tournaments.php")
-      .then(res => res.json())
-      .then(tournaments => {
-        tournaments.forEach(t => {
-          const option = document.createElement("option");
-          option.value = t.tournament_id;
-          option.textContent = t.name;
-          tournamentSelect.appendChild(option);
-        });
-      });
-    
-    tournamentSelect.addEventListener('change', e => {
-      const tid = e.target.value;
-      if (!tid) {
-        // reset both if no selection
-        playerSelect.innerHTML = '<option value="">-- Choose Golfer --</option>';
-        roundSelect .innerHTML = '<option value="">-- Choose Round --</option>';
-        return;
-      } */
+
     const tid = 1;
     fetch(`get_rounds_and_players.php?tournament_id=${tid}`, {
         credentials: 'include'
@@ -1171,13 +1153,7 @@ function loadTournamentPage(container) {
         const teamADiv = document.getElementById("teamA");
         if (teamADiv) teamADiv.appendChild(tableA);
 
-        // Add click event listeners
-        tableA.querySelectorAll('.golfer-name-cell').forEach(cell => {
-          cell.addEventListener('click', function() {
-            const golferId = this.getAttribute('data-golfer-id');
-            loadTournamentGolferSummary(golferId, "tournament");
-          });
-        });
+
       }
 
       if (teamB && Array.isArray(teamB.golfers)) {
@@ -1196,13 +1172,7 @@ function loadTournamentPage(container) {
         const teamBDiv = document.getElementById("teamB");
         if (teamBDiv) teamBDiv.appendChild(tableB);
 
-        // Add click event listeners
-        tableB.querySelectorAll('.golfer-name-cell').forEach(cell => {
-          cell.addEventListener('click', function() {
-            const golferId = this.getAttribute('data-golfer-id');
-            loadTournamentGolferSummary(golferId, "tournament");
-          });
-        });
+
       }
     });
 
@@ -1300,6 +1270,60 @@ function loadTournamentPage(container) {
       netDiv.appendChild(table);
       container.appendChild(netDiv);
 
+      // List of rounds with tee times and matches
+      fetch(`get_tournament_rounds.php?tournament_id=${sessionStorage.getItem('selected_tournament_id')}`, { credentials: 'include' })
+        .then(res => res.json())
+        .then(rounds => {
+          if (!Array.isArray(rounds) || rounds.length === 0) return;
+
+          const roundsDiv = document.createElement("div");
+          roundsDiv.className = "tournament-rounds-table-container";
+          const roundsHeading = document.createElement("h3");
+          roundsHeading.textContent = "Matchups and Tee Times";
+          roundsDiv.appendChild(roundsHeading);
+
+          rounds.forEach(round => {
+            // Heading for round name and date
+            const heading = document.createElement("h4");
+            heading.textContent = `${round.round_name} (${round.round_date})`;
+            roundsDiv.appendChild(heading);
+
+            const table = document.createElement("table");
+            table.className = "leaderboard-table";
+
+            if (round.tee_times.length === 0) {
+              // No tee times for this round
+              const row = document.createElement("tr");
+              row.innerHTML = `<td colspan="2" style="text-align:center;">No tee times</td>`;
+              table.appendChild(row);
+            } else {
+              round.tee_times.forEach(teeTime => {
+                if (teeTime.matches.length === 0) {
+                  // No matches for this tee time
+                  const row = document.createElement("tr");
+                  row.innerHTML = `<td>${teeTime.time.substring(0,5)}</td><td style="text-align:center;">Matchups not yet assigned</td>`;
+                  table.appendChild(row);
+                } else {
+                  teeTime.matches.forEach(match => {
+                    const players = match.golfers.map(g =>
+                      `<span style="color:${g.team_color}; font-weight:bold;">${g.name}</span>`
+                    ).join(', ');
+                    const row = document.createElement("tr");
+                    row.innerHTML = `<td>${teeTime.time.substring(0,5)}</td><td>${players}</td>`;
+                    table.appendChild(row);
+                  });
+                }
+              });
+            }
+
+            roundsDiv.appendChild(table);
+          });
+
+          container.appendChild(roundsDiv);
+        })
+        .catch(err => console.error("Error loading tournament rounds:", err));
+
+
 
       // Fetch all courses and all golfers for the tournament
       Promise.all([
@@ -1354,31 +1378,7 @@ function loadTournamentPage(container) {
 
 }
 
-function loadTournamentGolferSummary(golferId, containerId) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-  container.innerHTML = "<p>Loading golfer summary...</p>";
 
-  fetch(`get_tournament_golfer_summary.php?golfer_id=${golferId}`, { credentials: 'include' })
-    .then(res => res.json())
-    .then(summary => {
-      // Render summary (customize as needed)
-      container.innerHTML = `
-        <h3>${summary.first_name} ${summary.last_name} - Tournament Summary</h3>
-        <p>Team: ${summary.team_name}</p>
-        <p>Rounds Played: ${summary.rounds_played}</p>
-        <p>Total Strokes: ${summary.total_strokes}</p>
-        <button id="back-to-tournament">Back to Tournament</button>
-      `;
-      document.getElementById("back-to-tournament").onclick = () => {
-        loadTournamentPage(container);
-      };
-    })
-    .catch(err => {
-      container.innerHTML = "<p>Error loading golfer summary.</p>";
-      console.error(err);
-    });
-}
 
 
 

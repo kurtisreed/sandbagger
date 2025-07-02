@@ -445,15 +445,15 @@ main {
 
 
 .gross-leaderboard {
-  margin-top: 30px;
+  margin-top: 10px;
   border-top: 2px solid #ccc;
-  padding-top: 15px;
+  padding-top: 0px;
 }
 
 .net-leaderboard {
-  margin-top: 30px;
+  margin-top: 10px;
   border-top: 2px solid #ccc;
-  padding-top: 15px;
+  padding-top: 0px;
 }
 
 .leaderboard-table {
@@ -479,8 +479,8 @@ main {
 
 
 .handicap-explanation {
-  margin-top: 1.5em;
-  padding: 1em;
+  margin-top: 1em;
+  padding: 10px;
   background: #f8f8e0;
   border: 1px solid #e0e0b0;
   border-radius: 6px;
@@ -489,7 +489,8 @@ main {
 
 /* Add to your styles.css */
 .handicap-table-container {
-  margin-top: 1.5em;
+  margin-top: 10px;
+  border-top: 2px solid #ccc;
 }
 .handicap-table {
   border-collapse: collapse;
@@ -503,4 +504,10 @@ main {
 }
 .handicap-table th {
   background: #f2f2f2;
+}
+
+.tournament-rounds-table-container {
+  margin-top: 1em;
+  border-top: 2px solid #ccc;
+
 }
