@@ -1077,10 +1077,405 @@ function buildStrokeMapForGolfer(golferHandicap, holeData) {
 }
 
 
+// Add these helpers somewhere in your file
+
+/**
+ * Creates a standard container for a widget on the page.
+ * @param {string} title The title to display in an h3 tag.
+ * @param {string} className A CSS class for the main container div.
+ * @returns {{container: HTMLElement, body: HTMLElement}} The main container and the body where content should be added.
+ */
+function createWidgetContainer(title, className) {
+    const container = document.createElement('div');
+    container.className = className;
+    container.innerHTML = `<h3>${title}</h3>`;
+    
+    const body = document.createElement('div');
+    container.appendChild(body);
+    
+    return { container, body };
+}
+
+/**
+ * Renders an error message for a failed widget.
+ * @param {HTMLElement} parentContainer The main page container.
+ * @param {string} widgetName The name of the widget that failed.
+ */
+function renderErrorWidget(parentContainer, widgetName) {
+    const { container, body } = createWidgetContainer(`${widgetName} - Error`, 'error-widget');
+    body.textContent = 'Could not load this section.';
+    parentContainer.appendChild(container);
+}
+
+// Renders the main team scoreboard
+function renderScoreboard(parentContainer, scoreboard) {
+    console.log("Rendering scoreboard with data:", scoreboard);
+    const totalScore = document.createElement("div");
+    totalScore.className = "scoreboard";
+    totalScore.innerHTML = `
+        <div id="teamA"><div class="team-name"></div><div class="team-score"></div></div>
+        <div id="teamB"><div class="team-name"></div><div class="team-score"></div></div>
+    `;
+    // Find the two teams from the scoreboard data
+    let teamA = scoreboard.find(t => t.team_name === primaryTeamName);
+    let teamB = scoreboard.find(t => t.team_name === secondaryTeamName);
+
+    // Fallback: if not found, just use the first two teams
+    if (!teamA) teamA = scoreboard[0];
+    if (!teamB) teamB = scoreboard[1];
+
+    // Update team A
+    const teamADiv = totalScore.querySelector("#teamA"); // <-- FIXED
+    if (teamADiv && teamA) {
+        const nameDiv = teamADiv.querySelector(".team-name");
+        const scoreDiv = teamADiv.querySelector(".team-score");
+        nameDiv.textContent = teamA.team_name;
+        teamADiv.style.backgroundColor = teamA.color_hex || primaryTeamColor || "#eee";
+        nameDiv.style.color = pickContrastColorFromHex(teamA.color_hex || primaryTeamColor || "#eee");
+        scoreDiv.textContent = teamA.total_points || 0;
+        scoreDiv.style.color = pickContrastColorFromHex(teamA.color_hex || primaryTeamColor || "#eee");
+    }
+
+    // Update team B
+    const teamBDiv = totalScore.querySelector("#teamB"); // <-- FIXED
+    if (teamBDiv && teamB) {
+        const nameDiv = teamBDiv.querySelector(".team-name");
+        const scoreDiv = teamBDiv.querySelector(".team-score");
+        nameDiv.textContent = teamB.team_name;
+        teamBDiv.style.backgroundColor = teamB.color_hex || secondaryTeamColor || "#eee";
+        nameDiv.style.color = pickContrastColorFromHex(teamB.color_hex || secondaryTeamColor || "#eee");
+        scoreDiv.textContent = teamB.total_points || 0;
+        scoreDiv.style.color = pickContrastColorFromHex(teamB.color_hex || secondaryTeamColor || "#eee"); 
+    }
+
+    // Remove any existing golfer lists
+    const oldLists = parentContainer.querySelectorAll('.team-golfer-list');
+    oldLists.forEach(el => el.remove());
+
+      // Team A golfer table (under teamA)
+      if (teamA && Array.isArray(teamA.golfers)) {
+        const tableA = document.createElement("table");
+        tableA.className = "team-golfer-table";
+        tableA.style.margin = "0";
+        tableA.style.width = "100%";
+        tableA.style.background = teamA.color_hex || primaryTeamColor || "#eee";
+        tableA.innerHTML = teamA.golfers.map(g => 
+          `<tr>
+            <td class="golfer-name-cell" style="color:${pickContrastColorFromHex(teamA.color_hex || primaryTeamColor || "#eee")}; cursor:pointer;" data-golfer-id="${g.golfer_id}">
+              ${g.first_name}
+            </td>
+          </tr>`
+        ).join("");
+        const teamADiv = totalScore.querySelector("#teamA");
+        if (teamADiv) teamADiv.appendChild(tableA);
 
 
-//tournament tab load
-function loadTournamentPage(container) {
+      }
+
+      if (teamB && Array.isArray(teamB.golfers)) {
+        const tableB = document.createElement("table");
+        tableB.className = "team-golfer-table";
+        tableB.style.margin = "0";
+        tableB.style.width = "100%";
+        tableB.style.background = teamB.color_hex || secondaryTeamColor || "#eee";
+        tableB.innerHTML = teamB.golfers.map(g => 
+          `<tr>
+            <td class="golfer-name-cell" style="color:${pickContrastColorFromHex(teamB.color_hex || secondaryTeamColor || "#eee")}; cursor:pointer;" data-golfer-id="${g.golfer_id}">
+              ${g.first_name}
+            </td>
+          </tr>`
+        ).join("");
+        const teamBDiv = totalScore.querySelector("#teamB");
+        if (teamBDiv) teamBDiv.appendChild(tableB);
+
+
+      }
+    parentContainer.appendChild(totalScore);
+}
+
+// Renders the Gross Leaderboard
+function renderGrossLeaderboard(parentContainer, golfers) {
+    if (!Array.isArray(golfers) || golfers.length === 0) return;
+    const { container, body } = createWidgetContainer('Individual Tournament Leaderboard - Gross', 'gross-leaderboard');
+    if (!Array.isArray(golfers) || golfers.length === 0) return;
+
+      const leaderboardDiv = document.createElement("div");
+      leaderboardDiv.className = "gross-leaderboard";
+      const table = document.createElement("table");
+      table.classList.add("leaderboard-table");
+
+      // Sort golfers by score to par
+      golfers.sort((a, b) => (a.strokes - a.par) - (b.strokes - b.par));
+
+      const header = `<tr><th>Rank</th><th>Name</th><th>Team</th><th>To Par</th><th>Thru</th></tr>`;
+      table.innerHTML = header;
+
+      golfers.forEach((g, i) => {
+        const toPar = g.strokes - g.par;
+        const toParStr = toPar === 0 ? "E" : (toPar > 0 ? `+${toPar}` : `${toPar}`);
+        let bgColor = g.team_color || "";
+        let txtColor = pickContrastColorFromHex(bgColor);
+        let thruNum = g.holes_played;
+
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${i + 1}</td>
+          <td>${g.name}</td>
+          <td style="
+            ${bgColor  ? `background-color: ${bgColor};` : ""}
+            ${txtColor ? `color:            ${txtColor};` : ""}
+          ">
+            ${g.team_name}
+          </td>
+          <td>${toParStr}</td>
+          <td>${thruNum}</td>
+        `;
+        table.appendChild(row);
+      });
+
+      leaderboardDiv.appendChild(table);
+      container.appendChild(leaderboardDiv);
+    parentContainer.appendChild(container);
+}
+
+// Renders the Net Leaderboard
+function renderNetLeaderboard(parentContainer, players) {
+    if (!Array.isArray(players) || players.length === 0) return;
+    const { container, body } = createWidgetContainer('Individual Tournament Leaderboard - Net', 'net-leaderboard');
+          if (!Array.isArray(players) || players.length === 0) return;
+
+      const netDiv = document.createElement("div");
+      netDiv.className = "net-leaderboard";
+      const table = document.createElement("table");
+      table.classList.add("leaderboard-table");
+      table.innerHTML = `<tr>
+        <th>Rank</th><th>Name</th><th>Team</th>
+        <th>To Par</th><th>Thru</th>
+      </tr>`;
+
+      // compute To Par and sort by net-to-par
+      players.forEach(p => {
+        p.toPar = p.net_strokes - p.par;
+      });
+      players.sort((a,b) => a.toPar - b.toPar);
+
+      players.forEach((p,i) => {
+        const toPar = p.toPar === 0 ? "E"
+                      : (p.toPar > 0 ? `+${p.toPar}` : `${p.toPar}`);
+        let bgColor = p.team_color || ""; // Use dynamic team color
+        let txtColor = pickContrastColorFromHex(bgColor);
+
+
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${i + 1}</td>
+          <td>${p.name}</td>
+          <td style="
+            ${bgColor  ? `background-color: ${bgColor};` : ""}
+            ${txtColor ? `color:            ${txtColor};` : ""}
+          ">
+            ${p.team_name}
+          </td>
+          <td>${toPar}</td>
+          <td>${p.holes_played}</td>
+        `;
+        table.appendChild(row);
+      });
+
+      netDiv.appendChild(table);
+      container.appendChild(netDiv);
+    parentContainer.appendChild(container);
+}
+
+// Renders the Rounds and Matchups table
+function renderRoundsAndMatchups(parentContainer, rounds) {
+    if (!Array.isArray(rounds) || rounds.length === 0) return;
+    const { container, body } = createWidgetContainer('Matchups and Tee Times', 'tournament-rounds-table-container');
+              if (!Array.isArray(rounds) || rounds.length === 0) return;
+
+          const roundsDiv = document.createElement("div");
+          roundsDiv.className = "tournament-rounds-table-container";
+
+
+          rounds.forEach(round => {
+            // Heading for round name and date
+            const heading = document.createElement("h4");
+            heading.textContent = `${round.round_name} (${round.round_date})`;
+            roundsDiv.appendChild(heading);
+
+            const table = document.createElement("table");
+            table.className = "leaderboard-table";
+
+            if (round.tee_times.length === 0) {
+              // No tee times for this round
+              const row = document.createElement("tr");
+              row.innerHTML = `<td colspan="2" style="text-align:center;">No tee times</td>`;
+              table.appendChild(row);
+            } else {
+              round.tee_times.forEach(teeTime => {
+                if (teeTime.matches.length === 0) {
+                  // No matches for this tee time
+                  const row = document.createElement("tr");
+                  row.innerHTML = `<td>${teeTime.time.substring(0,5)}</td><td style="text-align:center;">Matchups not yet assigned</td>`;
+                  table.appendChild(row);
+                } else {
+                  teeTime.matches.forEach(match => {
+                    const players = match.golfers.map(g => {
+                      const matchupBgColor = g.team_color;
+                      const txtColor = pickContrastColorFromHex(matchupBgColor);
+                      return `<span style="background-color:${matchupBgColor}; color:${txtColor}; padding:2px;">${g.name}</span>`;
+                    }).join(' ');
+                    const row = document.createElement("tr");
+                    row.innerHTML = `<td>${teeTime.time.substring(0,5)}</td><td>${players}</td>`;
+                    table.appendChild(row);
+                  });
+                }
+              });
+            }
+
+            roundsDiv.appendChild(table);
+          });
+
+          container.appendChild(roundsDiv);
+    parentContainer.appendChild(container);
+}
+
+// Renders the Playing Handicap table
+function renderHandicapTable(parentContainer, courses, golfers) {
+    if (!Array.isArray(courses) || !Array.isArray(golfers) || courses.length === 0 || golfers.length === 0) return;
+    const { container, body } = createWidgetContainer('Playing Handicaps by Course', 'handicap-table-container');
+            if (!Array.isArray(courses) || !Array.isArray(golfers) || courses.length === 0 || golfers.length === 0) return;
+
+        // Table setup
+        const tableDiv = document.createElement("div");
+        tableDiv.className = "handicap-table-container";
+
+        let html = `<table class="handicap-table"><tr><th>Golfer</th><th>Hcp</th>`;
+        courses.forEach(course => {
+          html += `<th>${course.course_name}</th>`;
+        });
+        html += `</tr>`;
+
+        golfers.forEach(golfer => {
+          html += `<tr><td>${golfer.first_name}</td><td>${parseFloat(golfer.handicap).toFixed(1)}</td>`;
+          courses.forEach(course => {
+            // Calculate playing handicap for this golfer/course
+            const slope = parseFloat(course.slope);
+            const rating = parseFloat(course.rating);
+            const pct = parseFloat(course.handicap_pct || tournamentHandicapPct || 80); // fallback to 80 if not present
+            const hcp = parseFloat(golfer.handicap);
+            const playingHandicap = ((hcp * (slope / 113)) + (rating - 72)) * (pct / 100);
+            html += `<td>${playingHandicap ? playingHandicap.toFixed(1) : '-'}</td>`;
+          });
+          html += `</tr>`;
+        });
+
+        html += `</table>`;
+        tableDiv.innerHTML = html;
+        container.appendChild(tableDiv);
+        const explanation = document.createElement("div");
+        explanation.className = "handicap-explanation";
+        explanation.innerHTML = `
+          <strong>How Playing Handicap is Calculated:</strong><br>
+          Each golfer's <b>course handicap</b> is calculated according to USGA guidelines using the formula:<br>
+          <code>(Handicap &times; (Slope / 113) + (Rating - 72))</code><br>
+          For this tournament, we chose to use 80% of the course handicap to calculate the <b>playing handicap</b> to minimize the effect of handicaps overall.<br>
+        `;
+        container.appendChild(explanation);
+    parentContainer.appendChild(container);
+    // ... (Your logic for the explanation div also goes here) ...
+}
+
+async function loadTournamentPage(container) {
+    // 1. Clear the container and show a loading message
+    container.innerHTML = '<h2>Loading Tournament Data...</h2>';
+    
+    const tournamentId = sessionStorage.getItem('selected_tournament_id');
+    if (!tournamentId) {
+        container.innerHTML = '<h2>Error: No tournament selected.</h2>';
+        return;
+    }
+
+    try {
+        // 2. Start ALL data fetches at the same time.
+        const promises = [
+            fetch('get_tournament_scoreboard.php', { credentials: 'include' }).then(res => res.json()),
+            fetch('get_gross_leaderboard_all.php', { credentials: 'include' }).then(res => res.json()),
+            fetch('get_net_leaderboard_all.php', { credentials: 'include' }).then(res => res.json()),
+            fetch(`get_tournament_rounds.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
+            // The handicap table needs two fetches, so we wrap them in their own Promise.all
+            Promise.all([
+                fetch(`get_tournament_courses.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
+                fetch(`get_tournament_golfers.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json())
+            ])
+        ];
+
+        // 3. Wait for all promises to finish, regardless of success or failure.
+        const results = await Promise.allSettled(promises);
+
+        // 4. Now that all data is fetched, clear the loading message and render the page.
+        container.innerHTML = '';
+
+        // 5. Destructure results for clarity and process each one.
+        const [
+            scoreboardResult,
+            grossLeaderboardResult,
+            netLeaderboardResult,
+            roundsResult,
+            handicapResult
+        ] = results;
+
+        // Render Scoreboard
+        if (scoreboardResult.status === 'fulfilled') {
+            renderScoreboard(container, scoreboardResult.value);
+        } else {
+            console.error("Scoreboard Error:", scoreboardResult.reason);
+            renderErrorWidget(container, 'Team Scoreboard');
+        }
+
+                // Render Rounds & Matchups
+        if (roundsResult.status === 'fulfilled') {
+            renderRoundsAndMatchups(container, roundsResult.value);
+        } else {
+            console.error("Rounds/Matchups Error:", roundsResult.reason);
+            renderErrorWidget(container, 'Rounds & Matchups');
+        }
+
+        // Render Gross Leaderboard
+        if (grossLeaderboardResult.status === 'fulfilled') {
+            renderGrossLeaderboard(container, grossLeaderboardResult.value);
+        } else {
+            console.error("Gross Leaderboard Error:", grossLeaderboardResult.reason);
+            renderErrorWidget(container, 'Gross Leaderboard');
+        }
+
+        // Render Net Leaderboard
+        if (netLeaderboardResult.status === 'fulfilled') {
+            renderNetLeaderboard(container, netLeaderboardResult.value);
+        } else {
+            console.error("Net Leaderboard Error:", netLeaderboardResult.reason);
+            renderErrorWidget(container, 'Net Leaderboard');
+        }
+        
+
+
+        // Render Handicap Table
+        if (handicapResult.status === 'fulfilled') {
+            const [courses, golfers] = handicapResult.value; // Destructure the resolved array
+            renderHandicapTable(container, courses, golfers);
+        } else {
+            console.error("Handicap Table Error:", handicapResult.reason);
+            renderErrorWidget(container, 'Handicap Table');
+        }
+
+    } catch (error) {
+        // This would catch a fundamental error, e.g., if Promise.allSettled itself failed.
+        container.innerHTML = '<h2>A critical error occurred while loading the page.</h2>';
+        console.error("Fatal error in loadTournamentPage:", error);
+    }
+}
+/* tournament tab load
+// function loadTournamentPage(container) {
   // Create the scoreboard divs
   const totalScore = document.createElement("div");
   totalScore.className = "scoreboard";
@@ -1305,9 +1700,11 @@ function loadTournamentPage(container) {
                   table.appendChild(row);
                 } else {
                   teeTime.matches.forEach(match => {
-                    const players = match.golfers.map(g =>
-                      `<span style="color:${g.team_color}; font-weight:bold;">${g.name}</span>`
-                    ).join(', ');
+                    const players = match.golfers.map(g => {
+                      const matchupBgColor = g.team_color;
+                      const txtColor = pickContrastColorFromHex(matchupBgColor);
+                      return `<span style="background-color:${matchupBgColor}; color:${txtColor}; padding:1px;">${g.name}</span>`;
+                    }).join(', ');
                     const row = document.createElement("tr");
                     row.innerHTML = `<td>${teeTime.time.substring(0,5)}</td><td>${players}</td>`;
                     table.appendChild(row);
@@ -1377,7 +1774,7 @@ function loadTournamentPage(container) {
   // You can then append other tournament elements below
 
 }
-
+*/
 
 
 

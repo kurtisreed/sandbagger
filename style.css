@@ -511,3 +511,7 @@ main {
   border-top: 2px solid #ccc;
 
 }
+
+div:empty {
+  display: none;
+}
