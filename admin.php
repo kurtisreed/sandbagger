@@ -166,11 +166,7 @@
       <tr>
         <th>ID</th>
         <th>Name</th>
-        <th>Par</th>
-        <th>Tees</th>
-        <th>Slope</th>
-        <th>Rating</th>
-        <th>Yardage</th>
+
         <th>Actions</th>
       </tr>
     </thead>
@@ -224,7 +220,29 @@
   </div>
 
 
+
 </section>
+
+  <!-- Course Detail Section -->
+<div id="section-course-detail" class="admin-section" hidden>
+  <h2 id="course-detail-title"></h2>
+  <table class="leaderboard-table admin-table">
+    <thead>
+      <tr>
+        <th>Tee Name</th>
+        <th>Slope</th>
+        <th>Rating</th>
+        <th>Par</th>
+        <th>Yardage</th>
+        <!-- Add 18 columns for holes -->
+        <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th>
+        <th>10</th><th>11</th><th>12</th><th>13</th><th>14</th><th>15</th><th>16</th><th>17</th><th>18</th>
+      </tr>
+    </thead>
+    <tbody id="course-tees-table-body"></tbody>
+  </table>
+  <button id="back-to-courses" class="btn-secondary">Back</button>
+</div>
 
 <!-- Tournament Detail Section -->
 <section id="section-tourney-detail" class="admin-section" hidden>

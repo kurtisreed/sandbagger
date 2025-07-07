@@ -279,13 +279,9 @@ function loadCourses() {
         tr.innerHTML = `
           <td>${c.course_id}</td>
           <td class="editable" data-field="name">${c.name}</td>
-          <td class="editable" data-field="par_total">${c.par_total}</td>
-          <td class="editable" data-field="tees">${c.tees}</td>
-          <td class="editable" data-field="slope">${c.slope}</td>
-          <td class="editable" data-field="rating">${c.rating}</td>
-          <td class="editable" data-field="total_yardage">${c.total_yardage}</td>
+
           <td>
-            <button class="edit-course btn-secondary" data-id="${c.course_id}">Edit</button>
+            <button class="edit-course btn-secondary" data-id="${c.course_id}">View and Edit</button>
             <button class="delete-course btn-danger" data-id="${c.course_id}">Delete</button>
           </td>`;
         tbody.appendChild(tr);
@@ -296,7 +292,7 @@ function loadCourses() {
         btn.addEventListener('click', () => {
           const id = btn.dataset.id;
           const row = btn.closest('tr');
-          enableCourseEditing(row, id);
+          showCourseDetailPage(row, id);
         });
       });
 
@@ -341,24 +337,64 @@ function createCourse() {
   .catch(err => console.error('Error creating course:', err));
 }
 
-function enableCourseEditing(row, courseId) {
-  // Replace static content with input fields
-  row.querySelectorAll('.editable').forEach(cell => {
-    const field = cell.dataset.field;
-    const value = cell.textContent.trim();
-    cell.innerHTML = `<input type="text" class="edit-input" data-field="${field}" value="${value}">`;
+function showCourseDetailPage(row, courseId) {
+  // Hide other sections and show the course detail section
+  document.querySelectorAll('.admin-section').forEach(sec => sec.hidden = true);
+  document.getElementById('section-course-detail').hidden = false;
+
+  // Set course name at the top
+  const courseName = row.querySelector('.editable[data-field="name"]').textContent.trim();
+  document.getElementById('course-detail-title').textContent = courseName;
+
+  // Fetch and render tees table
+  fetch(`/api/get_course_tees.php?course_id=${courseId}`)
+    .then(r => r.json())
+    .then(data => {
+      const tees = data.tees;
+      const holes = data.holes;
+      const tbody = document.getElementById('course-tees-table-body');
+      tbody.innerHTML = '';
+
+      // Add a row for Par
+      let parRow = '<tr><td colspan="5" style="text-align:right;">Par</td>';
+      for (let i = 1; i <= 18; i++) {
+        const hole = holes.find(h => h.hole_number == i);
+        parRow += `<td>${hole ? hole.par : ''}</td>`;
+      }
+      parRow += '</tr>';
+      tbody.innerHTML += parRow;
+
+      // Add a row for Handicap Index
+      let hcpRow = '<tr><td colspan="5" style="text-align:right;">Handicap</td>';
+      for (let i = 1; i <= 18; i++) {
+        const hole = holes.find(h => h.hole_number == i);
+        hcpRow += `<td>${hole ? hole.handicap_index : ''}</td>`;
+      }
+      hcpRow += '</tr>';
+      tbody.innerHTML += hcpRow;
+
+      // Add the tees rows
+      tees.forEach(tee => {
+        let holesHtml = '';
+        for (let i = 1; i <= 18; i++) {
+          holesHtml += `<td>${tee[`hole_${i}_distance`] || ''}</td>`;
+        }
+        tbody.innerHTML += `
+          <tr>
+            <td>${tee.tee_name}</td>
+            <td>${tee.slope}</td>
+            <td>${tee.rating}</td>
+            <td>${tee.par}</td>
+            <td>${tee.yardage}</td>
+            ${holesHtml}
+          </tr>
+        `;
+      });
+    });
+  document.getElementById('back-to-courses').addEventListener('click', () => {
+    document.getElementById('section-course-detail').hidden = true;
+    document.getElementById('section-courses').hidden = false;
   });
-
-  // Replace Edit button with Save and Cancel buttons
-  const actionCell = row.querySelector('td:last-child');
-  actionCell.innerHTML = `
-    <button class="save-course btn-secondary" data-id="${courseId}">Save</button>
-    <button class="cancel-edit btn-danger">Cancel</button>
-  `;
-
-  // Add event listeners for Save and Cancel buttons
-  actionCell.querySelector('.save-course').addEventListener('click', () => saveCourse(row, courseId));
-  actionCell.querySelector('.cancel-edit').addEventListener('click', () => loadCourses());
 }
 
 function saveCourse(row, courseId) {
