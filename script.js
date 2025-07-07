@@ -1352,7 +1352,7 @@ function renderHandicapTable(parentContainer, courses, golfers) {
 
         let html = `<table class="handicap-table"><tr><th>Golfer</th><th>Hcp</th>`;
         courses.forEach(course => {
-          html += `<th>${course.course_name}</th>`;
+          html += `<th>${course.course_name} (${course.tee_name})</th>`;
         });
         html += `</tr>`;
 

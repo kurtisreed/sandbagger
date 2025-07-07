@@ -356,6 +356,12 @@
           <option value="">-- Select Course --</option>
         </select>
       </div>
+      <div class="form-row">
+        <label for="r-tees">Tees</label>
+        <select id="r-tees" required>
+          <option value="">-- Select Tees (slope,rating,yards) --</option>
+        </select>
+      </div>
       <div class="form-actions">
         <button type="submit" class="btn-primary">Create</button>
         <button type="button" class="btn-secondary modal-close">Cancel</button>

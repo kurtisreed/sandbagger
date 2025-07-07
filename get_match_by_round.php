@@ -26,13 +26,14 @@ SELECT
   m.round_id,
   m.finalized,
   r.course_id,
+  r.tee_id,
   r.round_name,
   r.round_date,
   c.course_name,
-  c.tees,
-  c.par_total,
-  c.slope,
-  c.rating,
+  ct.tee_name,
+  ct.slope,
+  ct.rating,
+  ct.par,
   g.golfer_id,
   g.first_name,
   tg.team_id,
@@ -43,6 +44,7 @@ FROM match_golfers mg
 JOIN matches m ON mg.match_id = m.match_id
 JOIN rounds r ON m.round_id = r.round_id
 JOIN courses c ON r.course_id = c.course_id
+JOIN course_tees ct ON r.tee_id = ct.tee_id
 JOIN match_golfers mg2 ON mg.match_id = mg2.match_id
 JOIN golfers g ON mg2.golfer_id = g.golfer_id
 JOIN tournament_golfers tg ON g.golfer_id = tg.golfer_id AND tg.tournament_id = ?

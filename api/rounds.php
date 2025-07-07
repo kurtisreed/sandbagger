@@ -14,7 +14,7 @@ switch ($method) {
     if ($id) {
       // fetch one round
       $stmt = $conn->prepare("
-        SELECT round_id, tournament_id, course_id, round_name, round_date
+        SELECT round_id, tournament_id, course_id, tee_id, round_name, round_date
           FROM rounds
          WHERE round_id = ?
       ");
@@ -24,7 +24,7 @@ switch ($method) {
     } elseif ($tournament_id) {
       // fetch rounds for a specific tournament
       $stmt = $conn->prepare("
-        SELECT round_id, tournament_id, course_id, round_name, round_date
+        SELECT round_id, tournament_id, course_id, tee_id, round_name, round_date
           FROM rounds
          WHERE tournament_id = ?
          ORDER BY round_name
@@ -35,7 +35,7 @@ switch ($method) {
     } else {
       // fetch all rounds
       $result = $conn->query("
-        SELECT round_id, tournament_id, course_id, round_name, round_date
+        SELECT round_id, tournament_id, course_id, tee_id, round_name, round_date
           FROM rounds
          ORDER BY round_date DESC
       ");
@@ -47,13 +47,14 @@ switch ($method) {
     // create a new round
     $data = json_decode(file_get_contents('php://input'), true);
     $stmt = $conn->prepare("
-      INSERT INTO rounds (tournament_id, course_id, round_name, round_date)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO rounds (tournament_id, course_id, tee_id, round_name, round_date)
+      VALUES (?, ?, ?, ?, ?)
     ");
     $stmt->bind_param(
-      'iiss',
+      'iiiss',
       $data['tournament_id'],
       $data['course_id'],
+      $data['tee_id'], // Assuming tee_id is part of the data
       $data['round_name'],
       $data['round_date']
     );
@@ -68,6 +69,7 @@ switch ($method) {
       UPDATE rounds
          SET tournament_id = ?,
              course_id     = ?,
+             tee_id        = ?,  // Assuming tee_id is part of the data
              round_name    = ?,
              round_date    = ?
        WHERE round_id     = ?
@@ -76,6 +78,7 @@ switch ($method) {
       'iissi',
       $data['tournament_id'],
       $data['course_id'],
+      $data['tee_id'], // Assuming tee_id is part of the data
       $data['round_name'],
       $data['round_date'],
       $id

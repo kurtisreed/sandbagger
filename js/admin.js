@@ -970,6 +970,25 @@ function loadCourseSelect() {
         <option value="${course.course_id}">${course.name}</option>
       `;
     });
+    document.getElementById('r-course').addEventListener('change', function() {
+      const courseId = this.value;
+      const teesSelect = document.getElementById('r-tees');
+      teesSelect.innerHTML = '<option value="">-- Select Tees (slope,rating,yards) --</option>';
+
+      if (!courseId) return;
+
+      fetch(`/api/get_course_tees.php?course_id=${courseId}`)
+        .then(r => r.json())
+        .then(data => {
+          const tees = data.tees || data; // support both array and {tees:[]} response
+          tees.forEach(tee => {
+            teesSelect.innerHTML += `<option data-tee-name="${tee.tee_name}" value="${tee.tee_id}">${tee.tee_name} (${tee.slope},${tee.rating},${tee.yardage})</option>`;
+          });
+        })
+        .catch(() => {
+          teesSelect.innerHTML = '<option value="">No tees found</option>';
+        });
+    });
   });
 }
 
@@ -995,12 +1014,14 @@ document.getElementById('round-create-form').addEventListener('submit', async (e
   const date = document.getElementById('r-date').value;
   const courseId = document.getElementById('r-course').value;
   const courseName = document.getElementById('r-course').selectedOptions[0].text;
+  const teeName = document.getElementById('r-tees').selectedOptions[0].dataset.teeName;
+  const teeId = document.getElementById('r-tees').value;
   
   // Get next round number
   const nextRoundNum = await getNextRoundNumber(currentTourneyId);
   
   // Generate round name
-  const roundName = `Round ${nextRoundNum} at ${courseName}`;
+  const roundName = `Round ${nextRoundNum} at ${courseName} (${teeName} tees)`;
   
   // Create the round
   fetch(BASE + '/api/rounds.php', {
@@ -1010,6 +1031,7 @@ document.getElementById('round-create-form').addEventListener('submit', async (e
     body: JSON.stringify({
       tournament_id: currentTourneyId,
       course_id: courseId,
+      tee_id: teeId,
       round_name: roundName,
       round_date: date
     })
