@@ -972,27 +972,29 @@ function loadCourseSelect() {
         <option value="${course.course_id}">${course.name}</option>
       `;
     });
-    document.getElementById('r-course').addEventListener('change', function() {
-      const courseId = this.value;
-      const teesSelect = document.getElementById('r-tees');
-      teesSelect.innerHTML = '<option value="">-- Select Tees (slope,rating,yards) --</option>';
 
-      if (!courseId) return;
-
-      fetch(`/api/get_course_tees.php?course_id=${courseId}`)
-        .then(r => r.json())
-        .then(data => {
-          const tees = data.tees || data; // support both array and {tees:[]} response
-          tees.forEach(tee => {
-            teesSelect.innerHTML += `<option data-tee-name="${tee.tee_name}" value="${tee.tee_id}">${tee.tee_name} (${tee.slope},${tee.rating},${tee.yardage})</option>`;
-          });
-        })
-        .catch(() => {
-          teesSelect.innerHTML = '<option value="">No tees found</option>';
-        });
-    });
   });
 }
+
+document.getElementById('r-course').addEventListener('change', function() {
+  const courseId = this.value;
+  const teesSelect = document.getElementById('r-tees');
+  teesSelect.innerHTML = '<option value="">-- Select Tees (slope,rating,yards) --</option>';
+
+  if (!courseId) return;
+
+  fetch(`/api/get_course_tees.php?course_id=${courseId}`)
+    .then(r => r.json())
+    .then(data => {
+      const tees = data.tees || data; // support both array and {tees:[]} response
+      tees.forEach(tee => {
+        teesSelect.innerHTML += `<option data-tee-name="${tee.tee_name}" value="${tee.tee_id}">${tee.tee_name} (${tee.slope},${tee.rating},${tee.yardage})</option>`;
+      });
+    })
+    .catch(() => {
+      teesSelect.innerHTML = '<option value="">No tees found</option>';
+    });
+});
 
 function getNextRoundNumber(tournamentId) {
   return fetch(BASE + `/api/rounds.php?tournament_id=${tournamentId}`, {
