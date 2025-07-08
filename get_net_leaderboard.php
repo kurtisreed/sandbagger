@@ -49,19 +49,27 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 
-// Get course slope and rating for this round
-$courseSql = $conn->prepare("
-  SELECT c.slope, c.rating
-  FROM rounds r
-  JOIN courses c ON r.course_id = c.course_id
-  WHERE r.round_id = ?
-");
-$courseSql->bind_param("i", $round_id);
-$courseSql->execute();
-$courseResult = $courseSql->get_result();
-$courseRow = $courseResult->fetch_assoc();
-$slope = floatval($courseRow['slope']);
-$rating = floatval($courseRow['rating']);
+// Get tee_id for this round
+$teeSql = $conn->prepare("SELECT tee_id FROM rounds WHERE round_id = ?");
+$teeSql->bind_param("i", $round_id);
+$teeSql->execute();
+$teeResult = $teeSql->get_result();
+$teeRow = $teeResult->fetch_assoc();
+$tee_id = $teeRow ? $teeRow['tee_id'] : null;
+
+if (!$tee_id) {
+  echo json_encode(['error' => 'No tee_id found for this round']);
+  exit;
+}
+
+// Get slope and rating from course_tees
+$courseTeeSql = $conn->prepare("SELECT slope, rating FROM course_tees WHERE tee_id = ?");
+$courseTeeSql->bind_param("i", $tee_id);
+$courseTeeSql->execute();
+$courseTeeResult = $courseTeeSql->get_result();
+$courseTeeRow = $courseTeeResult->fetch_assoc();
+$slope = floatval($courseTeeRow['slope']);
+$rating = floatval($courseTeeRow['rating']);
 
 // Get tournament handicap percent
 $tourSql = $conn->prepare("SELECT handicap_pct FROM tournaments WHERE tournament_id = ?");

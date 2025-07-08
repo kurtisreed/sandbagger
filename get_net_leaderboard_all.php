@@ -29,13 +29,13 @@ $sql = "
     s.strokes,
     h.par,
     h.handicap_index,
-    c.slope,
-    c.rating
+    ct.slope,
+    ct.rating
   FROM match_golfers mg
   JOIN golfers g ON mg.golfer_id = g.golfer_id
   JOIN matches m ON mg.match_id = m.match_id
   JOIN rounds r ON m.round_id = r.round_id
-  JOIN courses c ON r.course_id = c.course_id
+  JOIN course_tees ct ON r.tee_id = ct.tee_id
   JOIN tournament_golfers tg ON g.golfer_id = tg.golfer_id AND tg.tournament_id = ?
   JOIN teams t ON tg.team_id = t.team_id
   LEFT JOIN hole_scores s ON mg.match_id = s.match_id AND mg.golfer_id = s.golfer_id
