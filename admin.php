@@ -254,7 +254,7 @@
     <button data-tab="teams" class="tab-btn active">Team Setup</button>
     <button data-tab="roster" class="tab-btn">Rosters</button>
     <button data-tab="rounds" class="tab-btn">Rounds</button>
-    <button data-tab="settings" class="tab-btn">Settings</button>
+
     <!-- add more as you build -->
   </nav>
 
@@ -441,16 +441,7 @@
 
 
 
-  <!-- Settings tab -->
-  <div id="tab-settings" class="tab-content" hidden>
 
-    <!-- e.g. checkbox for skins_enabled -->
-    <label>
-      <input type="checkbox" id="setting-skins"> Enable Skins
-    </label>
-    <!-- more settings… -->
-    <button id="settings-save-btn">Save Settings</button>
-  </div>
 
 
 

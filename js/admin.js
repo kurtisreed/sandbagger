@@ -149,7 +149,7 @@ function showTournamentDashboard(id) {
   loadTeams();
   loadTourneyRoster();
   loadTourneyRounds();
-  loadTourneySettings();
+
 }
 
 // Sub-nav click handlers
@@ -163,7 +163,7 @@ document.querySelectorAll('.sub-nav .tab-btn').forEach(btn => {
       loadTeams();
       loadTourneyRoster();
       loadTourneyRounds();
-      loadTourneySettings();
+
   });
 });
 
@@ -1346,30 +1346,6 @@ document.getElementById('tee-times-list').addEventListener('click', (e) => {
 });
 
 
-
-
-// Settings
-function loadTourneySettings() {
-  fetch(BASE + `/api/tournament_settings.php?tournament_id=${currentTourneyId}`,{credentials:'include'})
-    .then(r=>r.json())
-    .then(settings=>{
-      document.getElementById('setting-skins').checked =
-        settings.find(s=>s.setting_key==='skins_enabled')?.setting_value === 'true';
-      // …load other settings…
-    });
-}
-document.getElementById('settings-save-btn').addEventListener('click', ()=>{
-  const skins = document.getElementById('setting-skins').checked;
-  fetch(BASE + '/api/tournament_settings.php', {
-    method:'POST', credentials:'include',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({
-      tournament_id: currentTourneyId,
-      setting_key:   'skins_enabled',
-      setting_value: skins.toString()
-    })
-  }).then(()=>alert('Saved settings'));
-});
 
 
 
