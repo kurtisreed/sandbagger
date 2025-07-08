@@ -355,23 +355,6 @@ function showCourseDetailPage(row, courseId) {
       const tbody = document.getElementById('course-tees-table-body');
       tbody.innerHTML = '';
 
-      // Add a row for Par
-      let parRow = '<tr><td colspan="5" style="text-align:right;">Par</td>';
-      for (let i = 1; i <= 18; i++) {
-        const hole = holes.find(h => h.hole_number == i);
-        parRow += `<td>${hole ? hole.par : ''}</td>`;
-      }
-      parRow += '</tr>';
-      tbody.innerHTML += parRow;
-
-      // Add a row for Handicap Index
-      let hcpRow = '<tr><td colspan="5" style="text-align:right;">Handicap</td>';
-      for (let i = 1; i <= 18; i++) {
-        const hole = holes.find(h => h.hole_number == i);
-        hcpRow += `<td>${hole ? hole.handicap_index : ''}</td>`;
-      }
-      hcpRow += '</tr>';
-      tbody.innerHTML += hcpRow;
 
       // Add the tees rows
       tees.forEach(tee => {
@@ -390,6 +373,25 @@ function showCourseDetailPage(row, courseId) {
           </tr>
         `;
       });
+            // Add a row for Par
+      let parRow = '<tr><td colspan="5" style="font-weight:bold;text-align:right;border-top:2px solid #333">Par</td>';
+      for (let i = 1; i <= 18; i++) {
+        const hole = holes.find(h => h.hole_number == i);
+        parRow += `<td style="border-top:2px solid #333;">${hole ? hole.par : ''}</td>`;
+      }
+      parRow += '</tr>';
+      tbody.innerHTML += parRow;
+
+      // Add a row for Handicap Index
+      let hcpRow = '<tr><td colspan="5" style="font-weight:bold;text-align:right;">Handicap</td>';
+      for (let i = 1; i <= 18; i++) {
+        const hole = holes.find(h => h.hole_number == i);
+        hcpRow += `<td>${hole ? hole.handicap_index : ''}</td>`;
+      }
+      hcpRow += '</tr>';
+      tbody.innerHTML += hcpRow;
+
+
     });
   document.getElementById('back-to-courses').addEventListener('click', () => {
     document.getElementById('section-course-detail').hidden = true;

@@ -16,12 +16,7 @@ switch ($method) {
       $stmt = $conn->prepare("
         SELECT 
           course_id,
-          course_name AS name,
-          par_total,
-          tees,
-          slope,
-          rating,
-          total_yardage
+          course_name AS name
         FROM courses
         WHERE course_id = ?
       ");
@@ -33,12 +28,7 @@ switch ($method) {
       $result = $conn->query("
         SELECT 
           course_id,
-          course_name AS name,
-          par_total,
-          tees,
-          slope,
-          rating,
-          total_yardage
+          course_name AS name
         FROM courses
         ORDER BY course_name
       ");
