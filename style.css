@@ -507,11 +507,21 @@ main {
 }
 
 .tournament-rounds-table-container {
-  margin-top: 1em;
+  margin-top: .2em;
   border-top: 2px solid #ccc;
 
 }
 
+.tournament-rounds-table-container h4 {
+  padding: 0.1em 0 0.1em 0; /* or just padding: 0; */
+  margin: 0.1em 0 0.1em 0;   /* optional: adjust margin as needed */
+}
+
 div:empty {
   display: none;
+}
+
+h3 {
+  margin-top: 0.8em;
+  margin-bottom: 0.5em;
 }

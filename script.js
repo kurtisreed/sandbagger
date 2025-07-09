@@ -1300,7 +1300,10 @@ function renderRoundsAndMatchups(parentContainer, rounds) {
           rounds.forEach(round => {
             // Heading for round name and date
             const heading = document.createElement("h4");
-            heading.textContent = `${round.round_name} (${round.round_date})`;
+            const dateObj = new Date(round.round_date);
+            const monthDay = dateObj.toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
+            heading.innerHTML = `${round.round_name} <br>${monthDay}`;
+            heading.style.textAlign = "center";
             roundsDiv.appendChild(heading);
 
             const table = document.createElement("table");
