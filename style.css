@@ -506,6 +506,21 @@ main {
   background: #f2f2f2;
 }
 
+.scorecard-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: center;
+}
+
+.scorecard-table th, .scorecard-table td {
+  padding: 8px;
+  border: 1px solid #ccc;
+}
+
+.scorecard-table th {
+  background-color: #f2f2f2;
+}
+
 .tournament-rounds-table-container {
   margin-top: .2em;
   border-top: 2px solid #ccc;
@@ -522,6 +537,6 @@ div:empty {
 }
 
 h3 {
-  margin-top: 0.8em;
+  margin-top: 1em;
   margin-bottom: 0.5em;
 }

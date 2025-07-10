@@ -11,6 +11,7 @@ $sql = "
     SELECT
         c.course_id,
         c.course_name,
+        c.pdf_url,
         ct.tee_id,
         ct.tee_name,
         ct.slope,
@@ -42,6 +43,7 @@ while ($row = $result->fetch_assoc()) {
     $courses[] = [
         'course_id'    => $row['course_id'],
         'course_name'  => $row['course_name'],
+        'pdf_url'      => $row['pdf_url'],
         'tee_id'       => $row['tee_id'],
         'tee_name'     => $row['tee_name'],
         'slope'        => $row['slope'],

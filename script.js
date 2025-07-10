@@ -1355,7 +1355,11 @@ function renderHandicapTable(parentContainer, courses, golfers) {
 
         let html = `<table class="handicap-table"><tr><th>Golfer</th><th>Hcp</th>`;
         courses.forEach(course => {
-          html += `<th>${course.course_name} (${course.tee_name})</th>`;
+          if (course.pdf_url) {
+            html += `<th>${course.course_name} (${course.tee_name})</th>`;
+          } else {
+            html += `<th>${course.course_name} (${course.tee_name})</th>`;
+          }
         });
         html += `</tr>`;
 
@@ -1386,8 +1390,44 @@ function renderHandicapTable(parentContainer, courses, golfers) {
         `;
         container.appendChild(explanation);
     parentContainer.appendChild(container);
+
+
     // ... (Your logic for the explanation div also goes here) ...
 }
+
+function renderCoursePDFLinks(parentContainer, courses) {
+  console.log("Rendering course PDF links with data:", courses);
+  if (!Array.isArray(courses) || courses.length === 0) return;
+  const { container, body } = createWidgetContainer('Course Scorecards', 'scorecard-table-container');
+  if (!Array.isArray(courses) || courses.length === 0) return;
+
+  // Filter to unique courses by course_id
+  const uniqueCourses = [];
+  const seen = new Set();
+  courses.forEach(course => {
+    if (!seen.has(course.course_id)) {
+      uniqueCourses.push(course);
+      seen.add(course.course_id);
+    }
+  });
+
+  const pdfDiv = document.createElement("div");
+  pdfDiv.className = "scorecard-table-container";
+
+  let html = `<table class="scorecard-table"><tr><th>Course</th></tr>`;
+  uniqueCourses.forEach(course => {
+    if (course.pdf_url) {
+      html += `<tr><td><a href="${course.pdf_url}" target="_blank">${course.course_name}</a></td></tr>`;
+    } else {
+      html += `<tr><td>${course.course_name}</td></tr>`;
+    }
+  });
+  html += `</table>`;
+  pdfDiv.innerHTML = html;
+  container.appendChild(pdfDiv);
+  parentContainer.appendChild(container);
+}
+
 
 async function loadTournamentPage(container) {
     // 1. Clear the container and show a loading message
@@ -1466,6 +1506,7 @@ async function loadTournamentPage(container) {
         if (handicapResult.status === 'fulfilled') {
             const [courses, golfers] = handicapResult.value; // Destructure the resolved array
             renderHandicapTable(container, courses, golfers);
+            renderCoursePDFLinks(container, courses); // Assuming this function exists to render course PDFs
         } else {
             console.error("Handicap Table Error:", handicapResult.reason);
             renderErrorWidget(container, 'Handicap Table');
