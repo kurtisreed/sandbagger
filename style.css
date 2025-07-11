@@ -294,8 +294,9 @@ main {
 /* Form heading */
 #auth-form h2 {
   margin: 0;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   color: #fff;        /* match the room text color */
+  text-align: center; /* centers the heading */
 }
 
 /* Labels, to ensure consistent spacing and color */
