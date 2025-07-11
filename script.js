@@ -439,7 +439,7 @@ function loadTodaysMatch() {
         // Calculate points for each team
         // Example: 1 for win, 0.5 for tie, 0 for loss (replace with your logic)
         const points = calculateMatchPoints(); // You need to implement this based on your match logic
-
+        console.log("Calculated points:", points);
         // Send to backend
         fetch('finalize_match_result.php', {
           method: 'POST',
@@ -572,11 +572,12 @@ function updateFinalizeButtonVisibility() {
 function calculateMatchPoints() {
   // Build stroke maps for all golfers
   const allGolfers = golfers;
+  console.log("All golfers:", allGolfers);
   const localStrokeMaps = {};
   allGolfers.forEach(golfer => {
-    localStrokeMaps[golfer.id] = buildStrokeMapForGolfer(calculatePlayingHandicap(golfer.handicap), holeInfo);
+    localStrokeMaps[golfer.id] = buildStrokeMapForGolfer(golfer.handicap, holeInfo);
   });
-
+  console.log("Local stroke maps:", localStrokeMaps);
 
   // Organize scores by hole and team
   const scoresByHole = {};
@@ -598,7 +599,7 @@ function calculateMatchPoints() {
     }
     scoresByHole[holeNum][golfer.team].push(netScore);
   });
-
+  console.log("Scores by hole:", scoresByHole);
   // Calculate the differential for each hole
   let differential = 0;
   let holesPlayed = 0;
@@ -613,6 +614,7 @@ function calculateMatchPoints() {
     holesPlayed++;
     if (primaryBest < secondaryBest) differential++;
     else if (secondaryBest < primaryBest) differential--;
+    console.log(`Hole ${i}: Primary Best = ${primaryBest}, Secondary Best = ${secondaryBest}, Differential = ${differential}`);
   }
 
   // Decide points
