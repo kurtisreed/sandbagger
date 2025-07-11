@@ -572,12 +572,11 @@ function updateFinalizeButtonVisibility() {
 function calculateMatchPoints() {
   // Build stroke maps for all golfers
   const allGolfers = golfers;
-  console.log("All golfers:", allGolfers);
   const localStrokeMaps = {};
   allGolfers.forEach(golfer => {
     localStrokeMaps[golfer.id] = buildStrokeMapForGolfer(golfer.handicap, holeInfo);
   });
-  console.log("Local stroke maps:", localStrokeMaps);
+
 
   // Organize scores by hole and team
   const scoresByHole = {};
@@ -599,7 +598,7 @@ function calculateMatchPoints() {
     }
     scoresByHole[holeNum][golfer.team].push(netScore);
   });
-  console.log("Scores by hole:", scoresByHole);
+
   // Calculate the differential for each hole
   let differential = 0;
   let holesPlayed = 0;
@@ -614,7 +613,6 @@ function calculateMatchPoints() {
     holesPlayed++;
     if (primaryBest < secondaryBest) differential++;
     else if (secondaryBest < primaryBest) differential--;
-    console.log(`Hole ${i}: Primary Best = ${primaryBest}, Secondary Best = ${secondaryBest}, Differential = ${differential}`);
   }
 
   // Decide points
@@ -1111,7 +1109,7 @@ function renderErrorWidget(parentContainer, widgetName) {
 
 // Renders the main team scoreboard
 function renderScoreboard(parentContainer, scoreboard) {
-    console.log("Rendering scoreboard with data:", scoreboard);
+
     const totalScore = document.createElement("div");
     totalScore.className = "scoreboard";
     totalScore.innerHTML = `
@@ -1398,7 +1396,7 @@ function renderHandicapTable(parentContainer, courses, golfers) {
 }
 
 function renderCoursePDFLinks(parentContainer, courses) {
-  console.log("Rendering course PDF links with data:", courses);
+
   if (!Array.isArray(courses) || courses.length === 0) return;
   const { container, body } = createWidgetContainer('Course Scorecards', 'scorecard-table-container');
   if (!Array.isArray(courses) || courses.length === 0) return;
