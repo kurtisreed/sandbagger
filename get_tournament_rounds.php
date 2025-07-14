@@ -58,6 +58,7 @@ foreach ($rounds as &$round) {
 
         // 4. For each match, get golfers (with team color)
         foreach ($matches as &$match) {
+            // Get golfers (with team color)
             $sql = "
                 SELECT
                     g.first_name AS name,
@@ -77,10 +78,26 @@ foreach ($rounds as &$round) {
             while ($row2 = $res2->fetch_assoc()) {
                 $match['golfers'][] = [
                     'name' => $row2['name'],
-                    'team_color' => $row2['team_color']
+                    'team_color' => $row2['team_color'],
+                    'team_name' => $row2['team_name']
                 ];
             }
             $stmt2->close();
+
+            // Get match results for this match
+            $results = [];
+            $stmt3 = $conn->prepare("SELECT team_id, points FROM match_results WHERE match_id = ?");
+            $stmt3->bind_param('i', $match['match_id']);
+            $stmt3->execute();
+            $res3 = $stmt3->get_result();
+            while ($row3 = $res3->fetch_assoc()) {
+                $results[] = [
+                    'team_id' => (int)$row3['team_id'],
+                    'points' => (float)$row3['points']
+                ];
+            }
+            $stmt3->close();
+            $match['results'] = $results;
         }
         $tee_time['matches'] = $matches;
     }
