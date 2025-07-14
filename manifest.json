@@ -8,8 +8,8 @@
   "lang": "en",
   "categories": ["sports", "games", "utilities"],
   "display": "standalone",
-  "background_color": "#4F2683",
-  "theme_color": "#4F2683",
+  "background_color": "#000",
+  "theme_color": "#000",
   "icons": [
     {
       "src": "/icons/icon-192.png",
