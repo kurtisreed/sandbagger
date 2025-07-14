@@ -472,14 +472,36 @@ main {
   background-color: #f2f2f2;
 }
 
-.leaderboard-table td:nth-child(4),
-.leaderboard-table th:nth-child(4) {
-  width: 20px; /* or whatever width you want */
-  min-width: 20px;
-  max-width: 20px;
-  text-align: center;
+.matchup-table {
+  table-layout: fixed;
+  width: 100%;
 }
 
+.matchup-table th, .matchup-table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.matchup-table th:nth-child(1),
+.matchup-table td:nth-child(1) {
+  width: 14%;
+}
+
+.matchup-table th:nth-child(2),
+.matchup-table td:nth-child(2) {
+  width: 39%;
+}
+
+.matchup-table th:nth-child(3),
+.matchup-table td:nth-child(3) {
+  width: 39%;
+}
+
+.matchup-table th:nth-child(4),
+.matchup-table td:nth-child(4) {
+  width: 8%;
+}
 
 
 .form-logo {

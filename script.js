@@ -1307,7 +1307,7 @@ function renderRoundsAndMatchups(parentContainer, rounds) {
     roundsDiv.appendChild(heading);
 
     const table = document.createElement("table");
-    table.className = "leaderboard-table";
+    table.className = "leaderboard-table matchup-table";
 
 
     if (round.tee_times.length === 0) {
@@ -1319,7 +1319,8 @@ function renderRoundsAndMatchups(parentContainer, rounds) {
       round.tee_times.forEach(teeTime => {
         if (teeTime.matches.length === 0) {
           const row = document.createElement("tr");
-          row.innerHTML = `<td>${teeTime.time.substring(0,5)}</td><td colspan="2" style="text-align:center;">Matchups not yet assigned</td>`;
+          const formattedTime = formatTeeTime(teeTime.time);
+          row.innerHTML = `<td>${formattedTime}</td><td colspan="2" style="text-align:center;">Matchups not yet assigned</td>`;
           table.appendChild(row);
         } else {
           // Group matches by tee time (if multiple teeTimes have the same time)
@@ -1355,9 +1356,10 @@ function renderRoundsAndMatchups(parentContainer, rounds) {
             }
 
             const row = document.createElement("tr");
+            const formattedTime = formatTeeTime(teeTime.time);
             if (idx === 0) {
               row.innerHTML = `
-                <td rowspan="${teeTime.matches.length}">${teeTime.time.substring(0,5)}</td>
+                <td rowspan="${teeTime.matches.length}">${formattedTime}</td>
                 <td style="background:${team1Color};color:${team1TextColor};">${team1Names}</td>
                 <td style="background:${team2Color};color:${team2TextColor};">${team2Names}</td>
                 ${resultCell}
@@ -1380,6 +1382,13 @@ function renderRoundsAndMatchups(parentContainer, rounds) {
 
   container.appendChild(roundsDiv);
   parentContainer.appendChild(container);
+}
+
+function formatTeeTime(timeStr) {
+  // timeStr is "HH:MM"
+  let [hour, minute] = timeStr.split(':').map(Number);
+  hour = hour % 12 || 12; // Convert 0/12/13+ to 12-hour format
+  return `${hour}:${minute.toString().padStart(2, '0')}`;
 }
 
 // Renders the Playing Handicap table
