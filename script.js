@@ -1290,7 +1290,7 @@ function renderNetLeaderboard(parentContainer, players) {
 // Renders the Rounds and Matchups table
 function renderRoundsAndMatchups(parentContainer, rounds) {
   if (!Array.isArray(rounds) || rounds.length === 0) return;
-  const { container, body } = createWidgetContainer('Matchups and Tee Times', 'tournament-rounds-table-container');
+  const { container, body } = createWidgetContainer('Matchups and Tee Times (click row to see scorecard)', 'tournament-rounds-table-container');
   if (!Array.isArray(rounds) || rounds.length === 0) return;
 
   const roundsDiv = document.createElement("div");
@@ -1356,6 +1356,21 @@ function renderRoundsAndMatchups(parentContainer, rounds) {
             }
 
             const row = document.createElement("tr");
+            
+            // Make the row clickable if there's a match_id
+            if (match.match_id) {
+                row.dataset.matchId = match.match_id;
+                row.style.cursor = 'pointer';
+                row.title = "Click to view scorecard";
+                
+                // The parentContainer is the div#tournament
+                row.addEventListener('click', () => {
+                    parentContainer.innerHTML = '<h2>Loading Scorecard...</h2>';
+                    // Pass the container's ID to loadMatchScorecard
+                    loadMatchScorecard(match.match_id, parentContainer.id); 
+                });
+            }
+
             const formattedTime = formatTeeTime(teeTime.time);
             if (idx === 0) {
               row.innerHTML = `
