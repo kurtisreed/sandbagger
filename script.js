@@ -685,7 +685,7 @@ function loadTodaySummary() {
         return;
       }
       
-      container.innerHTML = "<h3>Matches</h3>";
+      container.innerHTML = "<h3>Matches (click match to see scorecard)</h3>";
       assignCSSColors(primaryTeamColor, secondaryTeamColor);
       matches.forEach(match => {
         const div = document.createElement("div");

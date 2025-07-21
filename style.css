@@ -124,8 +124,8 @@ nav {
 
 #logout-button {
   background: #fff;
-  color: var(--secondary-team-color);
-  border: 2px solid var(--secondary-team-color);
+  color: black;
+  border: 2px solid black;
   border-radius: 5px;
   padding: 0.4em 1.1em;
   font-weight: bold;
