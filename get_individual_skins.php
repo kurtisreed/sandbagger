@@ -150,7 +150,6 @@ while ($row = $scoreResult->fetch_assoc()) {
     // Calculate handicap strokes: full 18 gets 1 per hole, >18 gets 2 on some
     $bonus = 0;
     if ($handicap >= $index) $bonus += 0.5;
-    if ($handicap > 18 && $handicap - 18 >= $index) $bonus += 0.5;
 
     $net = $strokes - $bonus;
 
