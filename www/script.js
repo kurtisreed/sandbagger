@@ -772,8 +772,11 @@ function loadTodaySummary() {
                 table.classList.add("skins-table");
             
                 const header = document.createElement("tr");
-                header.innerHTML = "<th>Hole</th><th>Player</th><th>Team</th><th>Net Score</th>";
+                header.innerHTML = "<th>Hole</th><th>Player</th><th>Team</th><th>Net Score</th><th>$</th>";
                 table.appendChild(header);
+            
+                // Calculate skin value (450 divided by total number of skins)
+                const skinValue = skins.length > 0 ? (450 / skins.length).toFixed(2) : "0.00";
             
                 skins.forEach(skin => {
                   let bgColor = skin.team_color || ""; // Use dynamic team color
@@ -789,6 +792,7 @@ function loadTodaySummary() {
                       ${skin.team}
                     </td>
                     <td>${skin.net_score}</td>
+                    <td>$${skinValue}</td>
                   `;
                   table.appendChild(row);
                 });
