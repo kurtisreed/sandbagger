@@ -446,6 +446,36 @@ function loadTodaysMatch() {
             return `<td>${dots}${select}</td>`;
         }).join("");
         table.appendChild(row);
+        
+        // Add Out subtotal row after hole 9
+        if (i === 9) {
+          const outRow = document.createElement("tr");
+          outRow.classList.add("subtotal-row");
+          
+          // Calculate front 9 par total
+          const frontNinePar = holeInfo.filter(h => h.hole_number >= 1 && h.hole_number <= 9)
+            .reduce((sum, hole) => sum + (hole.par || 0), 0);
+          
+          outRow.innerHTML = `<td></td><td>Out</td><td>${frontNinePar}</td><td></td>` + golfers.map(golfer => {
+            return `<td class="out-subtotal-cell" data-golfer="${golfer.id}">–</td>`;
+          }).join("");
+          table.appendChild(outRow);
+        }
+        
+        // Add In subtotal row after hole 18
+        if (i === 18) {
+          const inRow = document.createElement("tr");
+          inRow.classList.add("subtotal-row");
+          
+          // Calculate back 9 par total
+          const backNinePar = holeInfo.filter(h => h.hole_number >= 10 && h.hole_number <= 18)
+            .reduce((sum, hole) => sum + (hole.par || 0), 0);
+          
+          inRow.innerHTML = `<td></td><td>In</td><td>${backNinePar}</td><td></td>` + golfers.map(golfer => {
+            return `<td class="in-subtotal-cell" data-golfer="${golfer.id}">–</td>`;
+          }).join("");
+          table.appendChild(inRow);
+        }
       }
       
       const totalsRow = document.createElement("tr");
@@ -668,10 +698,10 @@ function calculateMatchPoints() {
 
 //calculate golfer total scores
 function updateTotalScores() {
-  const totals = {}; // golfer_id -> { strokes: 0, toPar: 0 }
+  const totals = {}; // golfer_id -> { strokes: 0, toPar: 0, outStrokes: 0, outToPar: 0, inStrokes: 0, inToPar: 0 }
 
   golfers.forEach(golfer => {
-    totals[golfer.id] = { strokes: 0, toPar: 0 };
+    totals[golfer.id] = { strokes: 0, toPar: 0, outStrokes: 0, outToPar: 0, inStrokes: 0, inToPar: 0 };
   });
 
   document.querySelectorAll("select[data-hole][data-golfer]").forEach(select => {
@@ -684,20 +714,49 @@ function updateTotalScores() {
     if (!isNaN(strokes)) {
       totals[golferId].strokes += strokes;
       totals[golferId].toPar += (strokes - par);
+      
+      // Front 9 (Out)
+      if (hole >= 1 && hole <= 9) {
+        totals[golferId].outStrokes += strokes;
+        totals[golferId].outToPar += (strokes - par);
+      }
+      // Back 9 (In)
+      else if (hole >= 10 && hole <= 18) {
+        totals[golferId].inStrokes += strokes;
+        totals[golferId].inToPar += (strokes - par);
+      }
     }
   });
 
   for (let golferId in totals) {
-    const cell = document.querySelector(`.totals-cell[data-golfer="${golferId}"]`);
-    if (!cell) continue;
+    const { strokes, toPar, outStrokes, outToPar, inStrokes, inToPar } = totals[golferId];
 
-    const { strokes, toPar } = totals[golferId];
+    // Update total scores
+    const totalCell = document.querySelector(`.totals-cell[data-golfer="${golferId}"]`);
+    if (totalCell) {
+      const display = toPar === 0
+        ? `${strokes} (E)`
+        : `${strokes} (${toPar > 0 ? "+" : ""}${toPar})`;
+      totalCell.textContent = display;
+    }
 
-    const display = toPar === 0
-      ? `${strokes} (E)`
-      : `${strokes} (${toPar > 0 ? "+" : ""}${toPar})`;
+    // Update Out subtotal
+    const outCell = document.querySelector(`.out-subtotal-cell[data-golfer="${golferId}"]`);
+    if (outCell && outStrokes > 0) {
+      const outDisplay = outToPar === 0
+        ? `${outStrokes} (E)`
+        : `${outStrokes} (${outToPar > 0 ? "+" : ""}${outToPar})`;
+      outCell.textContent = outDisplay;
+    }
 
-    cell.textContent = display;
+    // Update In subtotal
+    const inCell = document.querySelector(`.in-subtotal-cell[data-golfer="${golferId}"]`);
+    if (inCell && inStrokes > 0) {
+      const inDisplay = inToPar === 0
+        ? `${inStrokes} (E)`
+        : `${inStrokes} (${inToPar > 0 ? "+" : ""}${inToPar})`;
+      inCell.textContent = inDisplay;
+    }
   }
 }
 
@@ -1697,6 +1756,36 @@ function loadMatchScorecard(match_id, container_id = "today-summary") {
 
         }).join("");
         table.appendChild(row);
+        
+        // Add Out subtotal row after hole 9
+        if (i === 9) {
+          const outRow = document.createElement("tr");
+          outRow.classList.add("subtotal-row");
+          
+          // Calculate front 9 par total
+          const frontNinePar = holeInfo.filter(h => h.hole_number >= 1 && h.hole_number <= 9)
+            .reduce((sum, hole) => sum + (hole.par || 0), 0);
+          
+          outRow.innerHTML = `<td></td><td>Out</td><td>${frontNinePar}</td><td></td>` + golfers.map(golfer => {
+            return `<td class="out-subtotal-cell-readonly" data-golfer="${golfer.id}">–</td>`;
+          }).join("");
+          table.appendChild(outRow);
+        }
+        
+        // Add In subtotal row after hole 18
+        if (i === 18) {
+          const inRow = document.createElement("tr");
+          inRow.classList.add("subtotal-row");
+          
+          // Calculate back 9 par total
+          const backNinePar = holeInfo.filter(h => h.hole_number >= 10 && h.hole_number <= 18)
+            .reduce((sum, hole) => sum + (hole.par || 0), 0);
+          
+          inRow.innerHTML = `<td></td><td>In</td><td>${backNinePar}</td><td></td>` + golfers.map(golfer => {
+            return `<td class="in-subtotal-cell-readonly" data-golfer="${golfer.id}">–</td>`;
+          }).join("");
+          table.appendChild(inRow);
+        }
       }
 
       // Totals row
@@ -1748,11 +1837,19 @@ function loadMatchScorecard(match_id, container_id = "today-summary") {
 function updateTotalScoresReadOnly(golfers, holeInfo) {
   const totals = {};     // golfer_id => total strokes
   const parTotals = {};  // golfer_id => total par for holes they've played
+  const outTotals = {};  // golfer_id => front 9 total strokes
+  const outParTotals = {}; // golfer_id => front 9 total par
+  const inTotals = {};   // golfer_id => back 9 total strokes
+  const inParTotals = {}; // golfer_id => back 9 total par
 
   // Initialize
   golfers.forEach(g => {
     totals[g.id] = 0;
     parTotals[g.id] = 0;
+    outTotals[g.id] = 0;
+    outParTotals[g.id] = 0;
+    inTotals[g.id] = 0;
+    inParTotals[g.id] = 0;
   });
 
   // Loop through all score cells
@@ -1766,7 +1863,19 @@ function updateTotalScoresReadOnly(golfers, holeInfo) {
       totals[golferId] += strokes;
 
       const par = holeInfo.find(h => h.hole_number == hole)?.par;
-      parTotals[golferId] += parseInt(par) || 0;
+      const parValue = parseInt(par) || 0;
+      parTotals[golferId] += parValue;
+
+      // Front 9 (Out)
+      if (hole >= 1 && hole <= 9) {
+        outTotals[golferId] += strokes;
+        outParTotals[golferId] += parValue;
+      }
+      // Back 9 (In)
+      else if (hole >= 10 && hole <= 18) {
+        inTotals[golferId] += strokes;
+        inParTotals[golferId] += parValue;
+      }
     }
   });
 
@@ -1778,6 +1887,22 @@ function updateTotalScoresReadOnly(golfers, holeInfo) {
     const toParText = isNaN(toPar) ? "" : (toPar === 0 ? "E" : (toPar > 0 ? `+${toPar}` : `${toPar}`));
     if (td) {
       td.textContent = `${total} (${toParText})`;
+    }
+
+    // Update Out subtotal
+    const outCell = document.querySelector(`.out-subtotal-cell-readonly[data-golfer="${golferId}"]`);
+    if (outCell && outTotals[golferId] > 0) {
+      const outToPar = outTotals[golferId] - outParTotals[golferId];
+      const outToParText = outToPar === 0 ? "E" : (outToPar > 0 ? `+${outToPar}` : `${outToPar}`);
+      outCell.textContent = `${outTotals[golferId]} (${outToParText})`;
+    }
+
+    // Update In subtotal
+    const inCell = document.querySelector(`.in-subtotal-cell-readonly[data-golfer="${golferId}"]`);
+    if (inCell && inTotals[golferId] > 0) {
+      const inToPar = inTotals[golferId] - inParTotals[golferId];
+      const inToParText = inToPar === 0 ? "E" : (inToPar > 0 ? `+${inToPar}` : `${inToPar}`);
+      inCell.textContent = `${inTotals[golferId]} (${inToParText})`;
     }
   });
 }
@@ -1821,7 +1946,11 @@ function calculateBestBallStatusReadOnly(golfers, strokeMaps) {
   let differential = 0;
 
   for (let hole = 1; hole <= 18; hole++) {
-    const holeCell = document.querySelector(`.score-table tr:nth-child(${hole + 1}) td:first-child`);
+    // Account for subtotal rows: hole 10+ need to skip the Out row, hole 1+ need to account for header
+    let rowIndex = hole + 1; // +1 for header row
+    if (hole >= 10) rowIndex += 1; // +1 for Out subtotal row after hole 9
+    
+    const holeCell = document.querySelector(`.score-table tr:nth-child(${rowIndex}) td:first-child`);
     if (!holeCell || !scoreMap[hole]) continue;
 
     const primaryBest = Math.min(...scoreMap[hole][primaryTeamName]);
@@ -1916,8 +2045,11 @@ function calculateBestBallStatus() {
   let differential = 0;
 
   for (let hole = 1; hole <= 18; hole++) {
-    const holeCell = document.querySelector(`td:first-child:nth-child(1):nth-of-type(${hole})`) ||
-                     document.querySelector(`.score-table tr:nth-child(${hole + 1}) td:first-child`);
+    // Account for subtotal rows: hole 10+ need to skip the Out row, hole 1+ need to account for header
+    let rowIndex = hole + 1; // +1 for header row
+    if (hole >= 10) rowIndex += 1; // +1 for Out subtotal row after hole 9
+    
+    const holeCell = document.querySelector(`.score-table tr:nth-child(${rowIndex}) td:first-child`);
     if (!holeCell || !scoreMap[hole]) continue;
 
     const primaryBest = Math.min(...scoreMap[hole][primaryTeamName]);
