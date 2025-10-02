@@ -14,7 +14,7 @@ switch ($method) {
     if ($id) {
       // fetch one round
       $stmt = $conn->prepare("
-        SELECT round_id, tournament_id, course_id, tee_id, round_name, round_date
+        SELECT round_id, tournament_id, course_id, tee_id, round_name, round_date, skins_total
           FROM rounds
          WHERE round_id = ?
       ");
@@ -24,7 +24,7 @@ switch ($method) {
     } elseif ($tournament_id) {
       // fetch rounds for a specific tournament
       $stmt = $conn->prepare("
-        SELECT round_id, tournament_id, course_id, tee_id, round_name, round_date
+        SELECT round_id, tournament_id, course_id, tee_id, round_name, round_date, skins_total
           FROM rounds
          WHERE tournament_id = ?
          ORDER BY round_name
@@ -35,7 +35,7 @@ switch ($method) {
     } else {
       // fetch all rounds
       $result = $conn->query("
-        SELECT round_id, tournament_id, course_id, tee_id, round_name, round_date
+        SELECT round_id, tournament_id, course_id, tee_id, round_name, round_date, skins_total
           FROM rounds
          ORDER BY round_date DESC
       ");

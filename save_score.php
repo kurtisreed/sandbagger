@@ -3,6 +3,9 @@ ini_set('display_errors', 1);
 error_reporting(E_ALL);
 session_start();
 header('Content-Type: application/json');
+header("Access-Control-Allow-Origin: http://localhost");
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
 
 // DB credentials
 require_once 'db_connect.php';

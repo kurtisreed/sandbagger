@@ -6,6 +6,8 @@
   <title>Sandbagger Scoring</title>
   <link rel="stylesheet" href="style.css"/>
   <link rel="manifest" href="manifest.json">
+  <!-- Capacitor import for native app features -->
+  <script type="module" src="https://unpkg.com/@capacitor/core@latest/dist/capacitor.js"></script>
   <meta name="theme-color" content="#006837">
   <!-- Tell iOS to run in standalone mode -->
   <meta name="mobile-web-app-capable" content="yes">
@@ -25,17 +27,45 @@
 <div id="auth-container" class="container">
         <form id="auth-form">
             <h2 class="form-title">Sandbagger Scoring</h2>
-            <img class="form-logo" src="/images/tigerpaynelogo.png" alt="Sandbagger Logo">
+            <img class="form-logo" src="/images/purplegolficon.png" alt="Sandbagger Logo">
+
+            <select id="selectMode" name="mode" required>
+              <option value="">-- Choose Mode --</option>
+              <option value="tournament">Tournament Mode</option>
+              <option value="quick">Quick Round</option>
+            </select>
+
+            <!-- Quick Round Options -->
+            <div id="quick-round-options" style="display: none;">
+              <select id="selectQuickRoundOption" name="quick_round_option">
+                <option value="">-- Choose Option --</option>
+                <option value="create">Create New Round</option>
+                <option value="join">Join Existing Round</option>
+              </select>
+            </div>
+
+            <!-- Join Code Input -->
+            <div id="join-code-section" style="display: none;">
+              <input type="number" id="join-code-input" placeholder="Enter 4-digit code" min="1000" max="9999" style="width: 100%; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box;">
+            </div>
+
+            <!-- Quick Round Type Selector -->
+            <select id="selectRoundType" name="round_type" style="display: none;">
+              <option value="">-- Choose Round Type --</option>
+              <option value="best-ball">Best Ball</option>
+              <option value="rabbit">Rabbit</option>
+              <option value="wolf">Wolf</option>
+            </select>
 
             <!--<h2>Sandbagger Scoring</h2>
 
             <select id="selectTournament" name="tournament_id" required>
               <option value="">-- Choose Tournament --</option>
             </select>-->
-            <select id="chooseUser" name="golfer_id">
+            <select id="chooseUser" name="golfer_id" style="display: none;">
                  <option value="Generic">-- Choose Golfer --</option>
             </select>
-            <select id="selectRound" name="round_id" required>
+            <select id="selectRound" name="round_id" style="display: none;">
               <option value="">-- Choose Round --</option>
             </select>
 
@@ -45,7 +75,11 @@
         <div id="auth-message"></div> <!-- To display any messages (success/error) -->
 </div>
 
-<div class="container" id="app-content" style="display: none;"> 
+<div class="container" id="best-ball-setup" style="display: none;">
+  <div id="best-ball-setup-content"></div>
+</div>
+
+<div class="container" id="app-content" style="display: none;">
 
   <header>
       <div id="tournament-bar" class="tournament-bar">

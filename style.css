@@ -114,9 +114,10 @@ nav {
 .user-bar {
   padding: 0.7em 1em;
   color: #000;
+  background-color: #FFC62F;
   text-align: center;
   border: 1px solid #000;
-  box-sizing: border-box;  
+  box-sizing: border-box;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -290,7 +291,7 @@ main {
 #auth-container {
   max-width: 400px;
   margin: 4rem auto;        /* centers horizontally */
-  background-color: black;   /* purple */
+  background-color: #4F2185;   /* purple */
   padding: 2rem;
   border: 2px solid #fff;   
   border-radius: 8px;

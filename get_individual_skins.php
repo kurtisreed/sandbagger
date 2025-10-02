@@ -78,13 +78,14 @@ while ($row = $golferResult->fetch_assoc()) {
 $totalGolfers = count(array_unique(array_keys($golfers)));
 
 
-// Step 2.5: Get tee_id for this round, then get slope/rating from course_tees
-$teeSql = $conn->prepare("SELECT tee_id FROM rounds WHERE round_id = ?");
+// Step 2.5: Get tee_id and skins_total for this round, then get slope/rating from course_tees
+$teeSql = $conn->prepare("SELECT tee_id, skins_total FROM rounds WHERE round_id = ?");
 $teeSql->bind_param("i", $round_id);
 $teeSql->execute();
 $teeResult = $teeSql->get_result();
 $teeRow = $teeResult->fetch_assoc();
 $tee_id = $teeRow ? $teeRow['tee_id'] : null;
+$skins_total = $teeRow ? $teeRow['skins_total'] : 450;
 
 if (!$tee_id) {
     echo json_encode(['error' => 'No tee_id found for this round']);
@@ -206,5 +207,9 @@ foreach ($holes as $holeNum => $scores) {
     }
 }
 
-echo json_encode($skins);
+// Return both skins data and skins_total
+echo json_encode([
+    'skins' => $skins,
+    'skins_total' => $skins_total
+]);
 
