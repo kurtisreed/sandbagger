@@ -15,9 +15,9 @@ if (!$code || $code < 1000 || $code > 9999) {
 }
 
 try {
-    // Find match by code
+    // Find match by code and include round_name to determine match type
     $stmt = $conn->prepare("
-        SELECT m.match_id, m.round_id, r.tournament_id
+        SELECT m.match_id, m.round_id, r.tournament_id, r.round_name
         FROM matches m
         JOIN rounds r ON m.round_id = r.round_id
         WHERE m.match_code = ?
@@ -37,7 +37,8 @@ try {
         'success' => true,
         'match_id' => $match['match_id'],
         'round_id' => $match['round_id'],
-        'tournament_id' => $match['tournament_id']
+        'tournament_id' => $match['tournament_id'],
+        'round_name' => $match['round_name']
     ]);
 
 } catch (Exception $e) {
