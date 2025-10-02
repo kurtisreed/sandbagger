@@ -88,22 +88,20 @@ try {
 
     // 6. Create tournament teams
     $stmt = $conn->prepare("
-        INSERT INTO tournament_teams (tournament_id, team_id, team_name, team_color)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO tournament_teams (tournament_id, team_id, team_color)
+        VALUES (?, ?, ?)
     ");
 
     // Team 1 - Purple
     $team1Id = 1;
-    $team1Name = 'Team 1';
     $team1Color = '#4F2185';
-    $stmt->bind_param('iiss', $tournamentId, $team1Id, $team1Name, $team1Color);
+    $stmt->bind_param('iis', $tournamentId, $team1Id, $team1Color);
     $stmt->execute();
 
     // Team 2 - Gold
     $team2Id = 2;
-    $team2Name = 'Team 2';
     $team2Color = '#FFC62F';
-    $stmt->bind_param('iiss', $tournamentId, $team2Id, $team2Name, $team2Color);
+    $stmt->bind_param('iis', $tournamentId, $team2Id, $team2Color);
     $stmt->execute();
 
     // 7. Link golfers to tournament with team assignments
