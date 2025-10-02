@@ -772,6 +772,763 @@ function loadRabbitSetup(preserveSelections = false) {
   });
 }
 
+function loadWolfSetup(preserveSelections = false) {
+  const setupContainer = document.getElementById('best-ball-setup');
+  const setupContent = document.getElementById('best-ball-setup-content');
+
+  // Save current selections if we're preserving them
+  let savedSelections = {};
+  if (preserveSelections) {
+    const selects = ['wolf-player1', 'wolf-player2', 'wolf-player3', 'wolf-player4', 'select-course', 'select-tee'];
+    selects.forEach(id => {
+      const select = document.getElementById(id);
+      if (select && select.value && select.value !== 'new-player') {
+        savedSelections[id] = select.value;
+      }
+    });
+
+    // Save handicap slider value
+    const handicapSlider = document.getElementById('handicap-slider');
+    if (handicapSlider) {
+      savedSelections['handicap-slider'] = handicapSlider.value;
+    }
+  }
+
+  setupContainer.style.display = 'block';
+
+  // Fetch both golfers and courses in parallel
+  Promise.all([
+    fetch(`${API_BASE_URL}/get_golfers.php`).then(res => res.json()),
+    fetch(`${API_BASE_URL}/api/courses.php`).then(res => res.json())
+  ])
+  .then(([golfers, courses]) => {
+    allGolfers = golfers;
+    allCourses = courses;
+
+    const golferOptions = golfers.map(g => `<option value="${g.golfer_id}">${g.first_name} ${g.last_name} (${g.handicap})</option>`).join('');
+    const courseOptions = courses.map(c => `<option value="${c.course_id}">${c.name}</option>`).join('');
+
+    setupContent.innerHTML = `
+      <div style="max-width: 600px; margin: 2rem auto; padding: 2rem; background: white; border-radius: 8px;">
+        <h2 style="text-align: center; margin-bottom: 2rem;">Wolf Setup</h2>
+
+        <div style="margin-bottom: 2rem; padding: 1rem; background: #f0f0f0; border-radius: 8px;">
+          <h3 style="margin-top: 0;">Playing Order (4 Players Required)</h3>
+          <p style="font-size: 0.9rem; color: #666; margin-bottom: 1rem;">The Wolf rotates each hole. Player 4 is the Wolf on Hole 1.</p>
+
+          <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem;">Player 1: <span style="color: red;">*</span></label>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <select id="wolf-player1" class="player-select" style="flex: 1; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc;">
+                <option value="">-- Select Player --</option>
+                ${golferOptions}
+                <option value="new-player">+ New Player</option>
+              </select>
+              <button class="edit-player-btn" data-select="wolf-player1" style="padding: 0.5rem 0.75rem; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">✏️</button>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem;">Player 2: <span style="color: red;">*</span></label>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <select id="wolf-player2" class="player-select" style="flex: 1; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc;">
+                <option value="">-- Select Player --</option>
+                ${golferOptions}
+                <option value="new-player">+ New Player</option>
+              </select>
+              <button class="edit-player-btn" data-select="wolf-player2" style="padding: 0.5rem 0.75rem; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">✏️</button>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem;">Player 3: <span style="color: red;">*</span></label>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <select id="wolf-player3" class="player-select" style="flex: 1; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc;">
+                <option value="">-- Select Player --</option>
+                ${golferOptions}
+                <option value="new-player">+ New Player</option>
+              </select>
+              <button class="edit-player-btn" data-select="wolf-player3" style="padding: 0.5rem 0.75rem; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">✏️</button>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem;">Player 4 🐺: <span style="color: red;">*</span></label>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <select id="wolf-player4" class="player-select" style="flex: 1; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc;">
+                <option value="">-- Select Player --</option>
+                ${golferOptions}
+                <option value="new-player">+ New Player</option>
+              </select>
+              <button class="edit-player-btn" data-select="wolf-player4" style="padding: 0.5rem 0.75rem; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">✏️</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 2rem; padding: 1rem; background: #f0f0f0; border-radius: 8px;">
+          <h3 style="margin-top: 0;">Course</h3>
+          <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem;">Select Course:</label>
+            <select id="select-course" style="width: 100%; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc;">
+              <option value="">-- Select Course --</option>
+              ${courseOptions}
+            </select>
+          </div>
+          <div id="tee-selection" style="display: none;">
+            <label style="display: block; margin-bottom: 0.5rem;">Select Tees:</label>
+            <select id="select-tee" style="width: 100%; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc;">
+              <option value="">-- Select Tees --</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 2rem; padding: 1rem; background: #f0f0f0; border-radius: 8px;">
+          <h3 style="margin-top: 0;">Handicap Adjustment</h3>
+          <div>
+            <label style="display: block; margin-bottom: 0.5rem;">Handicap Percentage: <span id="handicap-value" style="font-weight: bold;">100%</span></label>
+            <input type="range" id="handicap-slider" min="10" max="100" step="10" value="100" style="width: 100%; height: 8px; border-radius: 5px; background: #ddd; outline: none; cursor: pointer;">
+          </div>
+        </div>
+
+        <div style="text-align: center;">
+          <button id="start-wolf" style="padding: 1rem 2rem; font-size: 1.2rem; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+            Start Round
+          </button>
+          <button id="cancel-wolf" style="padding: 1rem 2rem; font-size: 1rem; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 1rem;">
+            Cancel
+          </button>
+        </div>
+        <div id="setup-message" style="margin-top: 1rem; text-align: center; color: red;"></div>
+      </div>
+
+      <!-- New Player Modal (reused) -->
+      <div id="new-player-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: white; padding: 2rem; border-radius: 8px; max-width: 400px; width: 90%;">
+          <h3 id="player-modal-title" style="margin-top: 0;">Add New Player</h3>
+          <input type="hidden" id="edit-player-id" value="">
+          <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem;">First Name:</label>
+            <input type="text" id="new-player-first-name" style="width: 100%; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box;">
+          </div>
+          <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem;">Last Name:</label>
+            <input type="text" id="new-player-last-name" style="width: 100%; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box;">
+          </div>
+          <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem;">Handicap:</label>
+            <input type="number" id="new-player-handicap" step="0.1" style="width: 100%; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box;">
+          </div>
+          <div id="new-player-message" style="margin-bottom: 1rem; color: red; text-align: center;"></div>
+          <div style="text-align: center;">
+            <button id="save-new-player" style="padding: 0.7rem 1.5rem; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 0.5rem;">
+              Save
+            </button>
+            <button id="cancel-new-player" style="padding: 0.7rem 1.5rem; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer;">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Restore saved selections if preserving
+    if (preserveSelections) {
+      Object.keys(savedSelections).forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+          element.value = savedSelections[id];
+          if (id === 'select-course') {
+            // Trigger course change to load tees
+            element.dispatchEvent(new Event('change'));
+          }
+        }
+      });
+    }
+
+    // Add event listeners
+    document.getElementById('start-wolf').addEventListener('click', startWolfRound);
+    document.getElementById('cancel-wolf').addEventListener('click', () => {
+      setupContainer.style.display = 'none';
+      document.getElementById('auth-container').style.display = 'block';
+    });
+
+    // Add listeners for "New Player" option
+    const playerSelects = document.querySelectorAll('.player-select');
+    playerSelects.forEach(select => {
+      select.addEventListener('change', function() {
+        if (this.value === 'new-player') {
+          showNewPlayerModal(this.id);
+        }
+      });
+    });
+
+    // Modal event listeners
+    document.getElementById('cancel-new-player').addEventListener('click', closeNewPlayerModal);
+    document.getElementById('save-new-player').addEventListener('click', saveNewPlayer);
+
+    // Add listeners for edit buttons
+    const editButtons = document.querySelectorAll('.edit-player-btn');
+    editButtons.forEach(btn => {
+      btn.addEventListener('click', function() {
+        const selectId = this.getAttribute('data-select');
+        const select = document.getElementById(selectId);
+        const golferId = select.value;
+
+        if (!golferId || golferId === 'new-player' || golferId === '') {
+          return;
+        }
+
+        const golfer = allGolfers.find(g => g.golfer_id == golferId);
+        if (golfer) {
+          showEditPlayerModal(golfer);
+        }
+      });
+    });
+
+    // Add listener for handicap slider
+    const handicapSlider = document.getElementById('handicap-slider');
+    const handicapValue = document.getElementById('handicap-value');
+    handicapSlider.addEventListener('input', function() {
+      handicapValue.textContent = this.value + '%';
+    });
+
+    // Add listener for course selection to load tees
+    const courseSelect = document.getElementById('select-course');
+    courseSelect.addEventListener('change', function() {
+      const courseId = this.value;
+      const teeSelection = document.getElementById('tee-selection');
+      const teeSelect = document.getElementById('select-tee');
+
+      if (!courseId) {
+        teeSelection.style.display = 'none';
+        teeSelect.innerHTML = '<option value="">-- Select Tees --</option>';
+        return;
+      }
+
+      // Fetch tees for selected course
+      fetch(`${API_BASE_URL}/api/get_course_tees.php?course_id=${courseId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.tees && data.tees.length > 0) {
+            teeSelect.innerHTML = '<option value="">-- Select Tees --</option>' +
+              data.tees.map(tee =>
+                `<option value="${tee.tee_id}">${tee.tee_name} (${tee.slope}, ${tee.rating}, ${tee.yardage})</option>`
+              ).join('');
+            teeSelection.style.display = 'block';
+
+            // Restore tee selection if preserving
+            if (preserveSelections && savedSelections['select-tee']) {
+              setTimeout(() => {
+                teeSelect.value = savedSelections['select-tee'];
+              }, 100);
+            }
+          } else {
+            teeSelect.innerHTML = '<option value="">No tees available</option>';
+            teeSelection.style.display = 'block';
+          }
+        })
+        .catch(err => {
+          console.error('Error loading tees:', err);
+        });
+    });
+  })
+  .catch(err => {
+    console.error('Error loading setup data:', err);
+    setupContent.innerHTML = '<p style="color: red; text-align: center;">Error loading golfers. Please try again.</p>';
+  });
+}
+
+function startWolfRound() {
+  const player1 = document.getElementById('wolf-player1').value;
+  const player2 = document.getElementById('wolf-player2').value;
+  const player3 = document.getElementById('wolf-player3').value;
+  const player4 = document.getElementById('wolf-player4').value;
+  const courseId = document.getElementById('select-course').value;
+  const teeId = document.getElementById('select-tee').value;
+  const handicapPct = document.getElementById('handicap-slider').value;
+
+  const message = document.getElementById('setup-message');
+
+  // Validation - all 4 players required
+  if (!player1 || !player2 || !player3 || !player4) {
+    message.style.color = 'red';
+    message.textContent = 'All 4 players are required for Wolf.';
+    return;
+  }
+
+  if (!courseId || !teeId) {
+    message.style.color = 'red';
+    message.textContent = 'Please select a course and tees.';
+    return;
+  }
+
+  // Check for duplicate players
+  const players = [player1, player2, player3, player4];
+  const uniquePlayers = new Set(players);
+  if (uniquePlayers.size !== 4) {
+    message.style.color = 'red';
+    message.textContent = 'Please select 4 different players.';
+    return;
+  }
+
+  message.style.color = 'blue';
+  message.textContent = 'Creating round...';
+
+  const wolfRoundData = {
+    players: players.map(p => parseInt(p)),
+    course_id: parseInt(courseId),
+    tee_id: parseInt(teeId),
+    handicap_pct: parseFloat(handicapPct)
+  };
+
+  fetch(`${API_BASE_URL}/api/create_wolf_round.php`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(wolfRoundData),
+    credentials: 'include'
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      message.style.color = 'green';
+      message.textContent = 'Round created! Loading scorecard...';
+
+      // Store round info in sessionStorage
+      sessionStorage.setItem('wolf_match_id', data.match_id);
+      sessionStorage.setItem('wolf_tournament_id', data.tournament_id);
+      sessionStorage.setItem('wolf_round_id', data.round_id);
+      sessionStorage.setItem('wolf_match_code', data.match_code);
+
+      // Load Wolf scoring interface
+      setTimeout(() => {
+        loadWolfScoring();
+      }, 1000);
+    } else {
+      message.style.color = 'red';
+      message.textContent = 'Error creating round: ' + (data.error || 'Unknown error');
+    }
+  })
+  .catch(err => {
+    console.error('Error creating wolf round:', err);
+    message.style.color = 'red';
+    message.textContent = 'Error creating round. Please try again.';
+  });
+}
+
+function loadWolfScoring() {
+  const matchId = sessionStorage.getItem('wolf_match_id');
+  const matchCode = sessionStorage.getItem('wolf_match_code');
+
+  if (!matchId) {
+    console.error('No match ID found');
+    return;
+  }
+
+  // Hide setup container and show scoring interface
+  const setupContainer = document.getElementById('best-ball-setup');
+  setupContainer.style.display = 'none';
+
+  const appContent = document.getElementById('app-content');
+  appContent.style.display = 'block';
+
+  // Hide the navigation tabs
+  const navElement = appContent.querySelector('nav');
+  if (navElement) {
+    navElement.style.display = 'none';
+  }
+
+  // Show the header with logout button
+  const headerElement = appContent.querySelector('header');
+  if (headerElement) {
+    headerElement.style.display = 'block';
+
+    const tournamentBar = headerElement.querySelector('#tournament-bar');
+    if (tournamentBar) {
+      tournamentBar.style.display = 'none';
+    }
+
+    const userBar = headerElement.querySelector('#user-bar');
+    if (userBar) {
+      userBar.style.display = 'flex';
+      const userName = userBar.querySelector('#user-name');
+      if (userName) {
+        userName.textContent = matchCode ? `Match Code: ${matchCode}` : 'Wolf Round';
+      }
+    }
+  }
+
+  const container = document.getElementById('score-entry-content');
+  container.innerHTML = '';
+
+  // Fetch match data
+  fetch(`${API_BASE_URL}/api/get_wolf_match.php?match_id=${matchId}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.error) {
+        container.innerHTML = `<p>Error loading match: ${data.error}</p>`;
+        return;
+      }
+
+      const matchGolfers = data.match;
+      holeInfo = data.holes;
+      const wolfPartners = data.partners || [];
+      const match = matchGolfers[0];
+      currentMatchId = match.match_id;
+      tournamentHandicapPct = parseFloat(match.tournament_handicap_pct || 100);
+
+      // Show match header
+      const headerDiv = document.createElement('div');
+      headerDiv.style.cssText = 'background: #4F2185; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; text-align: center; color: white;';
+      headerDiv.innerHTML = `
+        <h2 style="margin: 0; color: white;">${match.match_name}</h2>
+      `;
+      container.appendChild(headerDiv);
+
+      courses = {
+        course_name: match.course_name,
+        slope: match.slope,
+        rating: match.rating,
+        par: match.par
+      };
+
+      // Build golfer list in order (player_order field from database)
+      const golferMap = new Map();
+      matchGolfers.forEach(row => {
+        if (!golferMap.has(row.golfer_id)) {
+          golferMap.set(row.golfer_id, {
+            id: row.golfer_id,
+            name: row.first_name,
+            lastName: row.last_name,
+            handicap: calculatePlayingHandicap(row.handicap),
+            order: row.player_order || 0
+          });
+        }
+      });
+      golfers = Array.from(golferMap.values()).sort((a, b) => a.order - b.order);
+
+      // Build stroke maps
+      strokeMaps = {};
+      golfers.forEach(g => {
+        strokeMaps[g.id] = buildStrokeMapForGolfer(g.handicap, holeInfo);
+      });
+
+      // Build table
+      const table = document.createElement("table");
+      table.classList.add("score-table");
+
+      // Header
+      const header = document.createElement("tr");
+      header.innerHTML = `<th>#</th><th>P</th><th>HI</th><th>Partner</th>` + golfers.map(golfer => {
+        return `<th style="background-color: #2196F3; color: white;">${golfer.name} (${parseFloat(golfer.handicap).toFixed(1)})</th>`;
+      }).join("");
+      table.appendChild(header);
+
+      // Score rows
+      for (let i = 1; i <= 18; i++) {
+        const row = document.createElement("tr");
+        const par = holeInfo.find(h => h.hole_number === i)?.par || "-";
+        const index = holeInfo.find(h => h.hole_number === i)?.handicap_index || "-";
+
+        // Determine who is the Wolf for this hole (cycles: 4, 3, 2, 1, 4, 3, 2, 1...)
+        const wolfIndex = (4 - (i % 4)) % 4;
+        const wolfGolfer = golfers[wolfIndex];
+
+        // Partner selection dropdown - exclude the Wolf and add "Lone Wolf" option
+        const partnerOptions = golfers
+          .filter(g => g.id !== wolfGolfer.id)
+          .map(g => `<option value="${g.id}">${g.name}</option>`)
+          .join('');
+
+        row.innerHTML = `<td>${i}</td><td>${par}</td><td>${index}</td>` +
+          `<td>
+            <select class="partner-select" data-hole="${i}" data-wolf="${wolfGolfer.id}" style="width: 100%; padding: 0.3rem; font-size: 0.9rem; border: 1px solid #ccc; border-radius: 3px;">
+              <option value="">-- Select --</option>
+              <option value="lone">Lone Wolf</option>
+              ${partnerOptions}
+            </select>
+          </td>` +
+          golfers.map((golfer, idx) => {
+            const stroke = strokeMaps[golfer.id]?.[i] || 0;
+            let dots = '';
+            if (stroke === 1) {
+              dots = '<span class="corner-dot"></span>';
+            } else if (stroke === 2) {
+              dots = '<span class="corner-dot"></span><span class="corner-dot second-dot"></span>';
+            }
+
+            // Add wolf emoji if this player is the Wolf for this hole
+            const wolfEmoji = (idx === wolfIndex) ? '<span style="position: absolute; top: 2px; left: 2px; font-size: 0.7rem;">🐺</span>' : '';
+
+            return `<td style="position:relative;">
+              ${dots}
+              ${wolfEmoji}
+              <select class="score-input" data-hole="${i}" data-golfer="${golfer.id}" style="width: 100%; padding: 0.3rem; font-size: 1rem; border: 1px solid #ccc; border-radius: 3px; box-sizing: border-box;">
+                <option value="">–</option>
+                ${[1,2,3,4,5,6,7,8,9,10].map(n => `<option value="${n}">${n}</option>`).join('')}
+              </select>
+            </td>`;
+          }).join("");
+        table.appendChild(row);
+      }
+
+      // Totals row
+      const totalsRow = document.createElement("tr");
+      totalsRow.id = "totals-row";
+      totalsRow.innerHTML = `<td></td><td></td><td></td><td>Points:</td>` + golfers.map(g => {
+        return `<td class="totals-cell" data-golfer="${g.id}" style="font-weight: bold;">0</td>`;
+      }).join("");
+      table.appendChild(totalsRow);
+
+      container.appendChild(table);
+
+      // Add explanation
+      const explanation = document.createElement("div");
+      explanation.style.cssText = "margin-top: 2rem; padding: 1rem; background: #f5f5f5; border-radius: 4px; font-size: 0.9rem;";
+      explanation.innerHTML = `
+        <strong>How Wolf Works:</strong><br>
+        The Wolf rotates each hole (Player 4 → 3 → 2 → 1 → repeat). The Wolf chooses a partner or goes Lone.<br>
+        <strong>Scoring:</strong> Lone Wolf win = 2 pts (loss = 0 pts, others get 1 pt each). Partnership win = 1 pt each (loss = 0 pts each).<br><br>
+        <strong>How Playing Handicap is Calculated:</strong><br>
+        Each golfer's course handicap is calculated according to USGA guidelines using the formula:<br>
+        <code>(Handicap × (Slope / 113) + (Rating - 72))</code><br>
+      `;
+      container.appendChild(explanation);
+
+      // Load existing scores and partner selections
+      fetch(`${API_BASE_URL}/get_scores.php?match_id=${matchId}`, {
+        credentials: 'include'
+      })
+      .then(res => res.json())
+      .then(scores => {
+        scores.forEach(score => {
+          const select = document.querySelector(`select.score-input[data-hole="${score.hole_number}"][data-golfer="${score.golfer_id}"]`);
+          if (select) {
+            select.value = score.strokes;
+            updateScoreCellClasses();
+          }
+        });
+
+        // Load partner selections
+        wolfPartners.forEach(partner => {
+          const partnerSelect = document.querySelector(`select.partner-select[data-hole="${partner.hole_number}"]`);
+          if (partnerSelect) {
+            if (partner.partner_golfer_id === null) {
+              partnerSelect.value = 'lone';
+            } else {
+              partnerSelect.value = partner.partner_golfer_id;
+            }
+          }
+        });
+
+        updateTotalScores();
+        calculateWolfPoints();
+      });
+
+      // Add score change listeners
+      table.querySelectorAll("select.score-input").forEach(select => {
+        select.addEventListener("change", function () {
+          const strokes = this.value;
+          const hole = this.dataset.hole;
+          const golfer_id = this.dataset.golfer;
+
+          if (!strokes || !golfer_id || !hole) return;
+
+          const payload = {
+            match_id: matchId,
+            golfer_id: parseInt(golfer_id),
+            hole: parseInt(hole),
+            strokes: parseInt(strokes)
+          };
+
+          fetch(`${API_BASE_URL}/save_score.php`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+            credentials: 'include'
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              updateTotalScores();
+              updateScoreCellClasses();
+              calculateWolfPoints();
+            } else {
+              console.error("Save failed:", data.message);
+            }
+          })
+          .catch(err => console.error("Fetch error:", err));
+        });
+      });
+
+      // Add partner selection change listeners
+      table.querySelectorAll("select.partner-select").forEach(select => {
+        select.addEventListener("change", function() {
+          const hole = this.dataset.hole;
+          const wolfId = this.dataset.wolf;
+          const partnerChoice = this.value;
+
+          // Save partner selection to database
+          const payload = {
+            match_id: matchId,
+            hole_number: parseInt(hole),
+            wolf_golfer_id: parseInt(wolfId),
+            partner_choice: partnerChoice
+          };
+
+          fetch(`${API_BASE_URL}/api/save_wolf_partner.php`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            credentials: 'include'
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              calculateWolfPoints();
+            } else {
+              console.error("Save partner failed:", data.error);
+            }
+          })
+          .catch(err => console.error("Save partner error:", err));
+        });
+      });
+    })
+    .catch(err => {
+      console.error("Error loading Wolf match:", err);
+      container.innerHTML = '<p>Error loading match data. Please try again.</p>';
+    });
+}
+
+function calculateWolfPoints() {
+  // Calculate Wolf points based on partner selection and net scores
+  const points = {};
+  golfers.forEach(g => points[g.id] = 0);
+
+  for (let hole = 1; hole <= 18; hole++) {
+    // Get the Wolf for this hole
+    const wolfIndex = (4 - (hole % 4)) % 4;
+    const wolfGolfer = golfers[wolfIndex];
+
+    // Get partner selection
+    const partnerSelect = document.querySelector(`select.partner-select[data-hole="${hole}"]`);
+    const partnerId = partnerSelect ? partnerSelect.value : '';
+
+    // Get all scores for this hole
+    const holeScores = [];
+    let allScored = true;
+    golfers.forEach(golfer => {
+      const select = document.querySelector(`select.score-input[data-hole="${hole}"][data-golfer="${golfer.id}"]`);
+      if (select && select.value) {
+        const gross = parseInt(select.value);
+        const strokes = strokeMaps[golfer.id]?.[hole] || 0;
+        const net = gross - strokes;
+        holeScores.push({ golfer: golfer, gross: gross, net: net });
+      } else {
+        allScored = false;
+      }
+    });
+
+    // Clear previous highlights
+    golfers.forEach(golfer => {
+      const cell = document.querySelector(`td[data-hole="${hole}"][data-golfer="${golfer.id}"]`);
+      if (cell) {
+        cell.style.backgroundColor = '';
+      }
+    });
+
+    // Only calculate if all players have scored and partner is selected
+    if (allScored && partnerId && holeScores.length === 4) {
+      let winners = [];
+      let resultText = '';
+
+      if (partnerId === 'lone') {
+        // Lone Wolf vs the other 3 (best ball)
+        const wolfScore = holeScores.find(s => s.golfer.id == wolfGolfer.id);
+        const othersScores = holeScores.filter(s => s.golfer.id != wolfGolfer.id);
+        const bestOtherNet = Math.min(...othersScores.map(s => s.net));
+
+        if (wolfScore.net < bestOtherNet) {
+          // Lone Wolf wins - gets 3 points
+          points[wolfGolfer.id] += 3;
+          winners = [wolfGolfer];
+          resultText = '🐺 Lone Wolf Wins! (+3)';
+        } else {
+          // Others win - each gets 1 point
+          othersScores.forEach(s => {
+            points[s.golfer.id] += 1;
+          });
+          winners = othersScores.map(s => s.golfer);
+          resultText = 'Others Win (+1 each)';
+        }
+      } else {
+        // Partnership: Wolf + Partner vs Other 2 (best ball)
+        const wolfTeam = holeScores.filter(s => s.golfer.id == wolfGolfer.id || s.golfer.id == partnerId);
+        const otherTeam = holeScores.filter(s => s.golfer.id != wolfGolfer.id && s.golfer.id != partnerId);
+
+        const wolfTeamBestNet = Math.min(...wolfTeam.map(s => s.net));
+        const otherTeamBestNet = Math.min(...otherTeam.map(s => s.net));
+
+        if (wolfTeamBestNet < otherTeamBestNet) {
+          // Wolf partnership wins - each gets 1 point
+          wolfTeam.forEach(s => {
+            points[s.golfer.id] += 1;
+          });
+          winners = wolfTeam.map(s => s.golfer);
+          const partnerGolfer = golfers.find(g => g.id == partnerId);
+          resultText = `🐺 + ${partnerGolfer.name} Win (+1 each)`;
+        } else if (otherTeamBestNet < wolfTeamBestNet) {
+          // Other team wins - each gets 1 point
+          otherTeam.forEach(s => {
+            points[s.golfer.id] += 1;
+          });
+          winners = otherTeam.map(s => s.golfer);
+          resultText = 'Others Win (+1 each)';
+        } else {
+          // Tie - no points
+          resultText = 'Tie (no points)';
+        }
+      }
+
+      // Highlight winning players
+      winners.forEach(winner => {
+        const cell = document.querySelector(`select.score-input[data-hole="${hole}"][data-golfer="${winner.id}"]`);
+        if (cell && cell.parentElement && cell.parentElement.parentElement) {
+          cell.parentElement.parentElement.style.backgroundColor = '#90EE90'; // Light green
+        }
+      });
+
+      // Update partner cell with result
+      const partnerCell = partnerSelect.parentElement;
+      if (partnerCell) {
+        const resultSpan = partnerCell.querySelector('.result-text') || document.createElement('div');
+        resultSpan.className = 'result-text';
+        resultSpan.style.cssText = 'font-size: 0.8rem; color: #333; margin-top: 0.2rem; font-weight: bold;';
+        resultSpan.textContent = resultText;
+        if (!partnerCell.querySelector('.result-text')) {
+          partnerCell.appendChild(resultSpan);
+        }
+      }
+    } else {
+      // Clear result text if incomplete
+      const partnerCell = partnerSelect ? partnerSelect.parentElement : null;
+      if (partnerCell) {
+        const resultSpan = partnerCell.querySelector('.result-text');
+        if (resultSpan) {
+          resultSpan.textContent = '';
+        }
+      }
+    }
+  }
+
+  // Update totals row with points
+  golfers.forEach(golfer => {
+    const totalCell = document.querySelector(`td.totals-cell[data-golfer="${golfer.id}"]`);
+    if (totalCell) {
+      totalCell.textContent = points[golfer.id];
+    }
+  });
+}
+
 function startRabbitRound() {
   const player1 = document.getElementById('rabbit-player1').value;
   const player2 = document.getElementById('rabbit-player2').value;
@@ -926,13 +1683,19 @@ function loadRabbitScoring() {
         par: match.par
       };
 
-      // Build golfer list
-      golfers = [...new Set(matchGolfers.map(row => ({
-        id: row.golfer_id,
-        name: row.first_name,
-        lastName: row.last_name,
-        handicap: calculatePlayingHandicap(row.handicap),
-      })))];
+      // Build golfer list (deduplicate by golfer_id)
+      const golferMap = new Map();
+      matchGolfers.forEach(row => {
+        if (!golferMap.has(row.golfer_id)) {
+          golferMap.set(row.golfer_id, {
+            id: row.golfer_id,
+            name: row.first_name,
+            lastName: row.last_name,
+            handicap: calculatePlayingHandicap(row.handicap),
+          });
+        }
+      });
+      golfers = Array.from(golferMap.values());
 
       // Build stroke maps
       strokeMaps = {};
@@ -3850,9 +4613,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const appContent = document.getElementById('app-content');
   const authMessage = document.getElementById('auth-message');
 
-  // Check for existing Best Ball or Rabbit session
+  // Check for existing Best Ball, Rabbit, or Wolf session
   const existingBestBallMatchId = sessionStorage.getItem('best_ball_match_id');
   const existingRabbitMatchId = sessionStorage.getItem('rabbit_match_id');
+  const existingWolfMatchId = sessionStorage.getItem('wolf_match_id');
 
   if (existingBestBallMatchId) {
     // Restore Best Ball session
@@ -3865,6 +4629,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Restore Rabbit session
     document.getElementById('auth-container').style.display = 'none';
     loadRabbitScoring();
+    return; // Exit early, skip form setup
+  }
+
+  if (existingWolfMatchId) {
+    // Restore Wolf session
+    document.getElementById('auth-container').style.display = 'none';
+    loadWolfScoring();
     return; // Exit early, skip form setup
   }
 
@@ -3912,6 +4683,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 sessionStorage.setItem('rabbit_round_id', data.round_id);
                 sessionStorage.setItem('rabbit_match_code', joinCode);
                 loadRabbitScoring();
+              } else if (roundName === 'Wolf') {
+                // Store Wolf match info
+                sessionStorage.setItem('wolf_match_id', data.match_id);
+                sessionStorage.setItem('wolf_tournament_id', data.tournament_id);
+                sessionStorage.setItem('wolf_round_id', data.round_id);
+                sessionStorage.setItem('wolf_match_code', joinCode);
+                loadWolfScoring();
               } else {
                 // Default to Best Ball
                 sessionStorage.setItem('best_ball_match_id', data.match_id);
@@ -3944,11 +4722,6 @@ document.addEventListener('DOMContentLoaded', () => {
         sessionStorage.setItem('quick_round_type', roundType);
 
         // Handle different round types
-        if (roundType === 'wolf') {
-          authMessage.textContent = `Wolf - Coming soon!`;
-          return;
-        }
-
         if (roundType === 'best-ball') {
           // Hide auth container and show best ball setup
           document.getElementById('auth-container').style.display = 'none';
@@ -3960,6 +4733,13 @@ document.addEventListener('DOMContentLoaded', () => {
           // Hide auth container and show rabbit setup
           document.getElementById('auth-container').style.display = 'none';
           loadRabbitSetup();
+          return;
+        }
+
+        if (roundType === 'wolf') {
+          // Hide auth container and show wolf setup
+          document.getElementById('auth-container').style.display = 'none';
+          loadWolfSetup();
           return;
         }
       }
