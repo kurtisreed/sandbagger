@@ -38,7 +38,7 @@ try {
     $tournamentName = "Quick Round - " . $currentDateTime;
     $stmt = $conn->prepare("
         INSERT INTO tournaments (name, start_date, end_date, handicap_pct, format_id)
-        VALUES (?, ?, ?, ?, 1)
+        VALUES (?, ?, ?, ?, NULL)
     ");
     $stmt->bind_param('sssd', $tournamentName, $currentDate, $currentDate, $data['handicap_pct']);
     $stmt->execute();
