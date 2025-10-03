@@ -1271,13 +1271,21 @@ function loadWolfScoring() {
         table.appendChild(row);
       }
 
-      // Totals row
-      const totalsRow = document.createElement("tr");
-      totalsRow.id = "totals-row";
-      totalsRow.innerHTML = `<td></td><td></td><td></td><td>Points:</td>` + golfers.map(g => {
-        return `<td class="totals-cell" data-golfer="${g.id}" style="font-weight: bold;">0</td>`;
+      // Points row
+      const pointsRow = document.createElement("tr");
+      pointsRow.id = "points-row";
+      pointsRow.innerHTML = `<td></td><td></td><td></td><td>Points:</td>` + golfers.map(g => {
+        return `<td class="points-cell" data-golfer="${g.id}" style="font-weight: bold;">0</td>`;
       }).join("");
-      table.appendChild(totalsRow);
+      table.appendChild(pointsRow);
+
+      // Score totals row
+      const scoreTotalsRow = document.createElement("tr");
+      scoreTotalsRow.id = "score-totals-row";
+      scoreTotalsRow.innerHTML = `<td></td><td></td><td></td><td>Score:</td>` + golfers.map(g => {
+        return `<td class="score-totals-cell" data-golfer="${g.id}">–</td>`;
+      }).join("");
+      table.appendChild(scoreTotalsRow);
 
       container.appendChild(table);
 
@@ -1286,11 +1294,11 @@ function loadWolfScoring() {
       explanation.style.cssText = "margin-top: 2rem; padding: 1rem; background: #f5f5f5; border-radius: 4px; font-size: 0.9rem;";
       explanation.innerHTML = `
         <strong>How Wolf Works:</strong><br>
-        The Wolf rotates each hole (Player 4 → 3 → 2 → 1 → repeat). The Wolf chooses a partner or goes Lone.<br>
-        <strong>Scoring:</strong> Lone Wolf win = 2 pts (loss = 0 pts, others get 1 pt each). Partnership win = 1 pt each (loss = 0 pts each).<br><br>
+        The Wolf rotates each hole, and tees off last. The Wolf chooses a partner or goes Lone.<br>
+        <strong>Scoring:</strong> Lone Wolf win = 3 pts (loss = 0 pts, others get 1 pt each). Partnership win = 1 pt each (loss = 0 pts each).<br><br>
         <strong>How Playing Handicap is Calculated:</strong><br>
         Each golfer's course handicap is calculated according to USGA guidelines using the formula:<br>
-        <code>(Handicap × (Slope / 113) + (Rating - 72))</code><br>
+        <code>(Handicap × (Slope / 113) + (Rating - 72)) * Round %</code><br>
       `;
       container.appendChild(explanation);
 
@@ -1452,13 +1460,16 @@ function calculateWolfPoints() {
           points[wolfGolfer.id] += 3;
           winners = [wolfGolfer];
           resultText = '🐺 Lone Wolf Wins! (+3)';
-        } else {
+        } else if (wolfScore.net > bestOtherNet) {
           // Others win - each gets 1 point
           othersScores.forEach(s => {
             points[s.golfer.id] += 1;
           });
           winners = othersScores.map(s => s.golfer);
           resultText = 'Others Win (+1 each)';
+        } else {
+          // Tie - no points
+          resultText = 'Tie (no points)';
         }
       } else {
         // Partnership: Wolf + Partner vs Other 2 (best ball)
@@ -1520,11 +1531,44 @@ function calculateWolfPoints() {
     }
   }
 
-  // Update totals row with points
+  // Update points row
   golfers.forEach(golfer => {
-    const totalCell = document.querySelector(`td.totals-cell[data-golfer="${golfer.id}"]`);
-    if (totalCell) {
-      totalCell.textContent = points[golfer.id];
+    const pointsCell = document.querySelector(`td.points-cell[data-golfer="${golfer.id}"]`);
+    if (pointsCell) {
+      pointsCell.textContent = points[golfer.id];
+    }
+  });
+
+  // Update score totals row
+  golfers.forEach(golfer => {
+    let total = 0;
+    let totalPar = 0;
+    let count = 0;
+    for (let hole = 1; hole <= 18; hole++) {
+      const select = document.querySelector(`select.score-input[data-hole="${hole}"][data-golfer="${golfer.id}"]`);
+      if (select && select.value) {
+        total += parseInt(select.value);
+        const par = holeInfo.find(h => h.hole_number === hole)?.par || 0;
+        totalPar += par;
+        count++;
+      }
+    }
+    const scoreTotalCell = document.querySelector(`td.score-totals-cell[data-golfer="${golfer.id}"]`);
+    if (scoreTotalCell) {
+      if (count > 0) {
+        const differential = total - totalPar;
+        let diffText = '';
+        if (differential > 0) {
+          diffText = ` (+${differential})`;
+        } else if (differential < 0) {
+          diffText = ` (${differential})`;
+        } else {
+          diffText = ' (E)';
+        }
+        scoreTotalCell.textContent = total + diffText;
+      } else {
+        scoreTotalCell.textContent = '–';
+      }
     }
   });
 }
