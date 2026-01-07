@@ -1873,6 +1873,486 @@ function loadRabbitScoring() {
     });
 }
 
+function loadWolfScorecardReadOnly() {
+  const matchId = sessionStorage.getItem('wolf_match_id');
+  const matchCode = sessionStorage.getItem('wolf_match_code');
+
+  if (!matchId) {
+    console.error('No match ID found');
+    return;
+  }
+
+  // Hide all other containers
+  document.getElementById('best-ball-setup').style.display = 'none';
+  document.getElementById('round-history-container').style.display = 'none';
+  document.getElementById('auth-container').style.display = 'none';
+
+  const appContent = document.getElementById('app-content');
+  appContent.style.display = 'block';
+
+  // Hide the navigation tabs
+  const navElement = appContent.querySelector('nav');
+  if (navElement) {
+    navElement.style.display = 'none';
+  }
+
+  // Show the header with logout button
+  const headerElement = appContent.querySelector('header');
+  if (headerElement) {
+    headerElement.style.display = 'block';
+    const tournamentBar = headerElement.querySelector('#tournament-bar');
+    if (tournamentBar) tournamentBar.style.display = 'none';
+    const userBar = headerElement.querySelector('#user-bar');
+    if (userBar) {
+      userBar.style.display = 'flex';
+      const userName = userBar.querySelector('#user-name');
+      if (userName) {
+        userName.textContent = matchCode ? `Match Code: ${matchCode}` : 'Wolf Round';
+      }
+    }
+  }
+
+  const container = document.getElementById('score-entry-content');
+  container.innerHTML = '';
+
+  // Fetch match data
+  fetch(`${API_BASE_URL}/api/get_wolf_match.php?match_id=${matchId}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.error) {
+        container.innerHTML = `<p>Error loading match: ${data.error}</p>`;
+        return;
+      }
+
+      const matchGolfers = data.match;
+      holeInfo = data.holes;
+      const wolfPartners = data.partners || [];
+      const match = matchGolfers[0];
+      currentMatchId = match.match_id;
+      tournamentHandicapPct = parseFloat(match.tournament_handicap_pct || 100);
+
+      // Show match header
+      const headerDiv = document.createElement('div');
+      headerDiv.style.cssText = 'background: #4F2185; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; text-align: center; color: white;';
+      headerDiv.innerHTML = `
+        <h2 style="margin: 0; color: white;">${match.match_name}</h2>
+        <p style="margin: 0.5rem 0 0 0; color: white; font-size: 1.1rem;">Match Finalized</p>
+      `;
+      container.appendChild(headerDiv);
+
+      courses = {
+        course_name: match.course_name,
+        slope: match.slope,
+        rating: match.rating,
+        par: match.par
+      };
+
+      // Build golfer list in order
+      const golferMap = new Map();
+      matchGolfers.forEach(row => {
+        if (!golferMap.has(row.golfer_id)) {
+          golferMap.set(row.golfer_id, {
+            id: row.golfer_id,
+            name: row.first_name,
+            lastName: row.last_name,
+            handicap: calculatePlayingHandicap(row.handicap),
+            order: row.player_order || 0
+          });
+        }
+      });
+      golfers = Array.from(golferMap.values()).sort((a, b) => a.order - b.order);
+
+      // Build stroke maps
+      strokeMaps = {};
+      golfers.forEach(g => {
+        strokeMaps[g.id] = buildStrokeMapForGolfer(g.handicap, holeInfo);
+      });
+
+      // Build table
+      const table = document.createElement("table");
+      table.classList.add("score-table");
+
+      // Header
+      const header = document.createElement("tr");
+      header.innerHTML = `<th>#</th><th>P</th><th>HI</th><th>Partner</th>` + golfers.map(golfer => {
+        return `<th style="background-color: #2196F3; color: white;">${golfer.name} (${parseFloat(golfer.handicap).toFixed(1)})</th>`;
+      }).join("");
+      table.appendChild(header);
+
+      // Load scores first
+      fetch(`${API_BASE_URL}/get_scores.php?match_id=${matchId}`, {
+        credentials: 'include'
+      })
+      .then(res => res.json())
+      .then(scores => {
+        const scoreMap = {};
+        scores.forEach(score => {
+          if (!scoreMap[score.hole_number]) scoreMap[score.hole_number] = {};
+          scoreMap[score.hole_number][score.golfer_id] = score.strokes;
+        });
+
+        // Create partner map
+        const partnerMap = {};
+        wolfPartners.forEach(partner => {
+          partnerMap[partner.hole_number] = {
+            partnerId: partner.partner_golfer_id,
+            wolfId: partner.wolf_golfer_id
+          };
+        });
+
+        // Score rows
+        for (let i = 1; i <= 18; i++) {
+          const row = document.createElement("tr");
+          const par = holeInfo.find(h => h.hole_number === i)?.par || "-";
+          const index = holeInfo.find(h => h.hole_number === i)?.handicap_index || "-";
+
+          const wolfIndex = (4 - (i % 4)) % 4;
+          const wolfGolfer = golfers[wolfIndex];
+
+          // Display partner selection
+          let partnerText = '–';
+          if (partnerMap[i]) {
+            if (partnerMap[i].partnerId === null) {
+              partnerText = 'Lone Wolf';
+            } else {
+              const partner = golfers.find(g => g.id == partnerMap[i].partnerId);
+              if (partner) partnerText = partner.name;
+            }
+          }
+
+          row.innerHTML = `<td>${i}</td><td>${par}</td><td>${index}</td>` +
+            `<td style="text-align: center; padding: 0.5rem;">${partnerText}</td>` +
+            golfers.map((golfer, idx) => {
+              const stroke = strokeMaps[golfer.id]?.[i] || 0;
+              let dots = '';
+              if (stroke === 1) {
+                dots = '<span class="corner-dot"></span>';
+              } else if (stroke === 2) {
+                dots = '<span class="corner-dot"></span><span class="corner-dot second-dot"></span>';
+              }
+
+              const wolfEmoji = (idx === wolfIndex) ? '<span style="position: absolute; top: 2px; left: 2px; font-size: 0.7rem;">🐺</span>' : '';
+              const scoreValue = scoreMap[i] && scoreMap[i][golfer.id] ? scoreMap[i][golfer.id] : '–';
+
+              return `<td style="position:relative; text-align: center; padding: 0.5rem;">
+                ${dots}
+                ${wolfEmoji}
+                ${scoreValue}
+              </td>`;
+            }).join("");
+          table.appendChild(row);
+        }
+
+        // Calculate and display points
+        const points = {};
+        golfers.forEach(g => points[g.id] = 0);
+
+        for (let hole = 1; hole <= 18; hole++) {
+          const wolfIndex = (4 - (hole % 4)) % 4;
+          const wolfGolfer = golfers[wolfIndex];
+          const partnerInfo = partnerMap[hole];
+          const partnerId = partnerInfo ? partnerInfo.partnerId : null;
+
+          const holeScores = [];
+          let allScored = true;
+          golfers.forEach(golfer => {
+            const gross = scoreMap[hole] && scoreMap[hole][golfer.id] ? parseInt(scoreMap[hole][golfer.id]) : null;
+            if (gross !== null) {
+              const strokes = strokeMaps[golfer.id]?.[hole] || 0;
+              const net = gross - strokes;
+              holeScores.push({ golfer: golfer, gross: gross, net: net });
+            } else {
+              allScored = false;
+            }
+          });
+
+          if (allScored && partnerId !== undefined && holeScores.length === 4) {
+            if (partnerId === null) {
+              // Lone Wolf
+              const wolfScore = holeScores.find(s => s.golfer.id == wolfGolfer.id);
+              const othersScores = holeScores.filter(s => s.golfer.id != wolfGolfer.id);
+              const bestOtherNet = Math.min(...othersScores.map(s => s.net));
+              if (wolfScore.net < bestOtherNet) {
+                points[wolfGolfer.id] += 3;
+              } else if (wolfScore.net > bestOtherNet) {
+                othersScores.forEach(s => points[s.golfer.id] += 1);
+              }
+            } else {
+              // Partnership
+              const wolfScore = holeScores.find(s => s.golfer.id == wolfGolfer.id);
+              const partnerScore = holeScores.find(s => s.golfer.id == partnerId);
+              const othersScores = holeScores.filter(s => s.golfer.id != wolfGolfer.id && s.golfer.id != partnerId);
+              const teamBest = Math.min(wolfScore.net, partnerScore.net);
+              const othersBest = Math.min(...othersScores.map(s => s.net));
+              if (teamBest < othersBest) {
+                points[wolfGolfer.id] += 1;
+                points[partnerId] += 1;
+              } else if (teamBest > othersBest) {
+                othersScores.forEach(s => points[s.golfer.id] += 1);
+              }
+            }
+          }
+        }
+
+        // Points row
+        const pointsRow = document.createElement("tr");
+        pointsRow.innerHTML = `<td></td><td></td><td></td><td>Points:</td>` + golfers.map(g => {
+          return `<td style="font-weight: bold; text-align: center;">${points[g.id] || 0}</td>`;
+        }).join("");
+        table.appendChild(pointsRow);
+
+        // Score totals row
+        const scoreTotalsRow = document.createElement("tr");
+        scoreTotalsRow.innerHTML = `<td></td><td></td><td></td><td>Score:</td>` + golfers.map(g => {
+          let total = 0;
+          for (let hole = 1; hole <= 18; hole++) {
+            if (scoreMap[hole] && scoreMap[hole][g.id]) {
+              total += parseInt(scoreMap[hole][g.id]);
+            }
+          }
+          return `<td style="text-align: center;">${total > 0 ? total : '–'}</td>`;
+        }).join("");
+        table.appendChild(scoreTotalsRow);
+
+        container.appendChild(table);
+
+        // Add explanation
+        const explanation = document.createElement("div");
+        explanation.style.cssText = "margin-top: 2rem; padding: 1rem; background: #f5f5f5; border-radius: 4px; font-size: 0.9rem;";
+        explanation.innerHTML = `
+          <strong>How Wolf Works:</strong><br>
+          The Wolf rotates each hole, and tees off last. The Wolf chooses a partner or goes Lone.<br>
+          <strong>Scoring:</strong> Lone Wolf win = 3 pts (loss = 0 pts, others get 1 pt each). Partnership win = 1 pt each (loss = 0 pts each).
+        `;
+        container.appendChild(explanation);
+      });
+    })
+    .catch(err => {
+      console.error("Error loading Wolf match:", err);
+      container.innerHTML = '<p>Error loading match data. Please try again.</p>';
+    });
+}
+
+function loadRabbitScorecardReadOnly() {
+  const matchId = sessionStorage.getItem('rabbit_match_id');
+  const matchCode = sessionStorage.getItem('rabbit_match_code');
+
+  if (!matchId) {
+    console.error('No match ID found');
+    return;
+  }
+
+  // Hide all other containers
+  document.getElementById('best-ball-setup').style.display = 'none';
+  document.getElementById('round-history-container').style.display = 'none';
+  document.getElementById('auth-container').style.display = 'none';
+
+  const appContent = document.getElementById('app-content');
+  appContent.style.display = 'block';
+
+  // Hide the navigation tabs
+  const navElement = appContent.querySelector('nav');
+  if (navElement) {
+    navElement.style.display = 'none';
+  }
+
+  // Show the header with logout button
+  const headerElement = appContent.querySelector('header');
+  if (headerElement) {
+    headerElement.style.display = 'block';
+    const tournamentBar = headerElement.querySelector('#tournament-bar');
+    if (tournamentBar) tournamentBar.style.display = 'none';
+    const userBar = headerElement.querySelector('#user-bar');
+    if (userBar) {
+      userBar.style.display = 'flex';
+      const userName = userBar.querySelector('#user-name');
+      if (userName) {
+        userName.textContent = matchCode ? `Match Code: ${matchCode}` : 'Rabbit Round';
+      }
+    }
+  }
+
+  const container = document.getElementById('score-entry-content');
+  container.innerHTML = '';
+
+  // Fetch match data
+  fetch(`${API_BASE_URL}/api/get_rabbit_match.php?match_id=${matchId}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.error) {
+        container.innerHTML = `<p>Error loading match: ${data.error}</p>`;
+        return;
+      }
+
+      const matchGolfers = data.match;
+      holeInfo = data.holes;
+      const match = matchGolfers[0];
+      currentMatchId = match.match_id;
+      tournamentHandicapPct = parseFloat(match.tournament_handicap_pct || 100);
+
+      // Show match header
+      const headerDiv = document.createElement('div');
+      headerDiv.style.cssText = 'background: #4F2185; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; text-align: center; color: white;';
+      headerDiv.innerHTML = `
+        <h2 style="margin: 0; color: white;">${match.match_name}</h2>
+        <p style="margin: 0.5rem 0 0 0; color: white; font-size: 1.1rem;">Match Finalized</p>
+      `;
+      container.appendChild(headerDiv);
+
+      courses = {
+        course_name: match.course_name,
+        slope: match.slope,
+        rating: match.rating,
+        par: match.par
+      };
+
+      // Build golfer list
+      const golferMap = new Map();
+      matchGolfers.forEach(row => {
+        if (!golferMap.has(row.golfer_id)) {
+          golferMap.set(row.golfer_id, {
+            id: row.golfer_id,
+            name: row.first_name,
+            lastName: row.last_name,
+            handicap: calculatePlayingHandicap(row.handicap),
+          });
+        }
+      });
+      golfers = Array.from(golferMap.values());
+
+      // Build stroke maps
+      strokeMaps = {};
+      golfers.forEach(g => {
+        strokeMaps[g.id] = buildStrokeMapForGolfer(g.handicap, holeInfo);
+      });
+
+      // Build table
+      const table = document.createElement("table");
+      table.classList.add("score-table");
+
+      // Header
+      const header = document.createElement("tr");
+      header.innerHTML = `<th>#</th><th>P</th><th>HI</th>` + golfers.map(golfer => {
+        return `<th style="background-color: #2196F3; color: white;">${golfer.name} (${parseFloat(golfer.handicap).toFixed(1)})</th>`;
+      }).join("");
+      table.appendChild(header);
+
+      // Load scores first
+      fetch(`${API_BASE_URL}/get_scores.php?match_id=${matchId}`, {
+        credentials: 'include'
+      })
+      .then(res => res.json())
+      .then(scores => {
+        const scoreMap = {};
+        scores.forEach(score => {
+          if (!scoreMap[score.hole_number]) scoreMap[score.hole_number] = {};
+          scoreMap[score.hole_number][score.golfer_id] = score.strokes;
+        });
+
+        // Score rows
+        for (let i = 1; i <= 18; i++) {
+          const row = document.createElement("tr");
+          const par = holeInfo.find(h => h.hole_number === i)?.par || "-";
+          const index = holeInfo.find(h => h.hole_number === i)?.handicap_index || "-";
+          row.innerHTML = `<td>${i}</td><td>${par}</td><td>${index}</td>` + golfers.map(golfer => {
+            const stroke = strokeMaps[golfer.id]?.[i] || 0;
+            let dots = '';
+            if (stroke === 1) {
+              dots = '<span class="corner-dot"></span>';
+            } else if (stroke === 2) {
+              dots = '<span class="corner-dot"></span><span class="corner-dot second-dot"></span>';
+            }
+            const scoreValue = scoreMap[i] && scoreMap[i][golfer.id] ? scoreMap[i][golfer.id] : '–';
+            return `<td style="position:relative; text-align: center; padding: 0.5rem;">
+              ${dots}
+              ${scoreValue}
+            </td>`;
+          }).join("");
+          table.appendChild(row);
+
+          // Add Rabbit winner row after every 3rd hole
+          if (i % 3 === 0) {
+            // Calculate rabbit winner for this segment
+            const startHole = i - 2;
+            const endHole = i;
+            let rabbitOwner = null;
+            let rabbitFree = true;
+
+            for (let hole = startHole; hole <= endHole; hole++) {
+              const holeScores = [];
+              let allScored = true;
+
+              golfers.forEach(golfer => {
+                const gross = scoreMap[hole] && scoreMap[hole][golfer.id] ? parseInt(scoreMap[hole][golfer.id]) : null;
+                if (gross !== null) {
+                  const strokes = strokeMaps[golfer.id]?.[hole] || 0;
+                  const net = gross - strokes;
+                  holeScores.push({ golfer: golfer, net: net });
+                } else {
+                  allScored = false;
+                }
+              });
+
+              if (allScored && holeScores.length === golfers.length) {
+                const lowestNet = Math.min(...holeScores.map(s => s.net));
+                const winners = holeScores.filter(s => s.net === lowestNet);
+
+                if (winners.length === 1) {
+                  // Clear winner
+                  const winner = winners[0].golfer;
+                  if (rabbitFree) {
+                    rabbitOwner = winner;
+                    rabbitFree = false;
+                  } else if (rabbitOwner && rabbitOwner.id !== winner.id) {
+                    rabbitOwner = null;
+                    rabbitFree = true;
+                  }
+                }
+                // Tie: rabbit stays where it is
+              }
+            }
+
+            const rabbitRow = document.createElement("tr");
+            rabbitRow.classList.add("rabbit-row");
+            rabbitRow.style.cssText = "background: #FFC62F; font-weight: bold;";
+            const rabbitText = rabbitOwner ? `${rabbitOwner.name}` : (rabbitFree ? 'Free' : '–');
+            rabbitRow.innerHTML = `<td colspan="${3 + golfers.length}" style="text-align: center; padding: 0.5rem;">Rabbit Winner (Holes ${startHole}-${endHole}): ${rabbitText}</td>`;
+            table.appendChild(rabbitRow);
+          }
+        }
+
+        // Totals row
+        const totalsRow = document.createElement("tr");
+        totalsRow.innerHTML = `<td></td><td></td><td></td>` + golfers.map(g => {
+          let total = 0;
+          for (let hole = 1; hole <= 18; hole++) {
+            if (scoreMap[hole] && scoreMap[hole][g.id]) {
+              total += parseInt(scoreMap[hole][g.id]);
+            }
+          }
+          return `<td style="text-align: center;">${total > 0 ? total : '–'}</td>`;
+        }).join("");
+        table.appendChild(totalsRow);
+
+        container.appendChild(table);
+
+        // Add explanation
+        const explanation = document.createElement("div");
+        explanation.style.cssText = "margin-top: 2rem; padding: 1rem; background: #f5f5f5; border-radius: 4px; font-size: 0.9rem;";
+        explanation.innerHTML = `
+          <strong>How Rabbit Works:</strong><br>
+          Win a hole outright to own the Rabbit. If the next hole is tied, you keep the Rabbit.
+          Another player must win a hole to set the Rabbit free. Points awarded every 3 holes (6 total).
+        `;
+        container.appendChild(explanation);
+      });
+    })
+    .catch(err => {
+      console.error("Error loading Rabbit match:", err);
+      container.innerHTML = '<p>Error loading match data. Please try again.</p>';
+    });
+}
+
 function calculateRabbitWinners() {
   // Calculate who owns the rabbit after every 3 holes
   let rabbitOwner = null;
@@ -2133,20 +2613,33 @@ function loadBestBallScoring() {
         par: match.par
       };
 
-      // Build golfer list
-      golfers = [...new Set(matchGolfers.map(row => ({
-        id: row.golfer_id,
-        name: row.first_name,
-        lastName: row.last_name,
-        team_id: row.team_id,
-        team: row.team_id === 1 ? 'Team 1' : 'Team 2', // Add team name for calculateBestBallStatus
-        handicap: calculatePlayingHandicap(row.handicap),
-      })))];
+      // Calculate playing handicaps for all golfers
+      const playingHandicaps = matchGolfers.map(row => ({
+        golfer_id: row.golfer_id,
+        playingHandicap: calculatePlayingHandicap(row.handicap)
+      }));
 
-      // Build stroke maps
+      // Find the lowest playing handicap (for adjusted handicap calculation)
+      const lowestHandicap = Math.min(...playingHandicaps.map(ph => ph.playingHandicap));
+
+      // Build golfer list with adjusted handicaps (lowest player = 0, others adjusted down)
+      golfers = [...new Set(matchGolfers.map(row => {
+        const playingHandicap = playingHandicaps.find(ph => ph.golfer_id === row.golfer_id).playingHandicap;
+        const adjustedHandicap = playingHandicap - lowestHandicap;
+        return {
+          id: row.golfer_id,
+          name: row.first_name,
+          lastName: row.last_name,
+          team_id: row.team_id,
+          team: row.team_id === 1 ? 'Team 1' : 'Team 2', // Add team name for calculateBestBallStatus
+          handicap: adjustedHandicap,
+        };
+      }))];
+
+      // Build stroke maps using adjusted handicaps
       strokeMaps = {};
-      matchGolfers.forEach(g => {
-        strokeMaps[g.golfer_id] = buildStrokeMapForGolfer(calculatePlayingHandicap(g.handicap), holeInfo);
+      golfers.forEach(g => {
+        strokeMaps[g.id] = buildStrokeMapForGolfer(g.handicap, holeInfo);
       });
 
       // Create score table
@@ -2424,17 +2917,30 @@ function loadBestBallScorecardReadOnly() {
         par: match.par
       };
 
-      // Build golfer list with team property
-      golfers = [...new Set(matchGolfers.map(row => ({
-        id: row.golfer_id,
-        name: row.first_name,
-        lastName: row.last_name,
-        team_id: row.team_id,
-        team: row.team_id === 1 ? 'Team 1' : 'Team 2',
-        handicap: calculatePlayingHandicap(row.handicap),
-      })))];
+      // Calculate playing handicaps for all golfers
+      const playingHandicaps = matchGolfers.map(row => ({
+        golfer_id: row.golfer_id,
+        playingHandicap: calculatePlayingHandicap(row.handicap)
+      }));
 
-      // Build stroke maps
+      // Find the lowest playing handicap (for adjusted handicap calculation)
+      const lowestHandicap = Math.min(...playingHandicaps.map(ph => ph.playingHandicap));
+
+      // Build golfer list with adjusted handicaps (lowest player = 0, others adjusted down)
+      golfers = [...new Set(matchGolfers.map(row => {
+        const playingHandicap = playingHandicaps.find(ph => ph.golfer_id === row.golfer_id).playingHandicap;
+        const adjustedHandicap = playingHandicap - lowestHandicap;
+        return {
+          id: row.golfer_id,
+          name: row.first_name,
+          lastName: row.last_name,
+          team_id: row.team_id,
+          team: row.team_id === 1 ? 'Team 1' : 'Team 2',
+          handicap: adjustedHandicap,
+        };
+      }))];
+
+      // Build stroke maps using adjusted handicaps
       strokeMaps = {};
       golfers.forEach(g => {
         strokeMaps[g.id] = buildStrokeMapForGolfer(g.handicap, holeInfo);
@@ -2699,6 +3205,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const quickRoundOptions = document.getElementById('quick-round-options');
     const joinCodeSection = document.getElementById('join-code-section');
     const quickRoundOptionSelect = document.getElementById('selectQuickRoundOption');
+    const roundHistoryBtn = document.getElementById('round-history-btn');
 
     modeSelect.addEventListener('change', function() {
       const selectedMode = this.value;
@@ -2712,6 +3219,7 @@ document.addEventListener("DOMContentLoaded", function () {
         joinCodeSection.style.display = 'none';
         roundTypeSelect.style.display = 'none';
         roundTypeSelect.required = false;
+        roundHistoryBtn.style.display = 'none';
       } else if (selectedMode === 'quick') {
         // Show quick round options, hide tournament fields
         playerSelect.style.display = 'none';
@@ -2721,6 +3229,7 @@ document.addEventListener("DOMContentLoaded", function () {
         joinCodeSection.style.display = 'none';
         roundTypeSelect.style.display = 'none';
         roundTypeSelect.required = false;
+        roundHistoryBtn.style.display = 'block';
       } else {
         // No mode selected, hide everything
         playerSelect.style.display = 'none';
@@ -2730,6 +3239,7 @@ document.addEventListener("DOMContentLoaded", function () {
         joinCodeSection.style.display = 'none';
         roundTypeSelect.style.display = 'none';
         roundTypeSelect.required = false;
+        roundHistoryBtn.style.display = 'none';
       }
     });
 
@@ -4651,6 +5161,109 @@ function pickContrastColorFromHex(hex, threshold = 155) {
 }
 
 
+// Load quick round history
+function loadQuickRoundHistory() {
+  const historyContainer = document.getElementById('round-history-container');
+  const historyContent = document.getElementById('round-history-content');
+  const authContainer = document.getElementById('auth-container');
+
+  // Hide auth container, show history container
+  authContainer.style.display = 'none';
+  historyContainer.style.display = 'block';
+  historyContent.innerHTML = '<p>Loading...</p>';
+
+  fetch(`${API_BASE_URL}/api/get_quick_round_history.php`, {
+    credentials: 'include'
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.error) {
+        historyContent.innerHTML = `<p>Error: ${data.error}</p>`;
+        return;
+      }
+
+      if (!data.matches || data.matches.length === 0) {
+        historyContent.innerHTML = '<p>No quick rounds found.</p>';
+        return;
+      }
+
+      // Build the match list
+      let html = '<div style="display: flex; flex-direction: column; gap: 1rem;">';
+
+      data.matches.forEach(match => {
+        const statusBadge = match.finalized === '1' ?
+          '<span style="background: #4CAF50; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.85rem;">Finalized</span>' :
+          '<span style="background: #FFC107; color: black; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.85rem;">In Progress</span>';
+
+        const roundTypeColor = match.round_name === 'Best Ball' ? '#4F2185' :
+                               match.round_name === 'Rabbit' ? '#FF5722' :
+                               match.round_name === 'Wolf' ? '#2196F3' : '#666';
+
+        html += `
+          <div class="match-history-card" data-match-id="${match.match_id}" data-round-name="${match.round_name}"
+               style="border: 1px solid #ddd; padding: 1rem; border-radius: 8px; cursor: pointer; background: white; transition: all 0.2s;"
+               onmouseover="this.style.boxShadow='0 4px 8px rgba(0,0,0,0.1)'; this.style.transform='translateY(-2px)';"
+               onmouseout="this.style.boxShadow='none'; this.style.transform='translateY(0)';">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+              <h3 style="margin: 0; font-size: 1.1rem;">${match.match_name}</h3>
+              ${statusBadge}
+            </div>
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+              <span style="background: ${roundTypeColor}; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.85rem;">${match.round_name}</span>
+              <span style="background: #666; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.85rem; font-family: monospace;">Code: ${match.match_code}</span>
+            </div>
+            <p style="margin: 0.5rem 0; color: #666; font-size: 0.9rem;">${match.participants}</p>
+          </div>
+        `;
+      });
+
+      html += '</div>';
+      historyContent.innerHTML = html;
+
+      // Add click event listeners to each card
+      document.querySelectorAll('.match-history-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const matchId = card.dataset.matchId;
+          const roundName = card.dataset.roundName;
+          loadQuickRoundFromHistory(matchId, roundName);
+        });
+      });
+    })
+    .catch(err => {
+      console.error('Error loading quick round history:', err);
+      historyContent.innerHTML = '<p>Error loading history. Please try again.</p>';
+    });
+}
+
+// Load a specific quick round match from history (read-only)
+function loadQuickRoundFromHistory(matchId, roundName) {
+  // Hide history container
+  document.getElementById('round-history-container').style.display = 'none';
+
+  // Store the match info in sessionStorage
+  if (roundName === 'Best Ball') {
+    sessionStorage.setItem('best_ball_match_id', matchId);
+    loadBestBallScorecardReadOnly();
+  } else if (roundName === 'Rabbit') {
+    sessionStorage.setItem('rabbit_match_id', matchId);
+    loadRabbitScorecardReadOnly();
+  } else if (roundName === 'Wolf') {
+    sessionStorage.setItem('wolf_match_id', matchId);
+    loadWolfScorecardReadOnly();
+  }
+}
+
+// Go back from history to auth screen
+function goBackFromHistory() {
+  // Clear any session storage from viewing historical matches
+  sessionStorage.removeItem('best_ball_match_id');
+  sessionStorage.removeItem('rabbit_match_id');
+  sessionStorage.removeItem('wolf_match_id');
+
+  document.getElementById('round-history-container').style.display = 'none';
+  document.getElementById('auth-container').style.display = 'flex';
+}
+
 // Authentication handling
 document.addEventListener('DOMContentLoaded', () => {
   const authForm = document.getElementById('auth-form');
@@ -4682,6 +5295,22 @@ document.addEventListener('DOMContentLoaded', () => {
     loadWolfScoring();
     return; // Exit early, skip form setup
   }
+
+    // Add event listeners for Round History functionality
+    const roundHistoryBtn = document.getElementById('round-history-btn');
+    const backFromHistoryBtn = document.getElementById('back-from-history-btn');
+
+    if (roundHistoryBtn) {
+      roundHistoryBtn.addEventListener('click', () => {
+        loadQuickRoundHistory();
+      });
+    }
+
+    if (backFromHistoryBtn) {
+      backFromHistoryBtn.addEventListener('click', () => {
+        goBackFromHistory();
+      });
+    }
 
     authForm.addEventListener('submit', (event) => {
       event.preventDefault();
@@ -4934,7 +5563,18 @@ document.getElementById('logout-button').addEventListener('click', () => {
     credentials: 'include'
   }).then(() => {
     sessionStorage.clear();
-    location.reload();
+
+    // Hide all containers
+    document.getElementById('app-content').style.display = 'none';
+    document.getElementById('round-history-container').style.display = 'none';
+    document.getElementById('best-ball-setup').style.display = 'none';
+
+    // Show auth container
+    document.getElementById('auth-container').style.display = 'flex';
+
+    // Reset form
+    document.getElementById('auth-form').reset();
+    document.getElementById('selectMode').dispatchEvent(new Event('change'));
   });
 });
 
