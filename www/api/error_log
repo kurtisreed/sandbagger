@@ -1,0 +1,167 @@
+[25-Apr-2025 21:10:45 America/Chicago] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'name' in 'field list' in /home4/kbr37/public_html/sandbaggerv2/api/courses.php:24
+Stack trace:
+#0 /home4/kbr37/public_html/sandbaggerv2/api/courses.php(24): mysqli->query('\r\n        SELEC...')
+#1 {main}
+  thrown in /home4/kbr37/public_html/sandbaggerv2/api/courses.php on line 24
+[25-Apr-2025 21:12:13 America/Chicago] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'name' in 'field list' in /home4/kbr37/public_html/sandbaggerv2/api/courses.php:24
+Stack trace:
+#0 /home4/kbr37/public_html/sandbaggerv2/api/courses.php(24): mysqli->query('\r\n        SELEC...')
+#1 {main}
+  thrown in /home4/kbr37/public_html/sandbaggerv2/api/courses.php on line 24
+[25-Apr-2025 21:15:42 America/Chicago] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'name' in 'field list' in /home4/kbr37/public_html/sandbaggerv2/api/courses.php:24
+Stack trace:
+#0 /home4/kbr37/public_html/sandbaggerv2/api/courses.php(24): mysqli->query('\r\n        SELEC...')
+#1 {main}
+  thrown in /home4/kbr37/public_html/sandbaggerv2/api/courses.php on line 24
+[25-Apr-2025 21:16:27 America/Chicago] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'par_total' in 'field list' in /home4/kbr37/public_html/sandbaggerv2/api/courses.php:29
+Stack trace:
+#0 /home4/kbr37/public_html/sandbaggerv2/api/courses.php(29): mysqli->query('\r\n        SELEC...')
+#1 {main}
+  thrown in /home4/kbr37/public_html/sandbaggerv2/api/courses.php on line 29
+[26-Apr-2025 22:42:12 America/Chicago] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'team_id' in 'field list' in /home4/kbr37/public_html/sandbaggerv2/api/tournament_golfers.php:69
+Stack trace:
+#0 /home4/kbr37/public_html/sandbaggerv2/api/tournament_golfers.php(69): mysqli->prepare('\r\n        UPDAT...')
+#1 {main}
+  thrown in /home4/kbr37/public_html/sandbaggerv2/api/tournament_golfers.php on line 69
+[27-Apr-2025 14:27:56 America/Chicago] DB Connection Error: Access denied for user 'kbr37_1'@'localhost' to database 'kbr37_sandbagger'
+[27-Apr-2025 14:29:08 America/Chicago] DB Connection Error: Access denied for user 'kbr37_1'@'localhost' to database 'kbr37_sandbagger'
+[27-Apr-2025 17:12:54 America/Chicago] PHP Fatal error:  Uncaught mysqli_sql_exception: Cannot delete or update a parent row: a foreign key constraint fails (`kbr37_sandbagger`.`tournament_formats`, CONSTRAINT `tournament_formats_ibfk_1` FOREIGN KEY (`tournament_id`) REFERENCES `tournaments` (`tournament_id`)) in /home4/kbr37/public_html/sandbaggerv2/api/tournaments.php:62
+Stack trace:
+#0 /home4/kbr37/public_html/sandbaggerv2/api/tournaments.php(62): mysqli_stmt->execute()
+#1 {main}
+  thrown in /home4/kbr37/public_html/sandbaggerv2/api/tournaments.php on line 62
+[27-Apr-2025 17:15:18 America/Chicago] PHP Fatal error:  Uncaught mysqli_sql_exception: Cannot delete or update a parent row: a foreign key constraint fails (`kbr37_sandbagger`.`tournament_formats`, CONSTRAINT `tournament_formats_ibfk_1` FOREIGN KEY (`tournament_id`) REFERENCES `tournaments` (`tournament_id`)) in /home4/kbr37/public_html/sandbaggerv2/api/tournaments.php:61
+Stack trace:
+#0 /home4/kbr37/public_html/sandbaggerv2/api/tournaments.php(61): mysqli_stmt->execute()
+#1 {main}
+  thrown in /home4/kbr37/public_html/sandbaggerv2/api/tournaments.php on line 61
+[27-Apr-2025 22:05:23 America/Chicago] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'kbr37_sandbagger.tournament_rounds' doesn't exist in /home4/kbr37/public_html/sandbaggerv2/api/tournaments.php:77
+Stack trace:
+#0 /home4/kbr37/public_html/sandbaggerv2/api/tournaments.php(77): mysqli->prepare('\r\n    DELETE FR...')
+#1 {main}
+  thrown in /home4/kbr37/public_html/sandbaggerv2/api/tournaments.php on line 77
+[27-Apr-2025 22:12:08 America/Chicago] PHP Warning:  Undefined variable $tournament_id in /home4/kbr37/public_html/sandbaggerv2/api/tournaments.php on line 57
+[27-Apr-2025 22:12:08 America/Chicago] Deleting tournament_id = NULL
+[27-Apr-2025 22:15:15 America/Chicago] Deleting tournament_id = '7'
+[27-Apr-2025 22:16:49 America/Chicago] Deleting tournament_id = '7'
+[27-Apr-2025 22:32:50 America/Chicago] Deleting tournament_id = '11'
+[27-Apr-2025 22:32:52 America/Chicago] Deleting tournament_id = '10'
+[27-Apr-2025 22:32:55 America/Chicago] Deleting tournament_id = '9'
+[06-Jun-2025 00:45:03 America/Chicago] DB Connection Error: Access denied for user 'kbr37'@'localhost' (using password: YES)
+[06-Jun-2025 00:45:34 America/Chicago] DB Connection Error: Access denied for user 'kbr37'@'localhost' (using password: YES)
+[06-Jun-2025 00:47:07 America/Chicago] DB Connection Error: Access denied for user 'kbr37'@'localhost' (using password: YES)
+[06-Jun-2025 00:49:13 America/Chicago] DB Connection Error: Access denied for user 'kbr37'@'localhost' (using password: YES)
+[06-Jun-2025 15:35:46 America/Chicago] PHP Warning:  require(/home3/ltmbxxte/public_html/apidb_connect.php): Failed to open stream: No such file or directory in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[06-Jun-2025 15:35:46 America/Chicago] PHP Fatal error:  Uncaught Error: Failed opening required '/home3/ltmbxxte/public_html/apidb_connect.php' (include_path='.:/opt/cpanel/ea-php83/root/usr/share/pear') in /home3/ltmbxxte/public_html/api/tournament_teams.php:4
+Stack trace:
+#0 {main}
+  thrown in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[06-Jun-2025 15:35:48 America/Chicago] PHP Warning:  require(/home3/ltmbxxte/public_html/apidb_connect.php): Failed to open stream: No such file or directory in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[06-Jun-2025 15:35:48 America/Chicago] PHP Fatal error:  Uncaught Error: Failed opening required '/home3/ltmbxxte/public_html/apidb_connect.php' (include_path='.:/opt/cpanel/ea-php83/root/usr/share/pear') in /home3/ltmbxxte/public_html/api/tournament_teams.php:4
+Stack trace:
+#0 {main}
+  thrown in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[06-Jun-2025 15:36:04 America/Chicago] PHP Warning:  require(/home3/ltmbxxte/public_html/apidb_connect.php): Failed to open stream: No such file or directory in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[06-Jun-2025 15:36:04 America/Chicago] PHP Fatal error:  Uncaught Error: Failed opening required '/home3/ltmbxxte/public_html/apidb_connect.php' (include_path='.:/opt/cpanel/ea-php83/root/usr/share/pear') in /home3/ltmbxxte/public_html/api/tournament_teams.php:4
+Stack trace:
+#0 {main}
+  thrown in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[06-Jun-2025 15:36:20 America/Chicago] PHP Warning:  require(/home3/ltmbxxte/public_html/apidb_connect.php): Failed to open stream: No such file or directory in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[06-Jun-2025 15:36:20 America/Chicago] PHP Fatal error:  Uncaught Error: Failed opening required '/home3/ltmbxxte/public_html/apidb_connect.php' (include_path='.:/opt/cpanel/ea-php83/root/usr/share/pear') in /home3/ltmbxxte/public_html/api/tournament_teams.php:4
+Stack trace:
+#0 {main}
+  thrown in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[06-Jun-2025 15:38:18 America/Chicago] PHP Warning:  require(/home3/ltmbxxte/public_html/apidb_connect.php): Failed to open stream: No such file or directory in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[06-Jun-2025 15:38:18 America/Chicago] PHP Fatal error:  Uncaught Error: Failed opening required '/home3/ltmbxxte/public_html/apidb_connect.php' (include_path='.:/opt/cpanel/ea-php83/root/usr/share/pear') in /home3/ltmbxxte/public_html/api/tournament_teams.php:4
+Stack trace:
+#0 {main}
+  thrown in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[06-Jun-2025 15:38:42 America/Chicago] PHP Warning:  require(/home3/ltmbxxte/public_html/apidb_connect.php): Failed to open stream: No such file or directory in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[06-Jun-2025 15:38:42 America/Chicago] PHP Fatal error:  Uncaught Error: Failed opening required '/home3/ltmbxxte/public_html/apidb_connect.php' (include_path='.:/opt/cpanel/ea-php83/root/usr/share/pear') in /home3/ltmbxxte/public_html/api/tournament_teams.php:4
+Stack trace:
+#0 {main}
+  thrown in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[06-Jun-2025 15:39:08 America/Chicago] PHP Warning:  require(/home3/ltmbxxte/public_html/apidb_connect.php): Failed to open stream: No such file or directory in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[06-Jun-2025 15:39:08 America/Chicago] PHP Fatal error:  Uncaught Error: Failed opening required '/home3/ltmbxxte/public_html/apidb_connect.php' (include_path='.:/opt/cpanel/ea-php83/root/usr/share/pear') in /home3/ltmbxxte/public_html/api/tournament_teams.php:4
+Stack trace:
+#0 {main}
+  thrown in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[09-Jun-2025 12:21:53 America/Chicago] PHP Warning:  require(/home3/ltmbxxte/public_html/apidb_connect.php): Failed to open stream: No such file or directory in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[09-Jun-2025 12:21:53 America/Chicago] PHP Fatal error:  Uncaught Error: Failed opening required '/home3/ltmbxxte/public_html/apidb_connect.php' (include_path='.:/opt/cpanel/ea-php83/root/usr/share/pear') in /home3/ltmbxxte/public_html/api/tournament_teams.php:4
+Stack trace:
+#0 {main}
+  thrown in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[09-Jun-2025 12:22:07 America/Chicago] PHP Warning:  require(/home3/ltmbxxte/public_html/apidb_connect.php): Failed to open stream: No such file or directory in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[09-Jun-2025 12:22:07 America/Chicago] PHP Fatal error:  Uncaught Error: Failed opening required '/home3/ltmbxxte/public_html/apidb_connect.php' (include_path='.:/opt/cpanel/ea-php83/root/usr/share/pear') in /home3/ltmbxxte/public_html/api/tournament_teams.php:4
+Stack trace:
+#0 {main}
+  thrown in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[09-Jun-2025 12:23:07 America/Chicago] PHP Warning:  require(/home3/ltmbxxte/public_html/apidb_connect.php): Failed to open stream: No such file or directory in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[09-Jun-2025 12:23:07 America/Chicago] PHP Fatal error:  Uncaught Error: Failed opening required '/home3/ltmbxxte/public_html/apidb_connect.php' (include_path='.:/opt/cpanel/ea-php83/root/usr/share/pear') in /home3/ltmbxxte/public_html/api/tournament_teams.php:4
+Stack trace:
+#0 {main}
+  thrown in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[09-Jun-2025 12:23:12 America/Chicago] PHP Warning:  require(/home3/ltmbxxte/public_html/apidb_connect.php): Failed to open stream: No such file or directory in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[09-Jun-2025 12:23:12 America/Chicago] PHP Fatal error:  Uncaught Error: Failed opening required '/home3/ltmbxxte/public_html/apidb_connect.php' (include_path='.:/opt/cpanel/ea-php83/root/usr/share/pear') in /home3/ltmbxxte/public_html/api/tournament_teams.php:4
+Stack trace:
+#0 {main}
+  thrown in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[09-Jun-2025 12:26:26 America/Chicago] PHP Warning:  require(/home3/ltmbxxte/public_html/api../db_connect.php): Failed to open stream: No such file or directory in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[09-Jun-2025 12:26:26 America/Chicago] PHP Fatal error:  Uncaught Error: Failed opening required '/home3/ltmbxxte/public_html/api../db_connect.php' (include_path='.:/opt/cpanel/ea-php83/root/usr/share/pear') in /home3/ltmbxxte/public_html/api/tournament_teams.php:4
+Stack trace:
+#0 {main}
+  thrown in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[09-Jun-2025 12:26:31 America/Chicago] PHP Warning:  require(/home3/ltmbxxte/public_html/api../db_connect.php): Failed to open stream: No such file or directory in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[09-Jun-2025 12:26:31 America/Chicago] PHP Fatal error:  Uncaught Error: Failed opening required '/home3/ltmbxxte/public_html/api../db_connect.php' (include_path='.:/opt/cpanel/ea-php83/root/usr/share/pear') in /home3/ltmbxxte/public_html/api/tournament_teams.php:4
+Stack trace:
+#0 {main}
+  thrown in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[09-Jun-2025 12:27:13 America/Chicago] PHP Warning:  require(/home3/ltmbxxte/public_html/api../db_connect.php): Failed to open stream: No such file or directory in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[09-Jun-2025 12:27:13 America/Chicago] PHP Fatal error:  Uncaught Error: Failed opening required '/home3/ltmbxxte/public_html/api../db_connect.php' (include_path='.:/opt/cpanel/ea-php83/root/usr/share/pear') in /home3/ltmbxxte/public_html/api/tournament_teams.php:4
+Stack trace:
+#0 {main}
+  thrown in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[09-Jun-2025 12:27:15 America/Chicago] PHP Warning:  require(/home3/ltmbxxte/public_html/api../db_connect.php): Failed to open stream: No such file or directory in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[09-Jun-2025 12:27:15 America/Chicago] PHP Fatal error:  Uncaught Error: Failed opening required '/home3/ltmbxxte/public_html/api../db_connect.php' (include_path='.:/opt/cpanel/ea-php83/root/usr/share/pear') in /home3/ltmbxxte/public_html/api/tournament_teams.php:4
+Stack trace:
+#0 {main}
+  thrown in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[09-Jun-2025 12:27:26 America/Chicago] PHP Warning:  require(/home3/ltmbxxte/public_html/apidb_connect.php): Failed to open stream: No such file or directory in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[09-Jun-2025 12:27:26 America/Chicago] PHP Fatal error:  Uncaught Error: Failed opening required '/home3/ltmbxxte/public_html/apidb_connect.php' (include_path='.:/opt/cpanel/ea-php83/root/usr/share/pear') in /home3/ltmbxxte/public_html/api/tournament_teams.php:4
+Stack trace:
+#0 {main}
+  thrown in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[09-Jun-2025 12:27:28 America/Chicago] PHP Warning:  require(/home3/ltmbxxte/public_html/apidb_connect.php): Failed to open stream: No such file or directory in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[09-Jun-2025 12:27:28 America/Chicago] PHP Fatal error:  Uncaught Error: Failed opening required '/home3/ltmbxxte/public_html/apidb_connect.php' (include_path='.:/opt/cpanel/ea-php83/root/usr/share/pear') in /home3/ltmbxxte/public_html/api/tournament_teams.php:4
+Stack trace:
+#0 {main}
+  thrown in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[09-Jun-2025 12:27:33 America/Chicago] PHP Warning:  require(/home3/ltmbxxte/public_html/apidb_connect.php): Failed to open stream: No such file or directory in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[09-Jun-2025 12:27:33 America/Chicago] PHP Fatal error:  Uncaught Error: Failed opening required '/home3/ltmbxxte/public_html/apidb_connect.php' (include_path='.:/opt/cpanel/ea-php83/root/usr/share/pear') in /home3/ltmbxxte/public_html/api/tournament_teams.php:4
+Stack trace:
+#0 {main}
+  thrown in /home3/ltmbxxte/public_html/api/tournament_teams.php on line 4
+[10-Jun-2025 13:22:40 America/Chicago] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'match_type' in 'field list' in /home3/ltmbxxte/public_html/api/get_match_data.php:86
+Stack trace:
+#0 /home3/ltmbxxte/public_html/api/get_match_data.php(86): mysqli->prepare('SELECT match_id...')
+#1 {main}
+  thrown in /home3/ltmbxxte/public_html/api/get_match_data.php on line 86
+[10-Jun-2025 13:23:28 America/Chicago] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'match_type' in 'field list' in /home3/ltmbxxte/public_html/api/get_match_data.php:86
+Stack trace:
+#0 /home3/ltmbxxte/public_html/api/get_match_data.php(86): mysqli->prepare('SELECT match_id...')
+#1 {main}
+  thrown in /home3/ltmbxxte/public_html/api/get_match_data.php on line 86
+[10-Jun-2025 13:23:54 America/Chicago] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'match_type' in 'field list' in /home3/ltmbxxte/public_html/api/get_match_data.php:86
+Stack trace:
+#0 /home3/ltmbxxte/public_html/api/get_match_data.php(86): mysqli->prepare('SELECT match_id...')
+#1 {main}
+  thrown in /home3/ltmbxxte/public_html/api/get_match_data.php on line 86
+[11-Jun-2025 09:38:30 America/Chicago] Deleting tournament_id = '27'
+[11-Jun-2025 09:38:30 America/Chicago] PHP Fatal error:  Uncaught mysqli_sql_exception: Cannot delete or update a parent row: a foreign key constraint fails (`ltmbxxte_sandbagger`.`tournament_teams`, CONSTRAINT `tournament_teams_ibfk_1` FOREIGN KEY (`tournament_id`) REFERENCES `tournaments` (`tournament_id`)) in /home3/ltmbxxte/public_html/api/tournaments.php:136
+Stack trace:
+#0 /home3/ltmbxxte/public_html/api/tournaments.php(136): mysqli_stmt->execute()
+#1 {main}
+  thrown in /home3/ltmbxxte/public_html/api/tournaments.php on line 136
+[11-Jun-2025 09:41:30 America/Chicago] Deleting tournament_id = '27'
+[11-Jun-2025 16:33:14 America/Chicago] Deleting tournament_id = '26'
+[11-Jun-2025 16:33:19 America/Chicago] Deleting tournament_id = '23'

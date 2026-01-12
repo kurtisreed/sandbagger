@@ -13,6 +13,110 @@ body {
   height: 100vh;
 }
 
+/* Universal User Header Bar */
+#user-header-bar {
+  background: #4F2185;
+  color: white;
+  padding: 0.5rem 1rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.user-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+#user-header-name {
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+/* Hamburger Menu */
+.hamburger-menu-container {
+  position: relative;
+}
+
+#hamburger-menu-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 40px;
+  height: 36px;
+}
+
+#hamburger-menu-btn span {
+  display: block;
+  width: 100%;
+  height: 4px;
+  background: white;
+  border-radius: 3px;
+  transition: all 0.3s;
+}
+
+#hamburger-menu-btn:hover span {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.hamburger-dropdown {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 0.5rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 160px;
+  z-index: 1001;
+  overflow: hidden;
+}
+
+.hamburger-dropdown.show {
+  display: block;
+}
+
+.hamburger-dropdown button {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: white;
+  color: #333;
+  text-align: left;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.hamburger-dropdown button:last-child {
+  border-bottom: none;
+}
+
+.hamburger-dropdown button:hover {
+  background: #f5f5f5;
+}
+
+.hamburger-dropdown button:active {
+  background: #e8e8e8;
+}
+
 header {
   /* Keep header background behind scoreboard */
   background: #2a9d8f;
@@ -364,6 +468,36 @@ main {
 
 .history-back-btn:hover {
   background-color: #d3d3d3;
+}
+
+/* User Dashboard buttons */
+#user-dashboard button[type="button"] {
+  background-color: lightgray;
+  color: #000;
+  border: none;
+  border-radius: 4px;
+  padding: 0.7rem 1rem;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  width: 100%;
+}
+
+#user-dashboard button[type="button"]:hover {
+  background-color: #d3d3d3;
+}
+
+#change-user-btn {
+  width: auto !important;
+  padding: 0.4rem 1rem !important;
+  font-size: 0.9rem !important;
+  background-color: #fff !important;
+  border: 2px solid #4F2185 !important;
+  color: #4F2185 !important;
+}
+
+#change-user-btn:hover {
+  background-color: #f0f0f0 !important;
 }
 
 /* The message below the form for errors or feedback */

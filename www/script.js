@@ -1094,6 +1094,7 @@ function startWolfRound() {
       message.textContent = 'Round created! Loading scorecard...';
 
       // Store round info in sessionStorage
+      sessionStorage.removeItem('quick_round_read_only'); // Clear read-only flag
       sessionStorage.setItem('wolf_match_id', data.match_id);
       sessionStorage.setItem('wolf_tournament_id', data.tournament_id);
       sessionStorage.setItem('wolf_round_id', data.round_id);
@@ -1149,11 +1150,7 @@ function loadWolfScoring() {
 
     const userBar = headerElement.querySelector('#user-bar');
     if (userBar) {
-      userBar.style.display = 'flex';
-      const userName = userBar.querySelector('#user-name');
-      if (userName) {
-        userName.textContent = matchCode ? `Match Code: ${matchCode}` : 'Wolf Round';
-      }
+      userBar.style.display = 'none';
     }
   }
 
@@ -1631,6 +1628,7 @@ function startRabbitRound() {
       message.textContent = 'Round created! Loading scorecard...';
 
       // Store round info in sessionStorage
+      sessionStorage.removeItem('quick_round_read_only'); // Clear read-only flag
       sessionStorage.setItem('rabbit_match_id', data.match_id);
       sessionStorage.setItem('rabbit_tournament_id', data.tournament_id);
       sessionStorage.setItem('rabbit_round_id', data.round_id);
@@ -1686,11 +1684,7 @@ function loadRabbitScoring() {
 
     const userBar = headerElement.querySelector('#user-bar');
     if (userBar) {
-      userBar.style.display = 'flex';
-      const userName = userBar.querySelector('#user-name');
-      if (userName) {
-        userName.textContent = matchCode ? `Match Code: ${matchCode}` : 'Rabbit Round';
-      }
+      userBar.style.display = 'none';
     }
   }
 
@@ -1904,11 +1898,7 @@ function loadWolfScorecardReadOnly() {
     if (tournamentBar) tournamentBar.style.display = 'none';
     const userBar = headerElement.querySelector('#user-bar');
     if (userBar) {
-      userBar.style.display = 'flex';
-      const userName = userBar.querySelector('#user-name');
-      if (userName) {
-        userName.textContent = matchCode ? `Match Code: ${matchCode}` : 'Wolf Round';
-      }
+      userBar.style.display = 'none';
     }
   }
 
@@ -2164,11 +2154,7 @@ function loadRabbitScorecardReadOnly() {
     if (tournamentBar) tournamentBar.style.display = 'none';
     const userBar = headerElement.querySelector('#user-bar');
     if (userBar) {
-      userBar.style.display = 'flex';
-      const userName = userBar.querySelector('#user-name');
-      if (userName) {
-        userName.textContent = matchCode ? `Match Code: ${matchCode}` : 'Rabbit Round';
-      }
+      userBar.style.display = 'none';
     }
   }
 
@@ -2494,6 +2480,7 @@ function startBestBallRound() {
       const teeText = selectedTeeOption.text;
 
       // Store all data in sessionStorage
+      sessionStorage.removeItem('quick_round_read_only'); // Clear read-only flag
       sessionStorage.setItem('best_ball_tournament_id', data.tournament_id);
       sessionStorage.setItem('best_ball_round_id', data.round_id);
       sessionStorage.setItem('best_ball_match_id', data.match_id);
@@ -2554,14 +2541,10 @@ function loadBestBallScoring() {
       tournamentBar.style.display = 'none';
     }
 
-    // Show user bar with match code
+    // Hide user bar
     const userBar = headerElement.querySelector('#user-bar');
     if (userBar) {
-      userBar.style.display = 'flex';
-      const userName = userBar.querySelector('#user-name');
-      if (userName) {
-        userName.textContent = matchCode ? `Match Code: ${matchCode}` : 'Quick Round';
-      }
+      userBar.style.display = 'none';
     }
   }
 
@@ -2864,14 +2847,10 @@ function loadBestBallScorecardReadOnly() {
       tournamentBar.style.display = 'none';
     }
 
-    // Show user bar with match code
+    // Hide user bar
     const userBar = headerElement.querySelector('#user-bar');
     if (userBar) {
-      userBar.style.display = 'flex';
-      const userName = userBar.querySelector('#user-name');
-      if (userName) {
-        userName.textContent = matchCode ? `Match Code: ${matchCode}` : 'Quick Round';
-      }
+      userBar.style.display = 'none';
     }
   }
 
@@ -3194,149 +3173,6 @@ fetch(`${API_BASE_URL}/check_session.php`, {
 
 
 
-document.addEventListener("DOMContentLoaded", function () {
-    const tournamentSelect = document.getElementById('selectTournament');
-    const playerSelect     = document.getElementById('chooseUser');
-    const roundSelect      = document.getElementById('selectRound');
-    const modeSelect       = document.getElementById('selectMode');
-    const roundTypeSelect  = document.getElementById('selectRoundType');
-
-    // Handle mode selection
-    const quickRoundOptions = document.getElementById('quick-round-options');
-    const joinCodeSection = document.getElementById('join-code-section');
-    const quickRoundOptionSelect = document.getElementById('selectQuickRoundOption');
-    const roundHistoryBtn = document.getElementById('round-history-btn');
-
-    modeSelect.addEventListener('change', function() {
-      const selectedMode = this.value;
-
-      if (selectedMode === 'tournament') {
-        // Show tournament mode fields
-        playerSelect.style.display = 'block';
-        roundSelect.style.display = 'block';
-        roundSelect.required = true;
-        quickRoundOptions.style.display = 'none';
-        joinCodeSection.style.display = 'none';
-        roundTypeSelect.style.display = 'none';
-        roundTypeSelect.required = false;
-        roundHistoryBtn.style.display = 'none';
-      } else if (selectedMode === 'quick') {
-        // Show quick round options, hide tournament fields
-        playerSelect.style.display = 'none';
-        roundSelect.style.display = 'none';
-        roundSelect.required = false;
-        quickRoundOptions.style.display = 'block';
-        joinCodeSection.style.display = 'none';
-        roundTypeSelect.style.display = 'none';
-        roundTypeSelect.required = false;
-        roundHistoryBtn.style.display = 'block';
-      } else {
-        // No mode selected, hide everything
-        playerSelect.style.display = 'none';
-        roundSelect.style.display = 'none';
-        roundSelect.required = false;
-        quickRoundOptions.style.display = 'none';
-        joinCodeSection.style.display = 'none';
-        roundTypeSelect.style.display = 'none';
-        roundTypeSelect.required = false;
-        roundHistoryBtn.style.display = 'none';
-      }
-    });
-
-    // Handle quick round option selection (Create New vs Join Existing)
-    quickRoundOptionSelect.addEventListener('change', function() {
-      const selectedOption = this.value;
-
-      if (selectedOption === 'create') {
-        roundTypeSelect.style.display = 'block';
-        roundTypeSelect.required = true;
-        joinCodeSection.style.display = 'none';
-      } else if (selectedOption === 'join') {
-        roundTypeSelect.style.display = 'none';
-        roundTypeSelect.required = false;
-        joinCodeSection.style.display = 'block';
-      } else {
-        roundTypeSelect.style.display = 'none';
-        roundTypeSelect.required = false;
-        joinCodeSection.style.display = 'none';
-      }
-    });
-
-    console.log('About to fetch golfers from:', `${API_BASE_URL}/get_golfers.php`);
-    fetch(`${API_BASE_URL}/get_golfers.php`)
-        .then(response => {
-          console.log('Golfers response status:', response.status);
-          console.log('Golfers response headers:', response.headers.get('content-type'));
-          return response.json();
-        })
-        .then(golfers => {
-          console.log('Golfers data received:', golfers);
-          allGolfers = golfers; // Save for later lookup
-          // Populate the dropdown
-          const playerSelect = document.getElementById('chooseUser');
-          playerSelect.innerHTML = '<option value="">-- Choose Golfer --</option>';
-          golfers.forEach(golfer => {
-            const option = document.createElement('option');
-            option.value = golfer.golfer_id;
-            option.text = `${golfer.first_name} ${golfer.last_name}`;
-            playerSelect.appendChild(option);
-          });
-        })
-        .catch(err => {
-          console.error("Error fetching golfers:", err);
-          console.error("Error details:", err.message);
-        });
-    
-
-    const tid = 1;
-    console.log('About to fetch rounds from:', `${API_BASE_URL}/get_rounds_and_players.php?tournament_id=${tid}`);
-    fetch(`${API_BASE_URL}/get_rounds_and_players.php?tournament_id=${tid}`, {
-        credentials: 'include'
-      })
-      .then(res => {
-        console.log('Rounds response status:', res.status);
-        return res.json();
-      })
-      .then(data => {
-        console.log('Rounds data received:', data);
-        // === players ===
-        playerSelect.innerHTML = '<option value="">-- Choose Golfer --</option>';
-        data.players.forEach(p => {
-          const opt = document.createElement('option');
-          opt.value   = p.golfer_id;
-          opt.text    = p.name;
-          playerSelect.appendChild(opt);
-        });
-    
-        // === rounds ===
-        roundSelect.innerHTML = '<option value="">-- Choose Round --</option>';
-        data.rounds.forEach(r => {
-          const opt = document.createElement('option');
-          opt.value   = r.round_id;
-          opt.text    = `${r.round_name}`;
-          roundSelect.appendChild(opt);
-        });
-      })
-      .catch(err => {
-        console.error('Error loading tournament data:', err);
-    });
-
-
-
-  playerSelect.addEventListener("change", function () {
-    const selectedId = this.value;
-    const selectedGolfer = allGolfers.find(g => g.golfer_id == selectedId);
-
-
-    if (selectedGolfer) {
-      const fullName = `${selectedGolfer.first_name} ${selectedGolfer.last_name}`;
-      sessionStorage.setItem("golfer_id", selectedGolfer.golfer_id);
-      sessionStorage.setItem("golfer_name", fullName);
-      sessionStorage.setItem("team_name", selectedGolfer.team);
-    }
-  });
-  
-});
 
 
 //Shows the user bar with user name and team name
@@ -5265,295 +5101,694 @@ function goBackFromHistory() {
 }
 
 // Authentication handling
+// User Dashboard Functions
+let currentUser = null;
+
+function loadUserDashboard(golfer) {
+  currentUser = golfer;
+  // Save to sessionStorage for page reloads
+  sessionStorage.setItem('current_user', JSON.stringify(golfer));
+
+  const authContainer = document.getElementById('auth-container');
+  const dashboard = document.getElementById('user-dashboard');
+  const userHeaderBar = document.getElementById('user-header-bar');
+  const userHeaderName = document.getElementById('user-header-name');
+
+  authContainer.style.display = 'none';
+  dashboard.style.display = 'block';
+
+  // Show and update user header bar
+  userHeaderBar.style.display = 'block';
+  userHeaderName.textContent = `${golfer.first_name} ${golfer.last_name}`;
+
+  // Load user's tournaments
+  loadUserTournaments(golfer.golfer_id);
+}
+
+function loadUserTournaments(golferId) {
+  const tournamentsList = document.getElementById('tournaments-list');
+  tournamentsList.innerHTML = '<p>Loading...</p>';
+
+  fetch(`${API_BASE_URL}/api/get_user_tournaments.php?golfer_id=${golferId}`, {
+    credentials: 'include'
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.error || !data.tournaments || data.tournaments.length === 0) {
+        tournamentsList.innerHTML = '<p style="color: #666; font-style: italic;">No active tournaments</p>';
+        return;
+      }
+
+      let html = '<div style="display: flex; flex-direction: column; gap: 1rem;">';
+      data.tournaments.forEach(tournament => {
+        html += `
+          <div style="border: 1px solid #ddd; padding: 1rem; border-radius: 8px; background: white;">
+            <h4 style="margin: 0 0 0.5rem 0;">${tournament.tournament_name}</h4>
+            <p style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: #666;">${tournament.start_date} to ${tournament.end_date}</p>
+        `;
+
+        if (tournament.rounds && tournament.rounds.length > 0) {
+          html += '<div style="margin-top: 0.5rem;">';
+          tournament.rounds.forEach(round => {
+            html += `
+              <button class="tournament-round-btn" data-tournament-id="${tournament.tournament_id}" data-round-id="${round.round_id}" data-round-name="${round.round_name}" style="display: block; width: 100%; margin-bottom: 0.5rem; padding: 0.5rem; background: #4F2185; color: white; border: none; border-radius: 4px; cursor: pointer; text-align: left;">
+                ${round.round_name} - ${round.course_name}
+              </button>
+            `;
+          });
+          html += '</div>';
+        } else {
+          html += '<p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: #999;">No rounds scheduled</p>';
+        }
+
+        html += '</div>';
+      });
+      html += '</div>';
+
+      tournamentsList.innerHTML = html;
+
+      // Add click handlers for tournament rounds
+      document.querySelectorAll('.tournament-round-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const roundId = this.dataset.roundId;
+          const tournamentId = this.dataset.tournamentId;
+          const roundName = this.dataset.roundName;
+
+          // Check if this is a Quick Round (Best Ball, Rabbit, Wolf)
+          const isQuickRound = ['Best Ball', 'Rabbit', 'Wolf'].includes(roundName);
+
+          sessionStorage.setItem('selected_golfer_id', currentUser.golfer_id);
+          sessionStorage.setItem('selected_round_id', roundId);
+
+          if (isQuickRound) {
+            // Load Quick Round view
+            loadQuickRoundFromTournament(tournamentId, roundName);
+          } else {
+            // Load regular tournament round
+            loadTournamentRound(roundId, tournamentId);
+          }
+        });
+      });
+    })
+    .catch(err => {
+      console.error('Error loading tournaments:', err);
+      tournamentsList.innerHTML = '<p style="color: red;">Error loading tournaments</p>';
+    });
+}
+
+function loadTournamentHistory(golferId) {
+  const dashboardContainer = document.getElementById('user-dashboard');
+  const historyContainer = document.getElementById('tournament-history-container');
+  const historyContent = document.getElementById('tournament-history-content');
+
+  // Hide dashboard, show history
+  dashboardContainer.style.display = 'none';
+  historyContainer.style.display = 'block';
+  historyContent.innerHTML = '<p>Loading...</p>';
+
+  // Fetch ALL tournaments for this user
+  fetch(`${API_BASE_URL}/api/get_all_user_tournaments.php?golfer_id=${golferId}`, {
+    credentials: 'include'
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.error || !data.tournaments || data.tournaments.length === 0) {
+        historyContent.innerHTML = '<p style="color: #666; font-style: italic;">No tournaments found</p>';
+        return;
+      }
+
+      let html = '<div style="display: flex; flex-direction: column; gap: 1rem;">';
+
+      data.tournaments.forEach(tournament => {
+        // Check if this is a Quick Round (Best Ball, Rabbit, Wolf)
+        const isQuickRound = tournament.rounds && tournament.rounds.length > 0 &&
+                            ['Best Ball', 'Rabbit', 'Wolf'].includes(tournament.rounds[0].round_name);
+
+        const cardClass = isQuickRound ? 'tournament-history-quick-round' : 'tournament-history-tournament';
+
+        html += `
+          <div class="${cardClass}"
+               data-tournament-id="${tournament.tournament_id}"
+               data-is-quick-round="${isQuickRound}"
+               data-round-name="${tournament.rounds && tournament.rounds[0] ? tournament.rounds[0].round_name : ''}"
+               style="border: 1px solid #ddd; padding: 1rem; border-radius: 8px; background: white; cursor: pointer; transition: all 0.2s;"
+               onmouseover="this.style.boxShadow='0 4px 8px rgba(0,0,0,0.1)'; this.style.transform='translateY(-2px)';"
+               onmouseout="this.style.boxShadow='none'; this.style.transform='translateY(0)';">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+              <h4 style="margin: 0 0 0.5rem 0;">${tournament.tournament_name}</h4>
+              ${isQuickRound ? '<span style="background: #FFC62F; color: black; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.85rem;">Quick Round</span>' : ''}
+            </div>
+            <p style="margin: 0; font-size: 0.9rem; color: #666;">${tournament.start_date} to ${tournament.end_date}</p>
+          </div>
+        `;
+      });
+
+      html += '</div>';
+      historyContent.innerHTML = html;
+
+      // Add click handlers for tournament cards
+      document.querySelectorAll('.tournament-history-quick-round, .tournament-history-tournament').forEach(card => {
+        card.addEventListener('click', function() {
+          const tournamentId = this.dataset.tournamentId;
+          const isQuickRound = this.dataset.isQuickRound === 'true';
+          const roundName = this.dataset.roundName;
+
+          if (isQuickRound) {
+            // Load quick round read-only view
+            loadQuickRoundFromTournament(tournamentId, roundName);
+          } else {
+            // Load full tournament view
+            loadFullTournamentView(tournamentId);
+          }
+        });
+      });
+    })
+    .catch(err => {
+      console.error('Error loading tournament history:', err);
+      historyContent.innerHTML = '<p style="color: red;">Error loading tournament history</p>';
+    });
+}
+
+function loadQuickRoundFromTournament(tournamentId, roundName) {
+  // Determine which container was visible (dashboard or history)
+  const dashboardWasVisible = document.getElementById('user-dashboard').style.display !== 'none';
+  const historyWasVisible = document.getElementById('tournament-history-container').style.display !== 'none';
+
+  // Hide dashboard and tournament history
+  document.getElementById('user-dashboard').style.display = 'none';
+  document.getElementById('tournament-history-container').style.display = 'none';
+
+  // Find the match for this tournament and load the appropriate view
+  fetch(`${API_BASE_URL}/api/get_match_by_tournament.php?tournament_id=${tournamentId}`, {
+    credentials: 'include'
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.match_id) {
+        const isFinalized = parseInt(data.finalized) === 1;
+
+        if (roundName === 'Best Ball') {
+          sessionStorage.setItem('best_ball_match_id', data.match_id);
+          sessionStorage.setItem('best_ball_tournament_id', tournamentId);
+
+          if (isFinalized) {
+            // Load read-only version for finalized matches
+            sessionStorage.setItem('quick_round_read_only', 'true');
+            loadBestBallScorecardReadOnly();
+          } else {
+            // Load editable version for active matches
+            sessionStorage.removeItem('quick_round_read_only');
+            loadBestBallScoring();
+          }
+        } else if (roundName === 'Rabbit') {
+          sessionStorage.setItem('rabbit_match_id', data.match_id);
+          sessionStorage.setItem('rabbit_tournament_id', tournamentId);
+
+          if (isFinalized) {
+            sessionStorage.setItem('quick_round_read_only', 'true');
+            loadRabbitScorecardReadOnly();
+          } else {
+            sessionStorage.removeItem('quick_round_read_only');
+            loadRabbitScoring();
+          }
+        } else if (roundName === 'Wolf') {
+          sessionStorage.setItem('wolf_match_id', data.match_id);
+          sessionStorage.setItem('wolf_tournament_id', tournamentId);
+
+          if (isFinalized) {
+            sessionStorage.setItem('quick_round_read_only', 'true');
+            loadWolfScorecardReadOnly();
+          } else {
+            sessionStorage.removeItem('quick_round_read_only');
+            loadWolfScoring();
+          }
+        }
+      } else {
+        alert('Could not load match data');
+        // Restore whichever container was visible before
+        if (dashboardWasVisible) {
+          document.getElementById('user-dashboard').style.display = 'block';
+        } else if (historyWasVisible) {
+          document.getElementById('tournament-history-container').style.display = 'block';
+        }
+      }
+    })
+    .catch(err => {
+      console.error('Error loading quick round:', err);
+      alert('Error loading quick round');
+      // Restore whichever container was visible before
+      if (dashboardWasVisible) {
+        document.getElementById('user-dashboard').style.display = 'block';
+      } else if (historyWasVisible) {
+        document.getElementById('tournament-history-container').style.display = 'block';
+      }
+    });
+}
+
+function loadFullTournamentView(tournamentId) {
+  // Hide tournament history
+  document.getElementById('tournament-history-container').style.display = 'none';
+
+  // TODO: Load full tournament view (leaderboard, scorecards, etc.)
+  console.log('Load full tournament:', tournamentId);
+  alert('Full tournament view coming soon!');
+  document.getElementById('tournament-history-container').style.display = 'block';
+}
+
+function loadTournamentRound(roundId, tournamentId) {
+  // Hide dashboard and other containers
+  document.getElementById('user-dashboard').style.display = 'none';
+  document.getElementById('round-history-container').style.display = 'none';
+  document.getElementById('best-ball-setup').style.display = 'none';
+  document.getElementById('tournament-history-container').style.display = 'none';
+  document.getElementById('edit-user-container').style.display = 'none';
+
+  // Store tournament and round info in sessionStorage
+  sessionStorage.setItem('selected_round_id', roundId);
+  sessionStorage.setItem('selected_tournament_id', tournamentId);
+  sessionStorage.setItem('golfer_id', currentUser.golfer_id);
+
+  // Show the app content
+  document.getElementById('app-content').style.display = 'block';
+
+  // Set the my-match tab as active
+  document.querySelectorAll('.tabs button').forEach(btn => btn.classList.remove('active'));
+  const myMatchBtn = document.querySelector('button[data-page="my-match"]');
+  if (myMatchBtn) {
+    myMatchBtn.classList.add('active');
+  }
+
+  // Load the my-match page
+  loadPage('my-match');
+}
+
+function loadEditUserPage() {
+  const editUserContainer = document.getElementById('edit-user-container');
+  const editUserMessage = document.getElementById('edit-user-message');
+
+  // Hide other containers
+  document.getElementById('user-dashboard').style.display = 'none';
+  document.getElementById('app-content').style.display = 'none';
+  document.getElementById('round-history-container').style.display = 'none';
+  document.getElementById('tournament-history-container').style.display = 'none';
+  document.getElementById('best-ball-setup').style.display = 'none';
+
+  // Show edit user container
+  editUserContainer.style.display = 'block';
+  editUserMessage.textContent = '';
+  editUserMessage.style.color = '';
+
+  // Pre-fill form with current user data
+  document.getElementById('edit-first-name').value = currentUser.first_name || '';
+  document.getElementById('edit-last-name').value = currentUser.last_name || '';
+  document.getElementById('edit-handicap').value = currentUser.handicap || 0;
+  document.getElementById('edit-email').value = currentUser.email || '';
+}
+
+function showQuickRoundTypeSelector() {
+  // Hide dashboard
+  document.getElementById('user-dashboard').style.display = 'none';
+
+  // Show round type selector
+  document.getElementById('quick-round-type-selector').style.display = 'block';
+
+  // Reset the dropdown
+  document.getElementById('round-type-select').value = '';
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const authForm = document.getElementById('auth-form');
-  const appContent = document.getElementById('app-content');
   const authMessage = document.getElementById('auth-message');
+  const selectUser = document.getElementById('selectUser');
+  const newGolferForm = document.getElementById('new-golfer-form');
+
+  // Set up hamburger menu event listeners (needed for all views)
+  const hamburgerBtn = document.getElementById('hamburger-menu-btn');
+  const hamburgerDropdown = document.getElementById('hamburger-dropdown');
+
+  hamburgerBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    hamburgerDropdown.classList.toggle('show');
+  });
+
+  // Close menu when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!hamburgerDropdown.contains(e.target) && !hamburgerBtn.contains(e.target)) {
+      hamburgerDropdown.classList.remove('show');
+    }
+  });
+
+  // Menu option: Dashboard
+  document.getElementById('menu-dashboard').addEventListener('click', () => {
+    hamburgerDropdown.classList.remove('show');
+    // Hide other containers
+    document.getElementById('app-content').style.display = 'none';
+    document.getElementById('round-history-container').style.display = 'none';
+    document.getElementById('best-ball-setup').style.display = 'none';
+    document.getElementById('tournament-history-container').style.display = 'none';
+    document.getElementById('edit-user-container').style.display = 'none';
+    // Show dashboard
+    document.getElementById('user-dashboard').style.display = 'block';
+  });
+
+  // Menu option: My History
+  document.getElementById('menu-my-history').addEventListener('click', () => {
+    hamburgerDropdown.classList.remove('show');
+    if (currentUser) {
+      loadTournamentHistory(currentUser.golfer_id);
+    }
+  });
+
+  // Menu option: Edit User
+  document.getElementById('menu-edit-user').addEventListener('click', () => {
+    hamburgerDropdown.classList.remove('show');
+    if (currentUser) {
+      loadEditUserPage();
+    }
+  });
+
+  // Menu option: Logout
+  document.getElementById('menu-logout').addEventListener('click', () => {
+    hamburgerDropdown.classList.remove('show');
+    document.getElementById('user-dashboard').style.display = 'none';
+    document.getElementById('app-content').style.display = 'none';
+    document.getElementById('round-history-container').style.display = 'none';
+    document.getElementById('best-ball-setup').style.display = 'none';
+    document.getElementById('tournament-history-container').style.display = 'none';
+    document.getElementById('edit-user-container').style.display = 'none';
+    document.getElementById('user-header-bar').style.display = 'none';
+    document.getElementById('auth-container').style.display = 'flex';
+    document.getElementById('auth-form').reset();
+    newGolferForm.style.display = 'none';
+    sessionStorage.clear();
+    currentUser = null;
+  });
 
   // Check for existing Best Ball, Rabbit, or Wolf session
   const existingBestBallMatchId = sessionStorage.getItem('best_ball_match_id');
   const existingRabbitMatchId = sessionStorage.getItem('rabbit_match_id');
   const existingWolfMatchId = sessionStorage.getItem('wolf_match_id');
+  const isReadOnly = sessionStorage.getItem('quick_round_read_only') === 'true';
+
+  // Restore currentUser if available
+  const savedUser = sessionStorage.getItem('current_user');
+  if (savedUser) {
+    currentUser = JSON.parse(savedUser);
+  }
 
   if (existingBestBallMatchId) {
-    // Restore Best Ball session
     document.getElementById('auth-container').style.display = 'none';
-    loadBestBallScoring();
-    return; // Exit early, skip form setup
+
+    // Show user header if currentUser exists (loaded from dashboard)
+    if (currentUser) {
+      document.getElementById('user-header-bar').style.display = 'block';
+      document.getElementById('user-header-name').textContent = `${currentUser.first_name} ${currentUser.last_name}`;
+    }
+
+    if (isReadOnly) {
+      loadBestBallScorecardReadOnly();
+    } else {
+      loadBestBallScoring();
+    }
+    return;
   }
 
   if (existingRabbitMatchId) {
-    // Restore Rabbit session
     document.getElementById('auth-container').style.display = 'none';
-    loadRabbitScoring();
-    return; // Exit early, skip form setup
+
+    // Show user header if currentUser exists (loaded from dashboard)
+    if (currentUser) {
+      document.getElementById('user-header-bar').style.display = 'block';
+      document.getElementById('user-header-name').textContent = `${currentUser.first_name} ${currentUser.last_name}`;
+    }
+
+    if (isReadOnly) {
+      loadRabbitScorecardReadOnly();
+    } else {
+      loadRabbitScoring();
+    }
+    return;
   }
 
   if (existingWolfMatchId) {
-    // Restore Wolf session
     document.getElementById('auth-container').style.display = 'none';
-    loadWolfScoring();
-    return; // Exit early, skip form setup
+
+    // Show user header if currentUser exists (loaded from dashboard)
+    if (currentUser) {
+      document.getElementById('user-header-bar').style.display = 'block';
+      document.getElementById('user-header-name').textContent = `${currentUser.first_name} ${currentUser.last_name}`;
+    }
+
+    if (isReadOnly) {
+      loadWolfScorecardReadOnly();
+    } else {
+      loadWolfScoring();
+    }
+    return;
   }
 
-    // Add event listeners for Round History functionality
-    const roundHistoryBtn = document.getElementById('round-history-btn');
-    const backFromHistoryBtn = document.getElementById('back-from-history-btn');
-
-    if (roundHistoryBtn) {
-      roundHistoryBtn.addEventListener('click', () => {
-        loadQuickRoundHistory();
+  // Load golfers into dropdown
+  fetch(`${API_BASE_URL}/get_golfers.php`)
+    .then(response => response.json())
+    .then(golfers => {
+      golfers.forEach(golfer => {
+        const option = document.createElement('option');
+        option.value = golfer.golfer_id;
+        option.textContent = `${golfer.first_name} ${golfer.last_name}`;
+        option.dataset.golfer = JSON.stringify(golfer);
+        selectUser.appendChild(option);
       });
+    })
+    .catch(err => console.error('Error loading golfers:', err));
+
+  // Handle user selection
+  selectUser.addEventListener('change', function() {
+    if (this.value === 'new') {
+      newGolferForm.style.display = 'block';
+    } else {
+      newGolferForm.style.display = 'none';
+    }
+  });
+
+  // Handle auth form submission
+  authForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    authMessage.textContent = '';
+
+    const selectedValue = selectUser.value;
+
+    if (!selectedValue) {
+      authMessage.textContent = 'Please select a golfer';
+      return;
     }
 
-    if (backFromHistoryBtn) {
-      backFromHistoryBtn.addEventListener('click', () => {
-        goBackFromHistory();
-      });
-    }
+    if (selectedValue === 'new') {
+      // Create new golfer
+      const firstName = document.getElementById('new-golfer-first-name').value.trim();
+      const lastName = document.getElementById('new-golfer-last-name').value.trim();
+      const handicap = document.getElementById('new-golfer-handicap').value;
+      const email = document.getElementById('new-golfer-email').value.trim();
 
-    authForm.addEventListener('submit', (event) => {
-      event.preventDefault();
-
-      const selectedMode = document.getElementById('selectMode').value;
-
-      // Check which mode was selected
-      if (selectedMode === 'quick') {
-        const quickRoundOption = document.getElementById('selectQuickRoundOption').value;
-
-        if (!quickRoundOption) {
-          authMessage.textContent = 'Please choose Create New or Join Existing.';
-          return;
-        }
-
-        // Handle Join Existing
-        if (quickRoundOption === 'join') {
-          const joinCode = document.getElementById('join-code-input').value.trim();
-
-          if (!joinCode || joinCode.length !== 4 || isNaN(joinCode)) {
-            authMessage.textContent = 'Please enter a valid 4-digit code.';
-            return;
-          }
-
-          authMessage.textContent = 'Finding match...';
-
-          // Fetch match by code
-          fetch(`${API_BASE_URL}/api/get_match_by_code.php?code=${joinCode}`, {
-            credentials: 'include'
-          })
-          .then(res => res.json())
-          .then(data => {
-            if (data.success && data.match_id) {
-              // Check round_name to determine match type
-              const roundName = data.round_name || 'Best Ball';
-
-              document.getElementById('auth-container').style.display = 'none';
-
-              if (roundName === 'Rabbit') {
-                // Store Rabbit match info
-                sessionStorage.setItem('rabbit_match_id', data.match_id);
-                sessionStorage.setItem('rabbit_tournament_id', data.tournament_id);
-                sessionStorage.setItem('rabbit_round_id', data.round_id);
-                sessionStorage.setItem('rabbit_match_code', joinCode);
-                loadRabbitScoring();
-              } else if (roundName === 'Wolf') {
-                // Store Wolf match info
-                sessionStorage.setItem('wolf_match_id', data.match_id);
-                sessionStorage.setItem('wolf_tournament_id', data.tournament_id);
-                sessionStorage.setItem('wolf_round_id', data.round_id);
-                sessionStorage.setItem('wolf_match_code', joinCode);
-                loadWolfScoring();
-              } else {
-                // Default to Best Ball
-                sessionStorage.setItem('best_ball_match_id', data.match_id);
-                sessionStorage.setItem('best_ball_tournament_id', data.tournament_id);
-                sessionStorage.setItem('best_ball_round_id', data.round_id);
-                sessionStorage.setItem('best_ball_match_code', joinCode);
-                loadBestBallScoring();
-              }
-            } else {
-              authMessage.textContent = 'Invalid code. Please try again.';
-            }
-          })
-          .catch(err => {
-            console.error('Error joining match:', err);
-            authMessage.textContent = 'Error joining match. Please try again.';
-          });
-
-          return;
-        }
-
-        // Handle Create New
-        const roundType = document.getElementById('selectRoundType').value;
-
-        if (!roundType) {
-          authMessage.textContent = 'Please select a round type.';
-          return;
-        }
-
-        // Store the round type in session storage
-        sessionStorage.setItem('quick_round_type', roundType);
-
-        // Handle different round types
-        if (roundType === 'best-ball') {
-          // Hide auth container and show best ball setup
-          document.getElementById('auth-container').style.display = 'none';
-          loadBestBallSetup();
-          return;
-        }
-
-        if (roundType === 'rabbit') {
-          // Hide auth container and show rabbit setup
-          document.getElementById('auth-container').style.display = 'none';
-          loadRabbitSetup();
-          return;
-        }
-
-        if (roundType === 'wolf') {
-          // Hide auth container and show wolf setup
-          document.getElementById('auth-container').style.display = 'none';
-          loadWolfSetup();
-          return;
-        }
-      }
-
-      // Tournament mode handling (existing logic)
-      const golferId = document.getElementById('chooseUser').value;
-      const roundId = document.getElementById('selectRound').value;
-      const roundSelect = document.getElementById('selectRound');
-
-      const tournamentId = 1;
-      sessionStorage.setItem('selected_tournament_id', tournamentId);
-
-
-      if (!golferId || !roundId || !tournamentId) {
-        authMessage.textContent = 'Please select a user, tournament, and round.';
+      if (!firstName || !lastName) {
+        authMessage.textContent = 'Please enter first and last name';
         return;
       }
-    
-      const formData = new FormData();
-      formData.append('golfer_id', golferId);
-      formData.append('round_id', roundId);
-      formData.append('tournament_id', tournamentId);
 
-    
-      fetch(`${API_BASE_URL}/authenticate.php`, {
+      authMessage.textContent = 'Creating golfer...';
+
+      fetch(`${API_BASE_URL}/api/create_golfer.php`, {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          first_name: firstName,
+          last_name: lastName,
+          handicap: parseFloat(handicap) || 0,
+          email: email || null
+        }),
         credentials: 'include'
       })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          startSessionHeartbeat();
-          appContent.style.display = 'block';
-          document.getElementById('auth-container').style.display = 'none';
-          tournamentName = data.tournament_name;
-          roundName = data.round_name;
-          teamId = data.team_id;
-          tournamentHandicapPct = data.tournament_handicap_pct;
-          
-          const topBarInfo = tournamentName + '<br>' + roundName;
-          document.getElementById('tournament-name').innerHTML = topBarInfo;
-          fetch(`${API_BASE_URL}/get_match_by_round.php`, { credentials: 'include' })
-            .then(res => res.json())
-            .then(data => {
-              holeInfo = data.holes;
-              if (Array.isArray(data.match) && data.match.length > 0) {
-                const first = data.match[0];
-                courses = {
-                  course_name: first.course_name,
-                  par_total: first.par_total,
-                  tees: first.tees,
-                  slope: first.slope,
-                  rating: first.rating
-                };
-              }
-            });
-          fetch(`${API_BASE_URL}/api/tournament_teams.php?tournament_id=${tournamentId}&_=${Date.now()}`, {
-              method: 'GET',
-              credentials: 'include'
-            })
-            .then(res => res.json())
-            .then(data => {
-              if (data.error) {
-                console.error("Error loading teams:", data.error);
-                return;
-              }
-              
-
-
-              data.forEach(team => {
-                if (team.team_id === parseInt(teamId)) {
-                  primaryTeamName = team.name;
-                  primaryTeamColor = team.color_hex;
-                  primaryTeamId = team.team_id;
-                } else {
-                  secondaryTeamName = team.name;
-                  secondaryTeamColor = team.color_hex;
-                  secondaryTeamId = team.team_id;
-                }
-              });
-
-              assignCSSColors(primaryTeamColor, secondaryTeamColor);
-              sessionStorage.setItem('primary_team_name', primaryTeamName);
-              sessionStorage.setItem('primary_team_color', primaryTeamColor);
-              sessionStorage.setItem('secondary_team_name', secondaryTeamName);
-              sessionStorage.setItem('secondary_team_color', secondaryTeamColor);
-              sessionStorage.setItem('primary_team_id', primaryTeamId);
-              sessionStorage.setItem('secondary_team_id', secondaryTeamId);
-
-              showUserBar(primaryTeamName, primaryTeamColor);
-
-              // Remove active class from all tabs
-              document.querySelectorAll('.tabs button').forEach(btn => btn.classList.remove('active'));
-
-              // Find the my-match button
-              const myMatchBtn = document.querySelector('button[data-page="my-match"]');
-              if (myMatchBtn) {
-                myMatchBtn.classList.add('active');
-              }
-
-              // Load the my-match page content
-              loadPage('my-match');
-            })
-
-        } else {
-          authMessage.textContent = 'Invalid PIN or missing info.';
-        }
-        document.addEventListener("DOMContentLoaded", function() {
-          // Remove active class from all tabs
-          document.querySelectorAll('.tabs button').forEach(btn => btn.classList.remove('active'));
-
-          // Find the my-match button
-          const myMatchBtn = document.querySelector('button[data-page="my-match"]');
-          if (myMatchBtn) {
-            myMatchBtn.classList.add('active');
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            const golfer = {
+              golfer_id: data.golfer_id,
+              first_name: firstName,
+              last_name: lastName,
+              handicap: parseFloat(handicap) || 0,
+              email: email || ''
+            };
+            loadUserDashboard(golfer);
+          } else {
+            authMessage.textContent = 'Error creating golfer: ' + (data.error || 'Unknown error');
           }
-
-          // Load the my-match page content
-          loadPage('my-match');
+        })
+        .catch(err => {
+          console.error('Error creating golfer:', err);
+          authMessage.textContent = 'Error creating golfer. Please try again.';
         });
-      });
+    } else {
+      // Load existing golfer
+      const selectedOption = selectUser.options[selectUser.selectedIndex];
+      const golfer = JSON.parse(selectedOption.dataset.golfer);
+      loadUserDashboard(golfer);
+    }
+  });
 
+  document.getElementById('create-quick-round-btn').addEventListener('click', () => {
+    document.getElementById('user-dashboard').style.display = 'none';
+    // Show round type selector
+    showQuickRoundTypeSelector();
+  });
+
+  // Round History back button
+  const backFromHistoryBtn = document.getElementById('back-from-history-btn');
+  if (backFromHistoryBtn) {
+    backFromHistoryBtn.addEventListener('click', () => {
+      sessionStorage.removeItem('best_ball_match_id');
+      sessionStorage.removeItem('rabbit_match_id');
+      sessionStorage.removeItem('wolf_match_id');
+      document.getElementById('round-history-container').style.display = 'none';
+      if (currentUser) {
+        document.getElementById('user-dashboard').style.display = 'block';
+      } else {
+        document.getElementById('auth-container').style.display = 'flex';
+      }
     });
+  }
 
+  // Tournament History back button
+  const backFromTournamentHistoryBtn = document.getElementById('back-from-tournament-history-btn');
+  if (backFromTournamentHistoryBtn) {
+    backFromTournamentHistoryBtn.addEventListener('click', () => {
+      document.getElementById('tournament-history-container').style.display = 'none';
+      if (currentUser) {
+        document.getElementById('user-dashboard').style.display = 'block';
+      } else {
+        document.getElementById('auth-container').style.display = 'flex';
+      }
+    });
+  }
+
+  // Edit User back button
+  const backFromEditUserBtn = document.getElementById('back-from-edit-user-btn');
+  if (backFromEditUserBtn) {
+    backFromEditUserBtn.addEventListener('click', () => {
+      document.getElementById('edit-user-container').style.display = 'none';
+      if (currentUser) {
+        document.getElementById('user-dashboard').style.display = 'block';
+      } else {
+        document.getElementById('auth-container').style.display = 'flex';
+      }
+    });
+  }
+
+  // Edit User form submission
+  const editUserForm = document.getElementById('edit-user-form');
+  if (editUserForm) {
+    editUserForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const editUserMessage = document.getElementById('edit-user-message');
+
+      const firstName = document.getElementById('edit-first-name').value.trim();
+      const lastName = document.getElementById('edit-last-name').value.trim();
+      const handicap = document.getElementById('edit-handicap').value;
+      const email = document.getElementById('edit-email').value.trim();
+
+      if (!firstName || !lastName) {
+        editUserMessage.textContent = 'First name and last name are required';
+        editUserMessage.style.color = 'red';
+        return;
+      }
+
+      editUserMessage.textContent = 'Updating...';
+      editUserMessage.style.color = '#666';
+
+      // Update user via API
+      fetch(`${API_BASE_URL}/api/update_golfer.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          golfer_id: currentUser.golfer_id,
+          first_name: firstName,
+          last_name: lastName,
+          handicap: parseFloat(handicap) || 0,
+          email: email || null
+        }),
+        credentials: 'include'
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            // Update current user and UI
+            currentUser.first_name = firstName;
+            currentUser.last_name = lastName;
+            currentUser.handicap = parseFloat(handicap) || 0;
+            currentUser.email = email || '';
+            document.getElementById('user-header-name').textContent = `${firstName} ${lastName}`;
+
+            editUserMessage.textContent = 'Profile updated successfully!';
+            editUserMessage.style.color = '#4CAF50';
+
+            // Return to dashboard after 1.5 seconds
+            setTimeout(() => {
+              document.getElementById('edit-user-container').style.display = 'none';
+              document.getElementById('user-dashboard').style.display = 'block';
+            }, 1500);
+          } else {
+            editUserMessage.textContent = 'Error: ' + (data.error || 'Unknown error');
+            editUserMessage.style.color = 'red';
+          }
+        })
+        .catch(err => {
+          console.error('Error updating user:', err);
+          editUserMessage.textContent = 'Error updating profile. Please try again.';
+          editUserMessage.style.color = 'red';
+        });
+    });
+  }
+
+  // Round Type Selector event handlers
+  const continueRoundTypeBtn = document.getElementById('continue-round-type-btn');
+  if (continueRoundTypeBtn) {
+    continueRoundTypeBtn.addEventListener('click', () => {
+      const roundTypeSelect = document.getElementById('round-type-select');
+      const selectedType = roundTypeSelect.value;
+
+      if (!selectedType) {
+        alert('Please select a round type');
+        return;
+      }
+
+      // Hide round type selector
+      document.getElementById('quick-round-type-selector').style.display = 'none';
+
+      // Load the appropriate setup
+      if (selectedType === 'best-ball') {
+        loadBestBallSetup();
+      } else if (selectedType === 'rabbit') {
+        loadRabbitSetup();
+      } else if (selectedType === 'wolf') {
+        loadWolfSetup();
+      }
+    });
+  }
+
+  const cancelRoundTypeBtn = document.getElementById('cancel-round-type-btn');
+  if (cancelRoundTypeBtn) {
+    cancelRoundTypeBtn.addEventListener('click', () => {
+      document.getElementById('quick-round-type-selector').style.display = 'none';
+      document.getElementById('user-dashboard').style.display = 'block';
+    });
+  }
+
+  const backFromRoundTypeBtn = document.getElementById('back-from-round-type-btn');
+  if (backFromRoundTypeBtn) {
+    backFromRoundTypeBtn.addEventListener('click', () => {
+      document.getElementById('quick-round-type-selector').style.display = 'none';
+      document.getElementById('user-dashboard').style.display = 'block';
+    });
+  }
 });
-
-function assignCSSColors(primaryColor, secondaryColor) {
-  document.documentElement.style.setProperty('--primary-team-color', primaryColor);
-  document.documentElement.style.setProperty('--secondary-team-color', secondaryColor);
-
-  const primaryContrastColor = pickContrastColorFromHex(primaryTeamColor);
-  const secondaryContrastColor = pickContrastColorFromHex(secondaryTeamColor);
-
-  document.documentElement.style.setProperty('--secondary-text-color', secondaryContrastColor);
-  document.documentElement.style.setProperty('--primary-text-color', primaryContrastColor);
-  
-  return;
-}
-
-
 
 //logout button
 document.getElementById('logout-button').addEventListener('click', () => {
@@ -5568,13 +5803,18 @@ document.getElementById('logout-button').addEventListener('click', () => {
     document.getElementById('app-content').style.display = 'none';
     document.getElementById('round-history-container').style.display = 'none';
     document.getElementById('best-ball-setup').style.display = 'none';
+    document.getElementById('user-dashboard').style.display = 'none';
+    document.getElementById('tournament-history-container').style.display = 'none';
+    document.getElementById('edit-user-container').style.display = 'none';
+    document.getElementById('user-header-bar').style.display = 'none';
 
     // Show auth container
     document.getElementById('auth-container').style.display = 'flex';
 
-    // Reset form
+    // Reset form and user
     document.getElementById('auth-form').reset();
-    document.getElementById('selectMode').dispatchEvent(new Event('change'));
+    document.getElementById('new-golfer-form').style.display = 'none';
+    currentUser = null;
   });
 });
 
