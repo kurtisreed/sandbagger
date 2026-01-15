@@ -97,10 +97,17 @@ let tournamentHandicapPct = null;
 let primaryTeamName, primaryTeamColor, secondaryTeamName, secondaryTeamColor, primaryTeamId, secondaryTeamId;
 let sessionHeartbeatInterval = null;
 
-// Function to assign CSS color variables for team colors
+// Function to assign CSS color variables for team colors and calculate text colors
 function assignCSSColors(primary, secondary) {
-  document.documentElement.style.setProperty('--primary-team-color', primary || '#4F2683');
-  document.documentElement.style.setProperty('--secondary-team-color', secondary || '#FFC62F');
+  const primaryColor = primary || '#4F2683';
+  const secondaryColor = secondary || '#FFC62F';
+
+  document.documentElement.style.setProperty('--primary-team-color', primaryColor);
+  document.documentElement.style.setProperty('--secondary-team-color', secondaryColor);
+
+  // Calculate and set text colors for contrast
+  document.documentElement.style.setProperty('--primary-text-color', pickContrastColorFromHex(primaryColor));
+  document.documentElement.style.setProperty('--secondary-text-color', pickContrastColorFromHex(secondaryColor));
 }
 
 // Best Ball setup
@@ -5297,39 +5304,78 @@ function loadTournamentHistory(golferId) {
 
         const cardClass = isQuickRound ? 'tournament-history-quick-round' : 'tournament-history-tournament';
 
-        html += `
-          <div class="${cardClass}"
-               data-tournament-id="${tournament.tournament_id}"
-               data-is-quick-round="${isQuickRound}"
-               data-round-name="${tournament.rounds && tournament.rounds[0] ? tournament.rounds[0].round_name : ''}"
-               style="border: 1px solid #ddd; padding: 1rem; border-radius: 8px; background: white; cursor: pointer; transition: all 0.2s;"
-               onmouseover="this.style.boxShadow='0 4px 8px rgba(0,0,0,0.1)'; this.style.transform='translateY(-2px)';"
-               onmouseout="this.style.boxShadow='none'; this.style.transform='translateY(0)';">
-            <div style="display: flex; justify-content: space-between; align-items: start;">
-              <h4 style="margin: 0 0 0.5rem 0;">${tournament.tournament_name}</h4>
-              ${isQuickRound ? '<span style="background: #FFC62F; color: black; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.85rem;">Quick Round</span>' : ''}
+        if (isQuickRound) {
+          // Quick Round - single clickable card
+          html += `
+            <div class="${cardClass}"
+                 data-tournament-id="${tournament.tournament_id}"
+                 data-is-quick-round="true"
+                 data-round-name="${tournament.rounds[0].round_name}"
+                 style="border: 1px solid #ddd; padding: 1rem; border-radius: 8px; background: white; cursor: pointer; transition: all 0.2s;"
+                 onmouseover="this.style.boxShadow='0 4px 8px rgba(0,0,0,0.1)'; this.style.transform='translateY(-2px)';"
+                 onmouseout="this.style.boxShadow='none'; this.style.transform='translateY(0)';">
+              <div style="display: flex; justify-content: space-between; align-items: start;">
+                <h4 style="margin: 0 0 0.5rem 0;">${tournament.tournament_name}</h4>
+                <span style="background: #FFC62F; color: black; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.85rem;">Quick Round</span>
+              </div>
+              <p style="margin: 0; font-size: 0.9rem; color: #666;">${tournament.start_date} to ${tournament.end_date}</p>
             </div>
-            <p style="margin: 0; font-size: 0.9rem; color: #666;">${tournament.start_date} to ${tournament.end_date}</p>
-          </div>
-        `;
+          `;
+        } else {
+          // Regular tournament - show round buttons
+          html += `
+            <div style="border: 1px solid #ddd; padding: 1rem; border-radius: 8px; background: white;">
+              <h4 style="margin: 0 0 0.5rem 0;">${tournament.tournament_name}</h4>
+              <p style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: #666;">${tournament.start_date} to ${tournament.end_date}</p>
+          `;
+
+          if (tournament.rounds && tournament.rounds.length > 0) {
+            html += '<div style="margin-top: 0.5rem;">';
+            tournament.rounds.forEach(round => {
+              html += `
+                <button class="tournament-round-btn" data-tournament-id="${tournament.tournament_id}" data-round-id="${round.round_id}" data-round-name="${round.round_name}" style="display: block; width: 100%; margin-bottom: 0.5rem; padding: 0.5rem; background: #4F2185; color: white; border: none; border-radius: 4px; cursor: pointer; text-align: left;">
+                  ${round.round_name} - ${round.course_name || 'Course TBD'}
+                </button>
+              `;
+            });
+            html += '</div>';
+          } else {
+            html += '<p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: #999;">No rounds scheduled</p>';
+          }
+
+          html += '</div>';
+        }
       });
 
       html += '</div>';
       historyContent.innerHTML = html;
 
-      // Add click handlers for tournament cards
-      document.querySelectorAll('.tournament-history-quick-round, .tournament-history-tournament').forEach(card => {
+      // Add click handlers for Quick Round cards
+      document.querySelectorAll('.tournament-history-quick-round').forEach(card => {
         card.addEventListener('click', function() {
           const tournamentId = this.dataset.tournamentId;
-          const isQuickRound = this.dataset.isQuickRound === 'true';
+          const roundName = this.dataset.roundName;
+          loadQuickRoundFromTournament(tournamentId, roundName);
+        });
+      });
+
+      // Add click handlers for tournament round buttons (same as dashboard)
+      historyContent.querySelectorAll('.tournament-round-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const roundId = this.dataset.roundId;
+          const tournamentId = this.dataset.tournamentId;
           const roundName = this.dataset.roundName;
 
+          // Check if this is a Quick Round
+          const isQuickRound = ['Best Ball', 'Rabbit', 'Wolf'].includes(roundName);
+
+          sessionStorage.setItem('selected_golfer_id', currentUser.golfer_id);
+          sessionStorage.setItem('selected_round_id', roundId);
+
           if (isQuickRound) {
-            // Load quick round read-only view
             loadQuickRoundFromTournament(tournamentId, roundName);
           } else {
-            // Load full tournament view
-            loadFullTournamentView(tournamentId);
+            loadTournamentRound(roundId, tournamentId, roundName);
           }
         });
       });
@@ -5490,6 +5536,12 @@ function loadTournamentRound(roundId, tournamentId, roundName = '') {
     sessionStorage.setItem('team_id', userTeamId);
 
     assignCSSColors(primaryTeamColor, secondaryTeamColor);
+
+    // Set round bar text color based on primary team color
+    const roundBar = document.getElementById('round-bar');
+    if (roundBar && primaryTeamColor) {
+      roundBar.style.color = pickContrastColorFromHex(primaryTeamColor);
+    }
 
     // Show the app content
     document.getElementById('app-content').style.display = 'block';
