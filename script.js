@@ -97,6 +97,12 @@ let tournamentHandicapPct = null;
 let primaryTeamName, primaryTeamColor, secondaryTeamName, secondaryTeamColor, primaryTeamId, secondaryTeamId;
 let sessionHeartbeatInterval = null;
 
+// Function to assign CSS color variables for team colors
+function assignCSSColors(primary, secondary) {
+  document.documentElement.style.setProperty('--primary-team-color', primary || '#4F2683');
+  document.documentElement.style.setProperty('--secondary-team-color', secondary || '#FFC62F');
+}
+
 // Best Ball setup
 let bestBallTeam1 = { player1: null, player2: null };
 let bestBallTeam2 = { player1: null, player2: null };
@@ -1154,6 +1160,12 @@ function loadWolfScoring() {
     }
   }
 
+  // Hide round bar for quick rounds
+  const roundBar = document.getElementById('round-bar');
+  if (roundBar) {
+    roundBar.style.display = 'none';
+  }
+
   const container = document.getElementById('score-entry-content');
   container.innerHTML = '';
 
@@ -1688,6 +1700,12 @@ function loadRabbitScoring() {
     }
   }
 
+  // Hide round bar for quick rounds
+  const roundBar = document.getElementById('round-bar');
+  if (roundBar) {
+    roundBar.style.display = 'none';
+  }
+
   const container = document.getElementById('score-entry-content');
   container.innerHTML = '';
 
@@ -1900,6 +1918,12 @@ function loadWolfScorecardReadOnly() {
     if (userBar) {
       userBar.style.display = 'none';
     }
+  }
+
+  // Hide round bar for quick rounds
+  const roundBar = document.getElementById('round-bar');
+  if (roundBar) {
+    roundBar.style.display = 'none';
   }
 
   const container = document.getElementById('score-entry-content');
@@ -2156,6 +2180,12 @@ function loadRabbitScorecardReadOnly() {
     if (userBar) {
       userBar.style.display = 'none';
     }
+  }
+
+  // Hide round bar for quick rounds
+  const roundBar = document.getElementById('round-bar');
+  if (roundBar) {
+    roundBar.style.display = 'none';
   }
 
   const container = document.getElementById('score-entry-content');
@@ -2548,6 +2578,12 @@ function loadBestBallScoring() {
     }
   }
 
+  // Hide round bar for quick rounds
+  const roundBar = document.getElementById('round-bar');
+  if (roundBar) {
+    roundBar.style.display = 'none';
+  }
+
   const container = document.getElementById('score-entry-content');
   container.innerHTML = ''; // Clear any existing content
 
@@ -2854,6 +2890,12 @@ function loadBestBallScorecardReadOnly() {
     }
   }
 
+  // Hide round bar for quick rounds
+  const roundBar = document.getElementById('round-bar');
+  if (roundBar) {
+    roundBar.style.display = 'none';
+  }
+
   const container = document.getElementById('score-entry-content');
   container.innerHTML = ''; // Clear any existing content
 
@@ -3097,7 +3139,7 @@ fetch(`${API_BASE_URL}/check_session.php`, {
       sessionStorage.setItem('tournament_handicap_pct', data.tournament_handicap_pct);
       sessionStorage.setItem('team_id', data.team_id);
       teamId = data.team_id;
-      tournamentId = 1;
+      tournamentId = data.tournament_id || sessionStorage.getItem('selected_tournament_id') || 1;
       tournamentHandicapPct = data.tournament_handicap_pct;
       fetch(`${API_BASE_URL}/api/tournament_teams.php?tournament_id=${tournamentId}&_=${Date.now()}`, {
               method: 'GET',
@@ -3218,9 +3260,19 @@ function showTournamentBar(data = null) {
 
 //data for the Score Entry tab
 function loadTodaysMatch() {
-   
-    
-  fetch(`${API_BASE_URL}/get_match_by_round.php`, { credentials: 'include' })
+  const roundId = sessionStorage.getItem('selected_round_id');
+  const tournamentId = sessionStorage.getItem('selected_tournament_id');
+  const golferId = currentUser?.golfer_id || sessionStorage.getItem('golfer_id');
+
+  if (!roundId || !tournamentId || !golferId) {
+    const container = document.getElementById("score-entry-content");
+    container.innerHTML = "<p>Missing round, tournament, or golfer information.</p>";
+    return;
+  }
+
+  const url = `${API_BASE_URL}/get_match_by_round.php?round_id=${roundId}&tournament_id=${tournamentId}&golfer_id=${golferId}`;
+
+  fetch(url, { credentials: 'include' })
     .then(res => res.json())
     .then(data => {
       const matchGolfers = data.match;
@@ -3231,15 +3283,25 @@ function loadTodaysMatch() {
         return;
       }
 
+      // Set course data and tournament handicap percentage for handicap calculations
+      const firstMatch = data.match[0];
+      courses = {
+        course_name: firstMatch.course_name,
+        slope: firstMatch.slope,
+        rating: firstMatch.rating,
+        par: firstMatch.par
+      };
+      tournamentHandicapPct = parseFloat(data.tournament_handicap_pct || 100);
+
       // Check if finalized
       const match = data.match && data.match[0];
       if (match && match.finalized && parseInt(match.finalized) === 1) {
         loadMatchScorecard(match.match_id, "score-entry-content");
         return;
       }
-      const container = document.getElementById("score-entry-content");  
+      const container = document.getElementById("score-entry-content");
       currentMatchId = data.match[0].match_id;
-      
+
       // Build golfer list
         golfers = [...new Set(matchGolfers.map(row => ({
           id: row.golfer_id,
@@ -3626,8 +3688,16 @@ function updateTotalScores() {
 
 // functionality for Today Tab
 function loadTodaySummary() {
-    
-  fetch(`${API_BASE_URL}/get_round_matches.php`, { credentials: 'include' })
+  const roundId = sessionStorage.getItem('selected_round_id');
+  const tournamentId = sessionStorage.getItem('selected_tournament_id');
+
+  if (!roundId || !tournamentId) {
+    const container = document.getElementById("today-summary");
+    container.innerHTML = "<p>Missing round or tournament information.</p>";
+    return;
+  }
+
+  fetch(`${API_BASE_URL}/get_round_matches.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' })
     .then(res => res.json())
     .then(matches => {
       const container = document.getElementById("today-summary");
@@ -3680,7 +3750,7 @@ function loadTodaySummary() {
             container.appendChild(skinsContainer);
             
             // Fetch and render skins - the API now returns both skins data and skins_total
-            fetch(`${API_BASE_URL}/get_individual_skins.php`, { credentials: 'include' })
+            fetch(`${API_BASE_URL}/get_individual_skins.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' })
               .then(res => res.json())
               .then(data => {
                 // Handle both new format (object with skins and skins_total) and old format (array)
@@ -3731,7 +3801,7 @@ function loadTodaySummary() {
                 skinsContainer.innerHTML += "<p>Error loading skins.</p>";
               });
               
-        fetch(`${API_BASE_URL}/get_gross_leaderboard.php`, { credentials: 'include' })
+        fetch(`${API_BASE_URL}/get_gross_leaderboard.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' })
         .then(res => res.json())
         .then(golfers => {
           if (!Array.isArray(golfers) || golfers.length === 0) return;
@@ -3784,7 +3854,7 @@ function loadTodaySummary() {
         .catch(err => console.error("Leaderboard error:", err));
     
     // Net leaderboard
-        fetch(`${API_BASE_URL}/get_net_leaderboard.php`, { credentials: 'include' })
+        fetch(`${API_BASE_URL}/get_net_leaderboard.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' })
           .then(res => res.json())
           .then(players => {
             if (!Array.isArray(players) || players.length === 0) return;
@@ -4474,9 +4544,9 @@ async function loadTournamentPage(container) {
     try {
         // 2. Start ALL data fetches at the same time.
         const promises = [
-            fetch(`${API_BASE_URL}/get_tournament_scoreboard.php`, { credentials: 'include' }).then(res => res.json()),
-            fetch(`${API_BASE_URL}/get_gross_leaderboard_all.php`, { credentials: 'include' }).then(res => res.json()),
-            fetch(`${API_BASE_URL}/get_net_leaderboard_all.php`, { credentials: 'include' }).then(res => res.json()),
+            fetch(`${API_BASE_URL}/get_tournament_scoreboard.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
+            fetch(`${API_BASE_URL}/get_gross_leaderboard_all.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
+            fetch(`${API_BASE_URL}/get_net_leaderboard_all.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
             fetch(`${API_BASE_URL}/get_tournament_rounds.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
             // The handicap table needs two fetches, so we wrap them in their own Promise.all
             Promise.all([
@@ -4555,7 +4625,8 @@ async function loadTournamentPage(container) {
 
 
 function loadMatchScorecard(match_id, container_id = "today-summary") {
-  fetch(`${API_BASE_URL}/get_match_by_id.php?match_id=${match_id}`, { credentials: 'include' })
+  const tournamentId = sessionStorage.getItem('selected_tournament_id');
+  fetch(`${API_BASE_URL}/get_match_by_id.php?match_id=${match_id}&tournament_id=${tournamentId}`, { credentials: 'include' })
     .then(res => res.json())
     .then(data => {
       
@@ -5185,7 +5256,7 @@ function loadUserTournaments(golferId) {
             loadQuickRoundFromTournament(tournamentId, roundName);
           } else {
             // Load regular tournament round
-            loadTournamentRound(roundId, tournamentId);
+            loadTournamentRound(roundId, tournamentId, roundName);
           }
         });
       });
@@ -5355,7 +5426,7 @@ function loadFullTournamentView(tournamentId) {
   document.getElementById('tournament-history-container').style.display = 'block';
 }
 
-function loadTournamentRound(roundId, tournamentId) {
+function loadTournamentRound(roundId, tournamentId, roundName = '') {
   // Hide dashboard and other containers
   document.getElementById('user-dashboard').style.display = 'none';
   document.getElementById('round-history-container').style.display = 'none';
@@ -5366,20 +5437,78 @@ function loadTournamentRound(roundId, tournamentId) {
   // Store tournament and round info in sessionStorage
   sessionStorage.setItem('selected_round_id', roundId);
   sessionStorage.setItem('selected_tournament_id', tournamentId);
+  sessionStorage.setItem('selected_round_name', roundName);
   sessionStorage.setItem('golfer_id', currentUser.golfer_id);
 
-  // Show the app content
-  document.getElementById('app-content').style.display = 'block';
-
-  // Set the my-match tab as active
-  document.querySelectorAll('.tabs button').forEach(btn => btn.classList.remove('active'));
-  const myMatchBtn = document.querySelector('button[data-page="my-match"]');
-  if (myMatchBtn) {
-    myMatchBtn.classList.add('active');
+  // Set the round name in the subheader and show round bar
+  const roundNameEl = document.getElementById('round-name');
+  if (roundNameEl) {
+    roundNameEl.textContent = roundName;
+  }
+  const roundBar = document.getElementById('round-bar');
+  if (roundBar) {
+    roundBar.style.display = 'block';
   }
 
-  // Load the my-match page
-  loadPage('my-match');
+  // Ensure nav tabs are visible (they get hidden by Quick Rounds)
+  const appContent = document.getElementById('app-content');
+  const navElement = appContent.querySelector('nav');
+  if (navElement) {
+    navElement.style.display = 'block';
+  }
+
+  // Fetch tournament teams and user's team assignment before loading the page
+  Promise.all([
+    fetch(`${API_BASE_URL}/api/tournament_teams.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
+    fetch(`${API_BASE_URL}/api/tournament_golfers.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json())
+  ])
+  .then(([teams, golfers]) => {
+    // Find the current user's team assignment
+    const userGolfer = golfers.find(g => g.golfer_id == currentUser.golfer_id);
+    const userTeamId = userGolfer ? userGolfer.team_id : null;
+
+    // Set primary team (user's team) and secondary team
+    teams.forEach(team => {
+      if (team.team_id == userTeamId) {
+        primaryTeamName = team.name;
+        primaryTeamColor = team.color_hex;
+        primaryTeamId = team.team_id;
+      } else {
+        secondaryTeamName = team.name;
+        secondaryTeamColor = team.color_hex;
+        secondaryTeamId = team.team_id;
+      }
+    });
+
+    // Store in sessionStorage
+    sessionStorage.setItem('primary_team_name', primaryTeamName);
+    sessionStorage.setItem('primary_team_color', primaryTeamColor);
+    sessionStorage.setItem('secondary_team_name', secondaryTeamName);
+    sessionStorage.setItem('secondary_team_color', secondaryTeamColor);
+    sessionStorage.setItem('primary_team_id', primaryTeamId);
+    sessionStorage.setItem('secondary_team_id', secondaryTeamId);
+    sessionStorage.setItem('team_id', userTeamId);
+
+    assignCSSColors(primaryTeamColor, secondaryTeamColor);
+
+    // Show the app content
+    document.getElementById('app-content').style.display = 'block';
+
+    // Set the my-match tab as active
+    document.querySelectorAll('.tabs button').forEach(btn => btn.classList.remove('active'));
+    const myMatchBtn = document.querySelector('button[data-page="my-match"]');
+    if (myMatchBtn) {
+      myMatchBtn.classList.add('active');
+    }
+
+    // Load the my-match page
+    loadPage('my-match');
+  })
+  .catch(err => {
+    console.error('Error loading tournament data:', err);
+    document.getElementById('app-content').style.display = 'block';
+    loadPage('my-match');
+  });
 }
 
 function loadEditUserPage() {
@@ -5484,68 +5613,14 @@ document.addEventListener('DOMContentLoaded', () => {
     currentUser = null;
   });
 
-  // Check for existing Best Ball, Rabbit, or Wolf session
-  const existingBestBallMatchId = sessionStorage.getItem('best_ball_match_id');
-  const existingRabbitMatchId = sessionStorage.getItem('rabbit_match_id');
-  const existingWolfMatchId = sessionStorage.getItem('wolf_match_id');
-  const isReadOnly = sessionStorage.getItem('quick_round_read_only') === 'true';
-
-  // Restore currentUser if available
-  const savedUser = sessionStorage.getItem('current_user');
-  if (savedUser) {
-    currentUser = JSON.parse(savedUser);
-  }
-
-  if (existingBestBallMatchId) {
-    document.getElementById('auth-container').style.display = 'none';
-
-    // Show user header if currentUser exists (loaded from dashboard)
-    if (currentUser) {
-      document.getElementById('user-header-bar').style.display = 'block';
-      document.getElementById('user-header-name').textContent = `${currentUser.first_name} ${currentUser.last_name}`;
-    }
-
-    if (isReadOnly) {
-      loadBestBallScorecardReadOnly();
-    } else {
-      loadBestBallScoring();
-    }
-    return;
-  }
-
-  if (existingRabbitMatchId) {
-    document.getElementById('auth-container').style.display = 'none';
-
-    // Show user header if currentUser exists (loaded from dashboard)
-    if (currentUser) {
-      document.getElementById('user-header-bar').style.display = 'block';
-      document.getElementById('user-header-name').textContent = `${currentUser.first_name} ${currentUser.last_name}`;
-    }
-
-    if (isReadOnly) {
-      loadRabbitScorecardReadOnly();
-    } else {
-      loadRabbitScoring();
-    }
-    return;
-  }
-
-  if (existingWolfMatchId) {
-    document.getElementById('auth-container').style.display = 'none';
-
-    // Show user header if currentUser exists (loaded from dashboard)
-    if (currentUser) {
-      document.getElementById('user-header-bar').style.display = 'block';
-      document.getElementById('user-header-name').textContent = `${currentUser.first_name} ${currentUser.last_name}`;
-    }
-
-    if (isReadOnly) {
-      loadWolfScorecardReadOnly();
-    } else {
-      loadWolfScoring();
-    }
-    return;
-  }
+  // Clear any Quick Round session data on page load - Quick Rounds don't persist across refreshes
+  sessionStorage.removeItem('best_ball_match_id');
+  sessionStorage.removeItem('rabbit_match_id');
+  sessionStorage.removeItem('wolf_match_id');
+  sessionStorage.removeItem('quick_round_read_only');
+  sessionStorage.removeItem('best_ball_tournament_id');
+  sessionStorage.removeItem('rabbit_tournament_id');
+  sessionStorage.removeItem('wolf_tournament_id');
 
   // Load golfers into dropdown
   fetch(`${API_BASE_URL}/get_golfers.php`)
@@ -5561,12 +5636,27 @@ document.addEventListener('DOMContentLoaded', () => {
     })
     .catch(err => console.error('Error loading golfers:', err));
 
+  // Get the continue button reference
+  const continueBtn = authForm.querySelector('button[type="submit"]');
+  // Hide continue button by default (only needed for new golfer creation)
+  continueBtn.style.display = 'none';
+
   // Handle user selection
   selectUser.addEventListener('change', function() {
     if (this.value === 'new') {
       newGolferForm.style.display = 'block';
-    } else {
+      continueBtn.style.display = 'block';
+    } else if (this.value) {
+      // Existing golfer selected - immediately load dashboard
       newGolferForm.style.display = 'none';
+      continueBtn.style.display = 'none';
+      const selectedOption = this.options[this.selectedIndex];
+      const golfer = JSON.parse(selectedOption.dataset.golfer);
+      loadUserDashboard(golfer);
+    } else {
+      // Empty selection
+      newGolferForm.style.display = 'none';
+      continueBtn.style.display = 'none';
     }
   });
 

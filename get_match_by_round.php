@@ -8,9 +8,10 @@ header("Access-Control-Allow-Credentials: true");
 // DB credentials
 require_once 'db_connect.php';
 
-$golfer_id = $_SESSION['golfer_id'] ?? null;
-$round_id = $_SESSION['round_id'] ?? null;
-$tournament_id = $_SESSION['tournament_id'] ?? null;
+// Accept GET parameters with fallback to session
+$golfer_id = $_GET['golfer_id'] ?? $_SESSION['golfer_id'] ?? null;
+$round_id = $_GET['round_id'] ?? $_SESSION['round_id'] ?? null;
+$tournament_id = $_GET['tournament_id'] ?? $_SESSION['tournament_id'] ?? null;
 
 if (!$golfer_id || !$round_id || !$tournament_id) {
   echo json_encode(['error' => 'Missing golfer, round, or tournament ID']);
@@ -94,9 +95,18 @@ if ($course_id) {
   }
 }
 
+// Get tournament handicap percentage
+$tournamentQuery = $conn->prepare("SELECT handicap_pct FROM tournaments WHERE tournament_id = ?");
+$tournamentQuery->bind_param("i", $tournament_id);
+$tournamentQuery->execute();
+$tournamentResult = $tournamentQuery->get_result();
+$tournamentRow = $tournamentResult->fetch_assoc();
+$handicap_pct = $tournamentRow ? $tournamentRow['handicap_pct'] : 100;
+
 $response = [
   'match' => $matchData,
-  'holes' => $holes
+  'holes' => $holes,
+  'tournament_handicap_pct' => $handicap_pct
 ];
 
 echo json_encode($response);

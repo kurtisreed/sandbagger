@@ -1,12 +1,18 @@
 <?php
 session_start();
+header('Content-Type: application/json');
+header("Access-Control-Allow-Origin: http://localhost");
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
+header("Access-Control-Allow-Credentials: true");
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Expires: 0");
 header("Pragma: no-cache");
 require_once 'db_connect.php';
 
-$round_id = $_SESSION['round_id'] ?? null;
-$tournament_id = $_SESSION['tournament_id'] ?? null;
+// Accept GET parameters with fallback to session
+$round_id = $_GET['round_id'] ?? $_SESSION['round_id'] ?? null;
+$tournament_id = $_GET['tournament_id'] ?? $_SESSION['tournament_id'] ?? null;
 if (!$tournament_id) {
   echo json_encode(['error' => 'No tournament specified']);
   exit;

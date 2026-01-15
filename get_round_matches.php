@@ -7,8 +7,9 @@ header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Access-Control-Allow-Credentials: true");
 
-$round_id = $_SESSION['round_id'] ?? null;
-$tournament_id = $_SESSION['tournament_id'] ?? null;
+// Accept GET parameters with fallback to session
+$round_id = $_GET['round_id'] ?? $_SESSION['round_id'] ?? null;
+$tournament_id = $_GET['tournament_id'] ?? $_SESSION['tournament_id'] ?? null;
 if (!$tournament_id) {
   echo json_encode(['error' => 'Missing tournament ID']);
   exit;
