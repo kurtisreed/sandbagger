@@ -5279,8 +5279,12 @@ function loadTournamentHistory(golferId) {
   const historyContainer = document.getElementById('tournament-history-container');
   const historyContent = document.getElementById('tournament-history-content');
 
-  // Hide dashboard, show history
+  // Hide other containers, show history
   dashboardContainer.style.display = 'none';
+  document.getElementById('app-content').style.display = 'none';
+  document.getElementById('best-ball-setup').style.display = 'none';
+  document.getElementById('round-history-container').style.display = 'none';
+  document.getElementById('edit-user-container').style.display = 'none';
   historyContainer.style.display = 'block';
   historyContent.innerHTML = '<p>Loading...</p>';
 
