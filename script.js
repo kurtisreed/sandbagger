@@ -5621,6 +5621,69 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!hamburgerDropdown.contains(e.target) && !hamburgerBtn.contains(e.target)) {
       hamburgerDropdown.classList.remove('show');
     }
+    // Also close round dropdown when clicking outside
+    const roundBar = document.getElementById('round-bar');
+    const roundDropdown = document.getElementById('round-dropdown');
+    if (roundDropdown && !roundBar.contains(e.target)) {
+      roundDropdown.style.display = 'none';
+    }
+  });
+
+  // Round bar dropdown functionality
+  const roundBar = document.getElementById('round-bar');
+  const roundDropdown = document.getElementById('round-dropdown');
+
+  roundBar.addEventListener('click', (e) => {
+    e.stopPropagation();
+
+    // Toggle dropdown visibility
+    if (roundDropdown.style.display === 'none') {
+      // Fetch rounds for current tournament and populate dropdown
+      const tournamentId = sessionStorage.getItem('selected_tournament_id');
+      const currentRoundId = sessionStorage.getItem('selected_round_id');
+
+      if (!tournamentId) return;
+
+      fetch(`${API_BASE_URL}/get_tournament_rounds.php?tournament_id=${tournamentId}`, { credentials: 'include' })
+        .then(res => res.json())
+        .then(rounds => {
+          if (!Array.isArray(rounds) || rounds.length === 0) {
+            roundDropdown.innerHTML = '<div class="round-dropdown-item">No rounds available</div>';
+          } else {
+            roundDropdown.innerHTML = rounds.map(round => {
+              const isActive = round.round_id == currentRoundId;
+              return `
+                <div class="round-dropdown-item ${isActive ? 'active' : ''}"
+                     data-round-id="${round.round_id}"
+                     data-round-name="${round.round_name}">
+                  ${round.round_name} - ${round.course_name || 'Course TBD'}
+                </div>
+              `;
+            }).join('');
+
+            // Add click handlers for dropdown items
+            roundDropdown.querySelectorAll('.round-dropdown-item').forEach(item => {
+              item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const roundId = item.dataset.roundId;
+                const roundName = item.dataset.roundName;
+                roundDropdown.style.display = 'none';
+
+                // Load the selected round
+                loadTournamentRound(roundId, tournamentId, roundName);
+              });
+            });
+          }
+          roundDropdown.style.display = 'block';
+        })
+        .catch(err => {
+          console.error('Error loading rounds:', err);
+          roundDropdown.innerHTML = '<div class="round-dropdown-item">Error loading rounds</div>';
+          roundDropdown.style.display = 'block';
+        });
+    } else {
+      roundDropdown.style.display = 'none';
+    }
   });
 
   // Menu option: Dashboard
