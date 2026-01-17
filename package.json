@@ -1,0 +1,37 @@
+{
+  "name": "sandbagger-scoring",
+  "version": "1.0.0",
+  "description": "Golf tournament scoring and leaderboard application",
+  "main": "index.html",
+  "scripts": {
+    "clean": "rm -rf www/* && mkdir -p www/api www/icons www/images www/js www/css",
+    "copy:core": "cp index.html script.js style.css manifest.json service-worker.js favicon.png www/ 2>/dev/null || true",
+    "copy:php": "find . -maxdepth 1 -name '*.php' -not -name 'admin.php' -exec cp {} www/ \\;",
+    "copy:dirs": "cp -r api icons images www/",
+    "copy:admin": "cp admin.php tournament-assign.html www/ 2>/dev/null || true && cp -r js css www/",
+    "build:user": "npm run clean && npm run copy:core && npm run copy:php && npm run copy:dirs",
+    "build": "npm run build:user && npm run copy:admin",
+    "sync:user": "npm run build:user && npx cap sync",
+    "sync": "npm run build && npx cap sync",
+    "open:android": "npx cap open android",
+    "open:ios": "npx cap open ios",
+    "cap": "npx cap"
+  },
+  "keywords": [
+    "golf",
+    "scoring",
+    "tournament",
+    "leaderboard",
+    "pwa",
+    "capacitor",
+    "mobile"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@capacitor/android": "^7.4.2",
+    "@capacitor/cli": "^7.4.2",
+    "@capacitor/core": "^7.4.2",
+    "@capacitor/ios": "^7.4.2"
+  }
+}
