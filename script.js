@@ -3,7 +3,15 @@ let API_BASE_URL = '';
 
 function initializeApiUrl() {
   const isCapacitorApp = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
-  API_BASE_URL = isCapacitorApp ? 'http://10.0.2.2' : '';
+
+  if (isCapacitorApp) {
+    // Use Mac's network IP for both iOS and Android
+    // Both simulators can reach Mac via network IP
+    API_BASE_URL = 'http://192.168.0.203:8888'; // HTTP not HTTPS (MAMP has no SSL)
+  } else {
+    API_BASE_URL = ''; // Web browser - relative URLs work
+  }
+
   console.log('API_BASE_URL set to:', API_BASE_URL, 'isCapacitorApp:', isCapacitorApp);
 }
 
@@ -142,9 +150,29 @@ function loadBestBallSetup(preserveSelections = false) {
   setupContainer.style.display = 'block';
 
   // Fetch both golfers and courses in parallel
+  console.log('Fetching golfers from:', `${API_BASE_URL}/get_golfers.php`);
+  console.log('Fetching courses from:', `${API_BASE_URL}/api/courses.php`);
   Promise.all([
-    fetch(`${API_BASE_URL}/get_golfers.php`).then(res => res.json()),
-    fetch(`${API_BASE_URL}/api/courses.php`).then(res => res.json())
+    fetch(`${API_BASE_URL}/get_golfers.php`)
+      .then(res => {
+        console.log('Golfers response status:', res.status, res.statusText);
+        if (!res.ok) throw new Error(`Golfers HTTP ${res.status}: ${res.statusText}`);
+        return res.json();
+      })
+      .then(data => {
+        console.log('Golfers data received:', data ? data.length : 0, 'golfers');
+        return data;
+      }),
+    fetch(`${API_BASE_URL}/api/courses.php`)
+      .then(res => {
+        console.log('Courses response status:', res.status, res.statusText);
+        if (!res.ok) throw new Error(`Courses HTTP ${res.status}: ${res.statusText}`);
+        return res.json();
+      })
+      .then(data => {
+        console.log('Courses data received:', data ? data.length : 0, 'courses');
+        return data;
+      })
   ])
   .then(([golfers, courses]) => {
     allGolfers = golfers;
@@ -414,7 +442,10 @@ function loadBestBallSetup(preserveSelections = false) {
     })
     .catch(err => {
       console.error('Error loading golfers:', err);
-      setupContent.innerHTML = '<p style="color: red; text-align: center;">Error loading golfers. Please try again.</p>';
+      console.error('Error name:', err.name);
+      console.error('Error message:', err.message);
+      console.error('Error stack:', err.stack);
+      setupContent.innerHTML = `<p style="color: red; text-align: center;">Error loading golfers: ${err.message}. Please try again.</p>`;
     });
 }
 
@@ -545,9 +576,29 @@ function loadRabbitSetup(preserveSelections = false) {
   setupContainer.style.display = 'block';
 
   // Fetch both golfers and courses in parallel
+  console.log('Fetching golfers from:', `${API_BASE_URL}/get_golfers.php`);
+  console.log('Fetching courses from:', `${API_BASE_URL}/api/courses.php`);
   Promise.all([
-    fetch(`${API_BASE_URL}/get_golfers.php`).then(res => res.json()),
-    fetch(`${API_BASE_URL}/api/courses.php`).then(res => res.json())
+    fetch(`${API_BASE_URL}/get_golfers.php`)
+      .then(res => {
+        console.log('Golfers response status:', res.status, res.statusText);
+        if (!res.ok) throw new Error(`Golfers HTTP ${res.status}: ${res.statusText}`);
+        return res.json();
+      })
+      .then(data => {
+        console.log('Golfers data received:', data ? data.length : 0, 'golfers');
+        return data;
+      }),
+    fetch(`${API_BASE_URL}/api/courses.php`)
+      .then(res => {
+        console.log('Courses response status:', res.status, res.statusText);
+        if (!res.ok) throw new Error(`Courses HTTP ${res.status}: ${res.statusText}`);
+        return res.json();
+      })
+      .then(data => {
+        console.log('Courses data received:', data ? data.length : 0, 'courses');
+        return data;
+      })
   ])
   .then(([golfers, courses]) => {
     allGolfers = golfers;
@@ -810,9 +861,29 @@ function loadWolfSetup(preserveSelections = false) {
   setupContainer.style.display = 'block';
 
   // Fetch both golfers and courses in parallel
+  console.log('Fetching golfers from:', `${API_BASE_URL}/get_golfers.php`);
+  console.log('Fetching courses from:', `${API_BASE_URL}/api/courses.php`);
   Promise.all([
-    fetch(`${API_BASE_URL}/get_golfers.php`).then(res => res.json()),
-    fetch(`${API_BASE_URL}/api/courses.php`).then(res => res.json())
+    fetch(`${API_BASE_URL}/get_golfers.php`)
+      .then(res => {
+        console.log('Golfers response status:', res.status, res.statusText);
+        if (!res.ok) throw new Error(`Golfers HTTP ${res.status}: ${res.statusText}`);
+        return res.json();
+      })
+      .then(data => {
+        console.log('Golfers data received:', data ? data.length : 0, 'golfers');
+        return data;
+      }),
+    fetch(`${API_BASE_URL}/api/courses.php`)
+      .then(res => {
+        console.log('Courses response status:', res.status, res.statusText);
+        if (!res.ok) throw new Error(`Courses HTTP ${res.status}: ${res.statusText}`);
+        return res.json();
+      })
+      .then(data => {
+        console.log('Courses data received:', data ? data.length : 0, 'courses');
+        return data;
+      })
   ])
   .then(([golfers, courses]) => {
     allGolfers = golfers;

@@ -1,5 +1,6 @@
 <?php
 session_start();
+ini_set('display_errors', '0'); // Suppress error output that would break JSON
 header('Content-Type: application/json');
 header("Access-Control-Allow-Origin: http://localhost");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");

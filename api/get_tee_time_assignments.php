@@ -1,4 +1,5 @@
 <?php
+require_once '../cors_headers.php';
 // api/get_tee_time_assignments.php
 // For a given round_id, returns the round name, a list of its tee times,
 // and a list of its matches, with each match containing its assigned golfers (name and team color).

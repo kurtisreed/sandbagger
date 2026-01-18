@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once 'db_connect.php';
+ini_set('display_errors', '0'); // Suppress error output that would break JSON
 header('Content-Type: application/json');
 header("Access-Control-Allow-Origin: http://localhost");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
@@ -88,7 +89,7 @@ while ($row = $result->fetch_assoc()) {
 
     // Calculate playing handicap for this course/round
     $playing_handicap = ($hcp * ($slope / 113) + ($rating - 72)) * ($handicap_pct / 100);
-    $playing_hcp_rounded = round($playing_handicap, 1);
+    $playing_hcp_rounded = round($playing_handicap);
 
     // Allocate strokes: base + 1 on the lowest-index holes
     $baseStrokes       = intdiv($playing_hcp_rounded, 18);

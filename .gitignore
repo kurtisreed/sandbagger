@@ -41,3 +41,5 @@ yarn-error.log*
 *.tmp
 *.temp
 *.zip
+# Local .htaccess for MAMP (use .htaccess.production for server)
+.htaccess

@@ -1,4 +1,5 @@
 <?php
+require_once '../cors_headers.php';
 // get_match_data.php
 // Returns JSON with tournament teams (with name/color), their golfers, matches, and assignments for a given round_id
 

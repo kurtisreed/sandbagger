@@ -1,4 +1,5 @@
 <?php
+require_once '../cors_headers.php';
 header('Content-Type: application/json');
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Expires: 0");

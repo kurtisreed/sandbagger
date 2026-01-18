@@ -1,5 +1,6 @@
 <?php
 session_start();
+ini_set('display_errors', '0'); // Suppress error output that would break JSON
 header('Content-Type: application/json');
 header("Access-Control-Allow-Origin: http://localhost");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
@@ -105,7 +106,7 @@ while ($row = $result->fetch_assoc()) {
     // Calculate and cache playing handicap for this golfer
     $hcp = floatval($row['handicap']);
     $playing_handicap = ($hcp * ($slope / 113) + ($rating - 72)) * ($handicap_pct / 100);
-    $playingHandicaps[$id] = round($playing_handicap, 1); // round to nearest integer for allocation
+    $playingHandicaps[$id] = round($playing_handicap); // round to nearest integer for allocation
   }
 
   // Only count holes with a recorded score & par

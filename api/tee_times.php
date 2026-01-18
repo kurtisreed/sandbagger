@@ -1,4 +1,5 @@
 <?php
+require_once '../cors_headers.php';
 // api/tee_times.php
 // Handles the creation of a new tee time.
 // Expects a POST request with a JSON body containing 'round_id' and 'time' in HH:MM format.

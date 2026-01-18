@@ -1,4 +1,5 @@
 <?php
+require_once '../cors_headers.php';
 // get_match_data_flat.php
 // Returns JSON with tournament teams, their golfers, matches, and flat assignment records for a given round_id
 

@@ -1,4 +1,5 @@
 <?php
+require_once '../cors_headers.php';
 // api/delete_tee_time.php
 // Handles the deletion of a single tee time.
 // Expects a DELETE request with a query parameter: ?tee_time_id=X

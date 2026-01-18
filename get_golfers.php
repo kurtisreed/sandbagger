@@ -1,4 +1,6 @@
 <?php
+ini_set('display_errors', '0'); // Suppress error output that would break JSON
+header('Content-Type: application/json');
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Expires: 0");
 header("Pragma: no-cache");
@@ -23,6 +25,5 @@ while ($row = $result->fetch_assoc()) {
     $golfers[] = $row;
 }
 
-header('Content-Type: application/json');
 echo json_encode($golfers);
 ?>

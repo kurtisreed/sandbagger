@@ -1,4 +1,5 @@
 <?php
+require_once '../cors_headers.php';
 // api/save_tee_time_assignments.php
 // Saves the assignment of matches to tee times for a given round.
 // Expects a POST request with a JSON body: { "round_id": X, "assignments": [...] }

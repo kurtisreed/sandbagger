@@ -57,9 +57,5 @@ RewriteRule . /index.php [L]
   Header set Expires "0"
 </FilesMatch>
 
-# php -- BEGIN cPanel-generated handler, do not edit
-# Set the “ea-php83” package as the default “PHP” programming language.
-<IfModule mime_module>
-  AddHandler application/x-httpd-ea-php83___lsphp .php .php8 .phtml
-</IfModule>
-# php -- END cPanel-generated handler, do not edit
+# LOCAL MAMP VERSION - cPanel handler removed for local development
+# For production, use .htaccess.production
