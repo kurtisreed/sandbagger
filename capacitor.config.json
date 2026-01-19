@@ -19,7 +19,8 @@
       "showSpinner": false
     },
     "StatusBar": {
-      "style": "DARK"
+      "style": "DARK",
+      "overlaysWebView": false
     },
     "Geolocation": {
       "permissions": [
