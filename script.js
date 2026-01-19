@@ -5,9 +5,8 @@ function initializeApiUrl() {
   const isCapacitorApp = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
 
   if (isCapacitorApp) {
-    // Use Mac's network IP for both iOS and Android
-    // Both simulators can reach Mac via network IP
-    API_BASE_URL = 'http://192.168.0.203:8888'; // HTTP not HTTPS (MAMP has no SSL)
+    // Production server for mobile apps
+    API_BASE_URL = 'https://sandbaggerscoring.com';
   } else {
     API_BASE_URL = ''; // Web browser - relative URLs work
   }
