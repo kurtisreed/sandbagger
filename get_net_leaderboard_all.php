@@ -3,7 +3,7 @@ session_start();
 require_once 'db_connect.php';
 ini_set('display_errors', '0'); // Suppress error output that would break JSON
 header('Content-Type: application/json');
-header("Access-Control-Allow-Origin: http://localhost");
+require_once 'cors_headers.php';
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Access-Control-Allow-Credentials: true");

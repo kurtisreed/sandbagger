@@ -1,7 +1,6 @@
 <?php
 require_once '../cors_headers.php';
 header('Content-Type: application/json');
-header("Access-Control-Allow-Origin: http://localhost");
 header("Access-Control-Allow-Methods: GET, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Access-Control-Allow-Credentials: true");

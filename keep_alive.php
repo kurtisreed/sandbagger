@@ -4,7 +4,7 @@ ini_set('session.gc_maxlifetime', 28800);
 ini_set('session.cookie_lifetime', 28800);
 
 session_start();
-header("Access-Control-Allow-Origin: http://localhost");
+require_once 'cors_headers.php';
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Access-Control-Allow-Credentials: true");

@@ -4,9 +4,7 @@ header('Content-Type: application/json');
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Expires: 0");
 header("Pragma: no-cache");
-header("Access-Control-Allow-Origin: http://localhost");
-header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization");
+require_once 'cors_headers.php';
 require_once 'db_connect.php';
 
 $conn = new mysqli($servername, $username, $password, $dbname);
