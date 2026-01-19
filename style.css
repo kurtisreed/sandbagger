@@ -7,10 +7,22 @@
 
 body {
   margin: 0;
+  padding-top: calc(env(safe-area-inset-top) + 50px);
   font-family: sans-serif;
   display: flex;
   flex-direction: column;
   height: 100vh;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-top);
+  background-color: #4F2185;
+  z-index: 9999;
 }
 
 /* Universal User Header Bar */
@@ -19,8 +31,10 @@ body {
   color: white;
   padding: 0.5rem 1rem;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  position: sticky;
-  top: 0;
+  position: fixed;
+  top: env(safe-area-inset-top);
+  left: 0;
+  right: 0;
   z-index: 1000;
 }
 
