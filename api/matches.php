@@ -23,16 +23,39 @@ switch ($method) {
       $stmt->execute();
       echo json_encode($stmt->get_result()->fetch_assoc());
     } elseif ($round_id) {
-      // fetch matches for a given round
+      // fetch matches for a given round with golfer details
       $stmt = $conn->prepare("
-        SELECT match_id, match_type, round_id
+        SELECT match_id, match_name, round_id
           FROM matches
          WHERE round_id = ?
          ORDER BY match_id
       ");
       $stmt->bind_param('i', $round_id);
       $stmt->execute();
-      echo json_encode($stmt->get_result()->fetch_all(MYSQLI_ASSOC));
+      $matches = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
+      // Get golfers for each match
+      foreach ($matches as &$match) {
+        $stmt2 = $conn->prepare("
+          SELECT mg.golfer_id, mg.player_order, g.first_name, g.last_name, g.handicap
+          FROM match_golfers mg
+          JOIN golfers g ON mg.golfer_id = g.golfer_id
+          WHERE mg.match_id = ?
+          ORDER BY mg.player_order
+        ");
+        $stmt2->bind_param('i', $match['match_id']);
+        $stmt2->execute();
+        $golfers = $stmt2->get_result()->fetch_all(MYSQLI_ASSOC);
+
+        // player_order is the team_position (1,2 = Team 1, 3,4 = Team 2)
+        foreach ($golfers as &$golfer) {
+          $golfer['team_position'] = $golfer['player_order'] ?: 1;
+        }
+
+        $match['golfers'] = $golfers;
+      }
+
+      echo json_encode($matches);
     } else {
       // fetch all matches
       $result = $conn->query("

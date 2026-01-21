@@ -437,8 +437,159 @@
   </div>
 </div>
 
+</section> <!-- End section-tourney-detail (Ryder Cup) -->
 
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- Tournament Detail Section - Guys Trip (format_id=4) -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<section id="section-tourney-detail-guys-trip" class="admin-section" hidden>
+  <h2 id="guys-trip-detail-title" class="tourney-head">Tournament</h2>
 
+  <!-- Sub-nav for Guys Trip tournament -->
+  <nav class="sub-nav guys-trip-nav">
+    <button data-tab="gt-players" class="tab-btn active">Players</button>
+    <button data-tab="gt-rounds" class="tab-btn">Rounds</button>
+  </nav>
+
+  <!-- Players tab (no teams, just player selection) -->
+  <div id="tab-gt-players" class="tab-content">
+    <div class="actions">
+      <button id="gt-save-players-btn" class="btn-primary">Save Player List</button>
+    </div>
+
+    <div class="zones">
+      <!-- Available golfers pool -->
+      <div id="gt-available" class="zone">
+        <h3>Available Golfers</h3>
+        <div class="cards-container">
+          <!-- JS will inject .card items here -->
+        </div>
+      </div>
+
+      <!-- Selected players for this tournament -->
+      <div id="gt-selected" class="zone">
+        <h3>Tournament Players</h3>
+        <div class="cards-container">
+          <!-- JS will inject .card items here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rounds tab -->
+  <div id="tab-gt-rounds" class="tab-content" hidden>
+    <div class="actions">
+      <button id="gt-new-round-btn" class="btn-primary">New Round</button>
+    </div>
+
+    <!-- Rounds Table -->
+    <table id="gt-rounds-table" class="admin-table">
+      <thead>
+        <tr>
+          <th>Round Date</th>
+          <th>Round Name</th>
+          <th>Course</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- JS will inject rows here -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Matches tab for a specific round (shown when editing a round) -->
+  <div id="tab-gt-matches" class="tab-content" hidden>
+    <h3 id="gt-matches-round-title">Round Matches</h3>
+    <div class="actions">
+      <button id="gt-back-to-rounds-btn" class="btn-secondary">← Back to Rounds</button>
+      <button id="gt-new-match-btn" class="btn-primary">New Match</button>
+      <button id="gt-save-matches-btn" class="btn-primary">Save All Matches</button>
+    </div>
+
+    <!-- Available players pool for matches -->
+    <div class="pools-wrapper">
+      <h4>Available Players</h4>
+      <div id="gt-player-pool" class="container"></div>
+    </div>
+
+    <!-- Match cards container -->
+    <div id="gt-matches-board" class="board"></div>
+  </div>
+
+  <!-- Tee Times tab for Guys Trip -->
+  <div id="tab-gt-tee-times" class="tab-content" hidden>
+    <h3 id="gt-tee-times-round-title">Tee Time Assignments</h3>
+    <div class="actions">
+      <button id="gt-back-to-rounds-btn-tt" class="btn-secondary">← Back to Rounds</button>
+      <button id="gt-new-tee-time-btn" class="btn-primary">+ Add Tee Time</button>
+      <button id="gt-save-tee-times-btn" class="btn-primary">Save Assignments</button>
+    </div>
+
+    <div class="tee-time-workspace">
+      <div class="match-pool-container">
+        <h4>Unassigned Matches</h4>
+        <div id="gt-unassigned-matches-pool" class="match-pool"></div>
+      </div>
+
+      <div class="tee-time-slots-container">
+        <h4>Tee Times</h4>
+        <div id="gt-tee-times-list"></div>
+      </div>
+    </div>
+  </div>
+
+</section> <!-- End section-tourney-detail-guys-trip -->
+
+<!-- Modal for creating a new round (Guys Trip) -->
+<div id="gt-round-modal" class="modal hidden">
+  <div class="modal-backdrop"></div>
+  <div class="modal-content">
+    <button class="modal-close">&times;</button>
+    <h2>Create New Round</h2>
+    <form id="gt-round-create-form" class="admin-form">
+      <div class="form-row">
+        <label for="gt-r-date">Round Date</label>
+        <input type="date" id="gt-r-date" required>
+      </div>
+      <div class="form-row">
+        <label for="gt-r-course">Course</label>
+        <select id="gt-r-course" required>
+          <option value="">-- Select Course --</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label for="gt-r-tees">Tees</label>
+        <select id="gt-r-tees" required>
+          <option value="">-- Select Tees --</option>
+        </select>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">Create</button>
+        <button type="button" class="btn-secondary modal-close">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal for creating a new tee time (Guys Trip) -->
+<div id="gt-tee-time-modal" class="modal hidden">
+  <div class="modal-backdrop"></div>
+  <div class="modal-content">
+    <button class="modal-close">×</button>
+    <h2>Create New Tee Time</h2>
+    <form id="gt-tee-time-create-form" class="admin-form">
+      <div class="form-row">
+        <label for="gt-tt-time">Tee Time</label>
+        <input type="time" id="gt-tt-time" value="08:00" required>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">Create</button>
+        <button type="button" class="btn-secondary modal-close">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
 
 
 

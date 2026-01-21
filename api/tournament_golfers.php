@@ -41,19 +41,64 @@ switch ($method) {
     break;
 
   case 'POST':
-    // assign a golfer to a tournament
     $data = json_decode(file_get_contents('php://input'), true);
-    $stmt = $conn->prepare("
-      INSERT INTO tournament_golfers (tournament_id, golfer_id)
-      VALUES (?, ?)
-    ");
-    $stmt->bind_param(
-      'ii',
-      $data['tournament_id'],
-      $data['golfer_id']
-    );
-    $stmt->execute();
-    echo json_encode(['affected_rows' => $stmt->affected_rows]);
+
+    // Check if bulk save (array of golfer_ids) or single golfer
+    if (isset($data['golfer_ids']) && is_array($data['golfer_ids'])) {
+      // Bulk save: replace all golfers for this tournament
+      $tournamentId = intval($data['tournament_id']);
+      $golferIds = $data['golfer_ids'];
+
+      // Start transaction
+      $conn->begin_transaction();
+
+      try {
+        // Delete existing assignments for this tournament (that have no team)
+        // Keep team assignments intact for Ryder Cup style tournaments
+        $stmt = $conn->prepare("
+          DELETE FROM tournament_golfers
+          WHERE tournament_id = ? AND (team_id IS NULL OR team_id = 0)
+        ");
+        $stmt->bind_param('i', $tournamentId);
+        $stmt->execute();
+
+        // Insert new golfer assignments
+        $insertStmt = $conn->prepare("
+          INSERT INTO tournament_golfers (tournament_id, golfer_id)
+          VALUES (?, ?)
+        ");
+
+        $insertCount = 0;
+        foreach ($golferIds as $golferId) {
+          $gid = intval($golferId);
+          $insertStmt->bind_param('ii', $tournamentId, $gid);
+          $insertStmt->execute();
+          $insertCount++;
+        }
+
+        $conn->commit();
+        echo json_encode(['success' => true, 'inserted' => $insertCount]);
+
+      } catch (Exception $e) {
+        $conn->rollback();
+        http_response_code(500);
+        echo json_encode(['error' => $e->getMessage()]);
+      }
+
+    } else {
+      // Single golfer assignment (original behavior)
+      $stmt = $conn->prepare("
+        INSERT INTO tournament_golfers (tournament_id, golfer_id)
+        VALUES (?, ?)
+      ");
+      $stmt->bind_param(
+        'ii',
+        $data['tournament_id'],
+        $data['golfer_id']
+      );
+      $stmt->execute();
+      echo json_encode(['affected_rows' => $stmt->affected_rows]);
+    }
     break;
 
   case 'DELETE':

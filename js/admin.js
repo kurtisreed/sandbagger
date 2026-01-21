@@ -110,60 +110,835 @@ function createTournament() {
 }
 
 let currentTourneyId = null;
+let currentTourneyFormatId = null;
 
 function showTournamentDashboard(id) {
-  // Hide other sections
-  document.querySelectorAll('.admin-section').forEach(sec => sec.hidden = true);
-  // Activate detail section
-  document.getElementById('section-tourney-detail').hidden = false;
   currentTourneyId = id;
 
-  // Update title
+  // Fetch tournament data first to determine format
   fetch(BASE + `/api/tournaments.php?tournament_id=${id}`, {credentials:'include'})
-    .then(r=>r.json())
+    .then(r => r.json())
     .then(t => {
-    // parse the incoming date strings
-    const start = new Date(t.start_date);
-    const end   = new Date(t.end_date);
+      currentTourneyFormatId = t.format_id;
 
-    // define the formatting you want
-    const opts = { month: 'long', day: 'numeric', year: 'numeric' };
+      // Parse dates for title
+      const start = new Date(t.start_date);
+      const end   = new Date(t.end_date);
+      const opts = { month: 'long', day: 'numeric', year: 'numeric' };
+      const formattedStart = start.toLocaleDateString('en-US', opts);
+      const formattedEnd   = end.toLocaleDateString('en-US', opts);
+      const titleText = `Tournament: ${t.name} (${formattedStart} – ${formattedEnd}) ${t.format_name}`;
 
-    // format them
-    const formattedStart = start.toLocaleDateString('en-US', opts);
-    const formattedEnd   = end.toLocaleDateString('en-US', opts);
+      // Hide all sections
+      document.querySelectorAll('.admin-section').forEach(sec => sec.hidden = true);
 
-    // inject into your title
-    document.getElementById('detail-title').textContent =
-      `Tournament: ${t.name} (${formattedStart} – ${formattedEnd}) ${t.format_name}`;
- 
-  });
+      // Route based on format_id
+      if (t.format_id === 4) {
+        // Guys Trip format
+        showGuysTrip(titleText);
+      } else {
+        // Default: Ryder Cup format (format_id=3 and others)
+        showRyderCup(titleText);
+      }
+    });
+}
+
+// Show Ryder Cup style tournament detail
+function showRyderCup(titleText) {
+  document.getElementById('section-tourney-detail').hidden = false;
+  document.getElementById('detail-title').textContent = titleText;
 
   // Reset sub-nav to first tab
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#section-tourney-detail .tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelector('[data-tab="teams"]').classList.add('active');
-  document.querySelectorAll('.tab-content').forEach(c=>c.hidden=true);
+  document.querySelectorAll('#section-tourney-detail .tab-content').forEach(c => c.hidden = true);
   document.getElementById('tab-teams').hidden = false;
 
   // Load each area
   loadTeams();
   loadTourneyRoster();
   loadTourneyRounds();
-
 }
 
-// Sub-nav click handlers
-document.querySelectorAll('.sub-nav .tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.sub-nav .tab-btn')
-            .forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll('.tab-content').forEach(c=>c.hidden = true);
-    document.getElementById('tab-' + btn.dataset.tab).hidden = false;
-      loadTeams();
-      loadTourneyRoster();
-      loadTourneyRounds();
+// Show Guys Trip style tournament detail
+function showGuysTrip(titleText) {
+  document.getElementById('section-tourney-detail-guys-trip').hidden = false;
+  document.getElementById('guys-trip-detail-title').textContent = titleText;
 
+  // Reset sub-nav to first tab
+  document.querySelectorAll('.guys-trip-nav .tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('[data-tab="gt-players"]').classList.add('active');
+  document.querySelectorAll('#section-tourney-detail-guys-trip .tab-content').forEach(c => c.hidden = true);
+  document.getElementById('tab-gt-players').hidden = false;
+
+  // Load Guys Trip data
+  loadGuysTrip_Players();
+  loadGuysTrip_Rounds();
+}
+
+// Sub-nav click handlers for Ryder Cup section
+document.querySelectorAll('#section-tourney-detail .sub-nav .tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#section-tourney-detail .sub-nav .tab-btn')
+            .forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('#section-tourney-detail .tab-content').forEach(c => c.hidden = true);
+    document.getElementById('tab-' + btn.dataset.tab).hidden = false;
+    loadTeams();
+    loadTourneyRoster();
+    loadTourneyRounds();
+  });
+});
+
+// Sub-nav click handlers for Guys Trip section
+document.querySelectorAll('.guys-trip-nav .tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.guys-trip-nav .tab-btn')
+            .forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('#section-tourney-detail-guys-trip .tab-content').forEach(c => c.hidden = true);
+    document.getElementById('tab-' + btn.dataset.tab).hidden = false;
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GUYS TRIP FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Load players for Guys Trip (no teams, just available vs selected)
+function loadGuysTrip_Players() {
+  console.log('loadGuysTrip_Players called, tourneyId:', currentTourneyId);
+
+  // Fetch all golfers
+  fetch(BASE + '/api/golfers.php', { credentials: 'include' })
+    .then(r => r.json())
+    .then(allGolfers => {
+      console.log('Loaded all golfers:', allGolfers.length);
+
+      // Fetch golfers already assigned to this tournament
+      fetch(BASE + `/api/tournament_golfers.php?tournament_id=${currentTourneyId}`, { credentials: 'include' })
+        .then(r => r.json())
+        .then(assignedGolfers => {
+          console.log('Loaded assigned golfers:', assignedGolfers.length);
+
+          const assignedIds = new Set(assignedGolfers.map(g => parseInt(g.golfer_id)));
+
+          const availableContainer = document.querySelector('#gt-available .cards-container');
+          const selectedContainer = document.querySelector('#gt-selected .cards-container');
+
+          if (!availableContainer || !selectedContainer) {
+            console.error('Containers not found!', { availableContainer, selectedContainer });
+            return;
+          }
+
+          availableContainer.innerHTML = '';
+          selectedContainer.innerHTML = '';
+
+          allGolfers.forEach(g => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.dataset.golferId = g.golfer_id;
+            card.innerHTML = `<span class="name">${g.first_name} ${g.last_name}</span>
+                              <span class="handicap">${g.handicap}</span>`;
+
+            if (assignedIds.has(parseInt(g.golfer_id))) {
+              selectedContainer.appendChild(card);
+            } else {
+              availableContainer.appendChild(card);
+            }
+          });
+
+          console.log('Cards created, initializing Sortable...');
+          // Initialize drag-and-drop
+          initGuysTrip_PlayerSortable();
+        })
+        .catch(err => console.error('Error loading assigned golfers:', err));
+    })
+    .catch(err => console.error('Error loading all golfers:', err));
+}
+
+// Initialize Sortable for Guys Trip player selection
+function initGuysTrip_PlayerSortable() {
+  const zones = ['gt-available', 'gt-selected'];
+
+  zones.forEach(zoneId => {
+    const container = document.querySelector(`#${zoneId} .cards-container`);
+    if (!container) {
+      console.error(`Container not found for ${zoneId}`);
+      return;
+    }
+
+    // Destroy existing sortable if present
+    if (container._sortable) {
+      container._sortable.destroy();
+    }
+
+    container._sortable = Sortable.create(container, {
+      group: 'gt-players',
+      animation: 150,
+      ghostClass: 'sortable-ghost',
+      draggable: '.card',
+      onEnd: function(evt) {
+        console.log('Card moved:', evt.item.dataset.golferId, 'to', evt.to.parentElement.id);
+      }
+    });
+  });
+}
+
+// Save Guys Trip player list
+document.getElementById('gt-save-players-btn')?.addEventListener('click', () => {
+  const selectedCards = document.querySelectorAll('#gt-selected .card');
+  const golferIds = Array.from(selectedCards).map(c => parseInt(c.dataset.golferId));
+
+  fetch(BASE + '/api/tournament_golfers.php', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      tournament_id: currentTourneyId,
+      golfer_ids: golferIds
+    })
+  })
+  .then(r => r.json())
+  .then(result => {
+    alert('Player list saved!');
+  })
+  .catch(err => {
+    console.error('Error saving players:', err);
+    alert('Error saving player list');
+  });
+});
+
+// Load rounds for Guys Trip
+function loadGuysTrip_Rounds() {
+  fetch(BASE + `/api/rounds.php?tournament_id=${currentTourneyId}`, { credentials: 'include' })
+    .then(r => r.json())
+    .then(rounds => {
+      const tbody = document.querySelector('#gt-rounds-table tbody');
+      tbody.innerHTML = '';
+
+      rounds.forEach(round => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${round.round_date}</td>
+          <td>${round.round_name || 'Round'}</td>
+          <td>${round.course_name || ''}</td>
+          <td>
+            <button class="btn-secondary gt-edit-matches" data-round-id="${round.round_id}">Matches</button>
+            <button class="btn-secondary gt-edit-tee-times" data-round-id="${round.round_id}">Tee Times</button>
+            <button class="btn-danger gt-delete-round" data-round-id="${round.round_id}">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // Attach event listeners
+      tbody.querySelectorAll('.gt-edit-matches').forEach(btn => {
+        btn.addEventListener('click', () => showGuysTrip_Matches(btn.dataset.roundId));
+      });
+      tbody.querySelectorAll('.gt-edit-tee-times').forEach(btn => {
+        btn.addEventListener('click', () => showGuysTrip_TeeTimes(btn.dataset.roundId));
+      });
+      tbody.querySelectorAll('.gt-delete-round').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (confirm('Delete this round?')) {
+            deleteGuysTrip_Round(btn.dataset.roundId);
+          }
+        });
+      });
+    });
+}
+
+// Store current Guys Trip round ID and match data
+let currentGuysTrip_RoundId = null;
+let guysTrip_Matches = [];
+let guysTrip_Players = [];
+let guysTrip_RoundName = '';
+
+// Show matches editor for a Guys Trip round
+function showGuysTrip_Matches(roundId) {
+  currentGuysTrip_RoundId = roundId;
+
+  // Hide other tabs, show matches tab
+  document.querySelectorAll('#section-tourney-detail-guys-trip .tab-content').forEach(c => c.hidden = true);
+  document.getElementById('tab-gt-matches').hidden = false;
+
+  // Fetch round details and players
+  Promise.all([
+    fetch(BASE + `/api/rounds.php?round_id=${roundId}`, { credentials: 'include' }).then(r => r.json()),
+    fetch(BASE + `/api/tournament_golfers.php?tournament_id=${currentTourneyId}`, { credentials: 'include' }).then(r => r.json()),
+    fetch(BASE + `/api/matches.php?round_id=${roundId}`, { credentials: 'include' }).then(r => r.json())
+  ])
+  .then(([round, players, matches]) => {
+    guysTrip_RoundName = round.round_name;
+    guysTrip_Players = players;
+    guysTrip_Matches = matches || [];
+
+    document.getElementById('gt-matches-round-title').textContent = round.round_name;
+
+    // Render the match board
+    renderGuysTrip_MatchBoard();
+  });
+}
+
+// Render the Guys Trip match board
+function renderGuysTrip_MatchBoard() {
+  const poolEl = document.getElementById('gt-player-pool');
+  const boardEl = document.getElementById('gt-matches-board');
+
+  // Find which players are already assigned to matches
+  const assignedPlayerIds = new Set();
+  guysTrip_Matches.forEach(match => {
+    if (match.golfers) {
+      match.golfers.forEach(g => assignedPlayerIds.add(parseInt(g.golfer_id)));
+    }
+  });
+
+  // Render available players pool
+  poolEl.innerHTML = '';
+  const poolZone = document.createElement('div');
+  poolZone.className = 'zone';
+  poolZone.id = 'gt-pool';
+  poolZone.innerHTML = '<h3>Available Players</h3>';
+
+  guysTrip_Players.forEach(p => {
+    if (!assignedPlayerIds.has(parseInt(p.golfer_id))) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.dataset.golferId = p.golfer_id;
+      card.dataset.handicap = p.handicap;
+      card.textContent = `${p.first_name} ${p.last_name} (${p.handicap})`;
+      poolZone.appendChild(card);
+    }
+  });
+  poolEl.appendChild(poolZone);
+
+  // Render matches
+  boardEl.innerHTML = '';
+  guysTrip_Matches.forEach((match, idx) => {
+    boardEl.appendChild(createGuysTrip_MatchElement(match, idx));
+  });
+
+  // Initialize drag-drop
+  initGuysTrip_MatchDragDrop();
+}
+
+// Create a match element for Guys Trip
+function createGuysTrip_MatchElement(match, index) {
+  const matchEl = document.createElement('div');
+  matchEl.className = 'match';
+  matchEl.dataset.matchId = match.match_id || `new-${index}`;
+
+  // Match title
+  const title = document.createElement('h2');
+  title.textContent = match.match_name || `Match ${index + 1}`;
+  matchEl.appendChild(title);
+
+  // Delete button
+  const delBtn = document.createElement('button');
+  delBtn.className = 'delete-match-btn';
+  delBtn.textContent = '×';
+  delBtn.addEventListener('click', () => deleteGuysTrip_Match(match.match_id || `new-${index}`));
+  matchEl.appendChild(delBtn);
+
+  // Teams container
+  const teamsRow = document.createElement('div');
+  teamsRow.className = 'container';
+
+  // Team 1 zone
+  const team1Zone = document.createElement('div');
+  team1Zone.className = 'zone';
+  team1Zone.id = `gt-team1-${match.match_id || `new-${index}`}`;
+  team1Zone.innerHTML = '<h3 style="background:#007bff;color:#fff;padding:4px;border-radius:4px;">Team 1</h3>';
+
+  // Team 2 zone
+  const team2Zone = document.createElement('div');
+  team2Zone.className = 'zone';
+  team2Zone.id = `gt-team2-${match.match_id || `new-${index}`}`;
+  team2Zone.innerHTML = '<h3 style="background:#28a745;color:#fff;padding:4px;border-radius:4px;">Team 2</h3>';
+
+  // Add existing golfers to teams
+  if (match.golfers) {
+    match.golfers.forEach(g => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.dataset.golferId = g.golfer_id;
+      card.dataset.handicap = g.handicap;
+      card.textContent = `${g.first_name} ${g.last_name} (${g.handicap})`;
+
+      // team_position 1,2 = Team 1; 3,4 = Team 2
+      if (g.team_position <= 2) {
+        team1Zone.appendChild(card);
+      } else {
+        team2Zone.appendChild(card);
+      }
+    });
+  }
+
+  teamsRow.appendChild(team1Zone);
+  teamsRow.appendChild(team2Zone);
+  matchEl.appendChild(teamsRow);
+
+  return matchEl;
+}
+
+// Initialize drag-drop for Guys Trip matches
+function initGuysTrip_MatchDragDrop() {
+  // Pool zone
+  const poolZone = document.getElementById('gt-pool');
+  if (poolZone) {
+    Sortable.create(poolZone, {
+      group: 'gt-match-players',
+      animation: 150,
+      draggable: '.card',
+      ghostClass: 'sortable-ghost'
+    });
+  }
+
+  // Team zones for each match
+  document.querySelectorAll('#gt-matches-board .match').forEach(matchEl => {
+    const matchId = matchEl.dataset.matchId;
+
+    ['gt-team1-', 'gt-team2-'].forEach(prefix => {
+      const zone = document.getElementById(prefix + matchId);
+      if (zone) {
+        Sortable.create(zone, {
+          group: 'gt-match-players',
+          animation: 150,
+          draggable: '.card',
+          ghostClass: 'sortable-ghost',
+          onAdd: (evt) => {
+            // Limit to 2 players per team
+            const cards = evt.to.querySelectorAll('.card');
+            if (cards.length > 2) {
+              alert('Maximum 2 players per team!');
+              evt.from.appendChild(evt.item);
+            }
+          }
+        });
+      }
+    });
+  });
+}
+
+// Add new match for Guys Trip
+document.getElementById('gt-new-match-btn')?.addEventListener('click', () => {
+  const newMatchIndex = guysTrip_Matches.length;
+  const newMatch = {
+    match_id: `new-${Date.now()}`,
+    match_name: `Match ${newMatchIndex + 1} in ${guysTrip_RoundName}`,
+    golfers: []
+  };
+  guysTrip_Matches.push(newMatch);
+  renderGuysTrip_MatchBoard();
+});
+
+// Delete a match
+function deleteGuysTrip_Match(matchId) {
+  if (!confirm('Delete this match?')) return;
+  guysTrip_Matches = guysTrip_Matches.filter(m => (m.match_id || `new-${guysTrip_Matches.indexOf(m)}`) !== matchId);
+  renderGuysTrip_MatchBoard();
+}
+
+// Save all matches for Guys Trip
+document.getElementById('gt-save-matches-btn')?.addEventListener('click', () => {
+  const matchData = [];
+
+  document.querySelectorAll('#gt-matches-board .match').forEach((matchEl, idx) => {
+    const matchId = matchEl.dataset.matchId;
+    const team1Cards = matchEl.querySelectorAll('[id^="gt-team1-"] .card');
+    const team2Cards = matchEl.querySelectorAll('[id^="gt-team2-"] .card');
+
+    const golfers = [];
+
+    // Team 1 players get positions 1, 2
+    team1Cards.forEach((card, i) => {
+      golfers.push({
+        golfer_id: parseInt(card.dataset.golferId),
+        team_position: i + 1
+      });
+    });
+
+    // Team 2 players get positions 3, 4
+    team2Cards.forEach((card, i) => {
+      golfers.push({
+        golfer_id: parseInt(card.dataset.golferId),
+        team_position: i + 3
+      });
+    });
+
+    matchData.push({
+      match_id: matchId.startsWith('new-') ? null : parseInt(matchId),
+      match_name: `Match ${idx + 1} in ${guysTrip_RoundName}`,
+      golfers: golfers
+    });
+  });
+
+  console.log('Saving Guys Trip matches:', matchData);
+
+  fetch(BASE + '/api/save_guys_trip_matches.php', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      round_id: currentGuysTrip_RoundId,
+      tournament_id: currentTourneyId,
+      matches: matchData
+    })
+  })
+  .then(r => r.json())
+  .then(result => {
+    if (result.success) {
+      alert('Matches saved!');
+      // Reload to get server-assigned IDs
+      showGuysTrip_Matches(currentGuysTrip_RoundId);
+    } else {
+      alert('Error saving matches: ' + (result.error || 'Unknown error'));
+    }
+  })
+  .catch(err => {
+    console.error('Error saving matches:', err);
+    alert('Error saving matches');
+  });
+});
+
+// Show tee times editor for a Guys Trip round
+function showGuysTrip_TeeTimes(roundId) {
+  currentGuysTrip_RoundId = roundId;
+
+  // Hide other tabs, show tee times tab
+  document.querySelectorAll('#section-tourney-detail-guys-trip .tab-content').forEach(c => c.hidden = true);
+  document.getElementById('tab-gt-tee-times').hidden = false;
+
+  // Fetch tee time assignments data
+  fetch(BASE + `/api/get_tee_time_assignments.php?round_id=${roundId}`, { credentials: 'include' })
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('gt-tee-times-round-title').textContent = data.round_name;
+      renderGuysTrip_TeeTimeWorkspace(data);
+    })
+    .catch(err => console.error('Error loading tee times:', err));
+}
+
+// Render the tee time workspace for Guys Trip
+function renderGuysTrip_TeeTimeWorkspace(data) {
+  const pool = document.getElementById('gt-unassigned-matches-pool');
+  const list = document.getElementById('gt-tee-times-list');
+
+  pool.innerHTML = '';
+  list.innerHTML = '';
+
+  // Render unassigned matches
+  data.matches.forEach(match => {
+    const card = createGuysTrip_TeeTimeMatchCard(match);
+    if (match.tee_time_id) {
+      // Will be placed in tee time slot below
+    } else {
+      pool.appendChild(card);
+    }
+  });
+
+  // Render tee time slots
+  data.tee_times.forEach(tt => {
+    const slot = document.createElement('div');
+    slot.className = 'tee-time-slot';
+    slot.dataset.teeTimeId = tt.tee_time_id;
+
+    const header = document.createElement('div');
+    header.className = 'tee-time-header';
+    header.innerHTML = `
+      <span class="tee-time-label">${tt.time}</span>
+      <button class="delete-tee-time-btn btn-danger" data-tee-time-id="${tt.tee_time_id}">×</button>
+    `;
+    slot.appendChild(header);
+
+    const matchesContainer = document.createElement('div');
+    matchesContainer.className = 'tee-time-slot-matches';
+
+    // Add matches assigned to this tee time
+    data.matches.filter(m => m.tee_time_id === tt.tee_time_id).forEach(match => {
+      matchesContainer.appendChild(createGuysTrip_TeeTimeMatchCard(match));
+    });
+
+    slot.appendChild(matchesContainer);
+    list.appendChild(slot);
+  });
+
+  // Initialize drag-drop for tee times
+  initGuysTrip_TeeTimeSortable();
+
+  // Add delete handlers for tee time slots
+  list.querySelectorAll('.delete-tee-time-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (confirm('Delete this tee time?')) {
+        deleteGuysTrip_TeeTime(btn.dataset.teeTimeId);
+      }
+    });
+  });
+}
+
+// Create a match card for tee time assignment
+function createGuysTrip_TeeTimeMatchCard(match) {
+  const card = document.createElement('div');
+  card.className = 'match-card';
+  card.dataset.matchId = match.match_id;
+  card.dataset.golferCount = match.golfers ? match.golfers.length : 0;
+
+  // Split golfers into Team 1 (positions 1,2) and Team 2 (positions 3,4)
+  let team1 = [];
+  let team2 = [];
+
+  if (match.golfers && match.golfers.length > 0) {
+    match.golfers.forEach(g => {
+      const pos = parseInt(g.team_position) || parseInt(g.player_order) || 1;
+      if (pos <= 2) {
+        team1.push(`${g.first_name} ${g.last_name}`);
+      } else {
+        team2.push(`${g.first_name} ${g.last_name}`);
+      }
+    });
+  }
+
+  const team1Names = team1.join(' & ') || 'TBD';
+  const team2Names = team2.join(' & ') || 'TBD';
+
+  card.innerHTML = `
+    <div class="match-card-title">${match.match_name || 'Match'}</div>
+    <div class="match-card-teams">
+      <div class="match-card-team team1">
+        <span class="team-label">Team 1:</span>
+        <span class="team-players">${team1Names}</span>
+      </div>
+      <div class="match-card-vs">vs</div>
+      <div class="match-card-team team2">
+        <span class="team-label">Team 2:</span>
+        <span class="team-players">${team2Names}</span>
+      </div>
+    </div>
+  `;
+
+  return card;
+}
+
+// Initialize Sortable for Guys Trip tee times
+function initGuysTrip_TeeTimeSortable() {
+  const pool = document.getElementById('gt-unassigned-matches-pool');
+
+  // Unassigned matches pool
+  Sortable.create(pool, {
+    group: 'gt-tee-times',
+    animation: 150,
+    ghostClass: 'sortable-ghost'
+  });
+
+  // Each tee time slot
+  document.querySelectorAll('#gt-tee-times-list .tee-time-slot-matches').forEach(slot => {
+    Sortable.create(slot, {
+      group: 'gt-tee-times',
+      animation: 150,
+      ghostClass: 'sortable-ghost'
+    });
+  });
+}
+
+// Delete a tee time
+function deleteGuysTrip_TeeTime(teeTimeId) {
+  fetch(BASE + `/api/tee_times.php?tee_time_id=${teeTimeId}`, {
+    method: 'DELETE',
+    credentials: 'include'
+  })
+  .then(r => r.json())
+  .then(() => showGuysTrip_TeeTimes(currentGuysTrip_RoundId))
+  .catch(err => console.error('Error deleting tee time:', err));
+}
+
+// New Tee Time button for Guys Trip
+document.getElementById('gt-new-tee-time-btn')?.addEventListener('click', () => {
+  document.getElementById('gt-tee-time-modal').classList.remove('hidden');
+});
+
+// Submit new tee time for Guys Trip
+document.getElementById('gt-tee-time-create-form')?.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const time = document.getElementById('gt-tt-time').value;
+
+  fetch(BASE + '/api/tee_times.php', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ round_id: currentGuysTrip_RoundId, time: time })
+  })
+  .then(r => r.json())
+  .then(response => {
+    if (response.success) {
+      document.getElementById('gt-tee-time-modal').classList.add('hidden');
+      document.getElementById('gt-tee-time-create-form').reset();
+      showGuysTrip_TeeTimes(currentGuysTrip_RoundId);
+    } else {
+      alert('Error creating tee time: ' + (response.error || 'Unknown error'));
+    }
+  })
+  .catch(err => {
+    console.error('Error creating tee time:', err);
+    alert('Error creating tee time');
+  });
+});
+
+// Save tee time assignments for Guys Trip
+document.getElementById('gt-save-tee-times-btn')?.addEventListener('click', () => {
+  const assignments = [];
+
+  document.querySelectorAll('#gt-tee-times-list .tee-time-slot').forEach(slot => {
+    const teeTimeId = slot.dataset.teeTimeId;
+    slot.querySelectorAll('.match-card').forEach(card => {
+      assignments.push({
+        match_id: parseInt(card.dataset.matchId),
+        tee_time_id: parseInt(teeTimeId)
+      });
+    });
+  });
+
+  // Also handle unassigned matches (set tee_time_id to null)
+  document.querySelectorAll('#gt-unassigned-matches-pool .match-card').forEach(card => {
+    assignments.push({
+      match_id: parseInt(card.dataset.matchId),
+      tee_time_id: null
+    });
+  });
+
+  fetch(BASE + '/api/save_tee_time_assignments.php', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      round_id: currentGuysTrip_RoundId,
+      assignments: assignments
+    })
+  })
+  .then(r => r.json())
+  .then(response => {
+    if (response.success) {
+      alert('Tee time assignments saved!');
+    } else {
+      alert('Error saving: ' + (response.error || 'Unknown error'));
+    }
+  })
+  .catch(err => {
+    console.error('Error saving tee times:', err);
+    alert('Error saving tee time assignments');
+  });
+});
+
+// Delete a Guys Trip round
+function deleteGuysTrip_Round(roundId) {
+  fetch(BASE + `/api/rounds.php?round_id=${roundId}`, {
+    method: 'DELETE',
+    credentials: 'include'
+  })
+  .then(() => loadGuysTrip_Rounds())
+  .catch(err => console.error('Error deleting round:', err));
+}
+
+// Back to rounds buttons
+document.getElementById('gt-back-to-rounds-btn')?.addEventListener('click', () => {
+  document.querySelectorAll('#section-tourney-detail-guys-trip .tab-content').forEach(c => c.hidden = true);
+  document.getElementById('tab-gt-rounds').hidden = false;
+});
+document.getElementById('gt-back-to-rounds-btn-tt')?.addEventListener('click', () => {
+  document.querySelectorAll('#section-tourney-detail-guys-trip .tab-content').forEach(c => c.hidden = true);
+  document.getElementById('tab-gt-rounds').hidden = false;
+});
+
+// New Round button for Guys Trip
+document.getElementById('gt-new-round-btn')?.addEventListener('click', () => {
+  document.getElementById('gt-round-modal').classList.remove('hidden');
+  loadCoursesForGuysTrip_RoundModal();
+});
+
+// Load courses into the Guys Trip round modal
+function loadCoursesForGuysTrip_RoundModal() {
+  fetch(BASE + '/api/courses.php', { credentials: 'include' })
+    .then(r => r.json())
+    .then(courses => {
+      const select = document.getElementById('gt-r-course');
+      select.innerHTML = '<option value="">-- Select Course --</option>';
+      courses.forEach(c => {
+        select.insertAdjacentHTML('beforeend',
+          `<option value="${c.course_id}">${c.name}</option>`
+        );
+      });
+    });
+}
+
+// Course change handler for Guys Trip - load tees
+document.getElementById('gt-r-course')?.addEventListener('change', (e) => {
+  const courseId = e.target.value;
+  const teeSelect = document.getElementById('gt-r-tees');
+  teeSelect.innerHTML = '<option value="">-- Select Tees --</option>';
+
+  if (courseId) {
+    fetch(BASE + `/api/get_course_tees.php?course_id=${courseId}`, { credentials: 'include' })
+      .then(r => r.json())
+      .then(data => {
+        // API returns { tees: [...], holes: [...] }
+        data.tees.forEach(t => {
+          teeSelect.insertAdjacentHTML('beforeend',
+            `<option value="${t.tee_id}">${t.tee_name} (${t.slope}/${t.rating})</option>`
+          );
+        });
+      });
+  }
+});
+
+// Submit new round form for Guys Trip
+document.getElementById('gt-round-create-form')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const roundDate = document.getElementById('gt-r-date').value;
+  const courseSelect = document.getElementById('gt-r-course');
+  const teeSelect = document.getElementById('gt-r-tees');
+
+  const courseId = courseSelect.value;
+  const teeId = teeSelect.value;
+  const courseName = courseSelect.options[courseSelect.selectedIndex].text;
+  const teeName = teeSelect.options[teeSelect.selectedIndex].text.split(' (')[0]; // Get just tee name before the slope/rating
+
+  // Get next round number
+  const nextRoundNum = await getNextRoundNumber(currentTourneyId);
+
+  // Generate round name following existing convention
+  const roundName = `Round ${nextRoundNum} at ${courseName} (${teeName} tees)`;
+
+  fetch(BASE + '/api/rounds.php', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      tournament_id: currentTourneyId,
+      course_id: courseId,
+      tee_id: teeId,
+      round_name: roundName,
+      round_date: roundDate
+    })
+  })
+  .then(r => r.json())
+  .then(result => {
+    document.getElementById('gt-round-modal').classList.add('hidden');
+    document.getElementById('gt-round-create-form').reset();
+    loadGuysTrip_Rounds();
+  })
+  .catch(err => console.error('Error creating round:', err));
+});
+
+// Close modal handlers for Guys Trip modals
+document.querySelectorAll('#gt-round-modal .modal-close, #gt-round-modal .modal-backdrop').forEach(el => {
+  el.addEventListener('click', () => {
+    document.getElementById('gt-round-modal').classList.add('hidden');
+  });
+});
+document.querySelectorAll('#gt-tee-time-modal .modal-close, #gt-tee-time-modal .modal-backdrop').forEach(el => {
+  el.addEventListener('click', () => {
+    document.getElementById('gt-tee-time-modal').classList.add('hidden');
   });
 });
 

@@ -516,6 +516,18 @@ h1 {
             pointer-events: none;
            }
 
+/* Cards container - the actual drag zone */
+.cards-container {
+    min-height: 150px;
+    padding: 5px;
+}
+
+/* Sortable ghost class */
+.sortable-ghost {
+    opacity: 0.4;
+    background: #c8ebfb;
+}
+
 /* Card elements */
 .card {
     background: white;
@@ -677,4 +689,37 @@ h1 {
 
 .player-name {
   font-size: 0.9rem;
+}
+
+/* Match card team display for Guys Trip */
+.match-card-teams {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+}
+
+.match-card-team {
+  display: flex;
+  gap: 5px;
+}
+
+.match-card-team .team-label {
+  font-weight: bold;
+  color: #666;
+}
+
+.match-card-team.team1 .team-players {
+  color: #007bff;
+}
+
+.match-card-team.team2 .team-players {
+  color: #28a745;
+}
+
+.match-card-vs {
+  text-align: center;
+  font-weight: bold;
+  color: #999;
+  font-size: 0.75rem;
 }
