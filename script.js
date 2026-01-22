@@ -6300,6 +6300,14 @@ function loadQuickRoundFromTournament(tournamentId, roundName) {
   document.getElementById('user-dashboard').style.display = 'none';
   document.getElementById('tournament-history-container').style.display = 'none';
 
+  // Clear and recreate score-entry-content div (needed for scoring functions)
+  const mainContent = document.getElementById('content');
+  mainContent.innerHTML = '';
+  const scoreEntryDiv = document.createElement('div');
+  scoreEntryDiv.id = 'score-entry-content';
+  scoreEntryDiv.style.paddingBottom = '2rem';
+  mainContent.appendChild(scoreEntryDiv);
+
   // Find the match for this tournament and load the appropriate view
   fetch(`${API_BASE_URL}/api/get_match_by_tournament.php?tournament_id=${tournamentId}`, {
     credentials: 'include'
