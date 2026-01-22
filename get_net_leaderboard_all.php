@@ -44,7 +44,7 @@ $sql = "
   JOIN rounds r ON m.round_id = r.round_id
   JOIN course_tees ct ON r.tee_id = ct.tee_id
   JOIN tournament_golfers tg ON g.golfer_id = tg.golfer_id AND tg.tournament_id = ?
-  JOIN teams t ON tg.team_id = t.team_id
+  LEFT JOIN teams t ON tg.team_id = t.team_id
   LEFT JOIN hole_scores s ON mg.match_id = s.match_id AND mg.golfer_id = s.golfer_id
   LEFT JOIN holes h ON r.course_id = h.course_id AND s.hole_number = h.hole_number
   WHERE r.tournament_id = ?

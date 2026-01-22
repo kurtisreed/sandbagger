@@ -26,7 +26,7 @@ if ($conn->connect_error) {
 }
 
 $sql = "
-SELECT 
+SELECT
   mg.match_id,
   m.round_id,
   m.finalized,
@@ -44,7 +44,8 @@ SELECT
   tg.team_id,
   t.name AS team_name,
   t.color_hex AS team_color,
-  g.handicap
+  g.handicap,
+  mg2.player_order
 FROM match_golfers mg
 JOIN matches m ON mg.match_id = m.match_id
 JOIN rounds r ON m.round_id = r.round_id

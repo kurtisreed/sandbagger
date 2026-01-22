@@ -31,7 +31,7 @@ if ($conn->connect_error) {
 
 // Step 1: Get golfer and match details
 $sql = "
-SELECT 
+SELECT
   mg.match_id,
   m.round_id,
   r.course_id,
@@ -42,17 +42,19 @@ SELECT
   g.first_name,
   t.name AS team_name,
   t.color_hex AS team_color,
-  g.handicap
+  g.handicap,
+  mg.player_order
 FROM match_golfers mg
 JOIN matches m ON mg.match_id = m.match_id
 JOIN rounds r ON m.round_id = r.round_id
 JOIN courses c ON r.course_id = c.course_id
 JOIN golfers g ON mg.golfer_id = g.golfer_id
 JOIN tournament_golfers tg ON g.golfer_id = tg.golfer_id AND tg.tournament_id = ?
-JOIN teams t ON tg.team_id = t.team_id
+LEFT JOIN teams t ON tg.team_id = t.team_id
 WHERE mg.match_id = ?
-ORDER BY 
-  t.name,
+ORDER BY
+  COALESCE(t.name, ''),
+  mg.player_order,
   g.first_name
 ";
 

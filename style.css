@@ -347,6 +347,17 @@ main {
   background-color: #f7f7f7 !important; /* light gray for par, optional */
 }
 
+/* Guys Trip best ball cells */
+.best-ball-cell {
+  font-weight: bold;
+  text-align: center;
+}
+
+.winning-score {
+  border: 2px solid #FFD700 !important; /* Gold border for winning score */
+  font-weight: bold;
+}
+
 #score-entry-content {
   overflow-y: auto;
   max-height: 800px;

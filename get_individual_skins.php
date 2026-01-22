@@ -59,17 +59,17 @@ if (empty($matches) || !$course_id) {
 
 // Step 2: Get all golfers and their handicaps, along with their team names
 $golferSql = $conn->prepare("
-    SELECT 
-        g.golfer_id, 
-        g.first_name, 
-        g.handicap, 
-        mg.match_id, 
+    SELECT
+        g.golfer_id,
+        g.first_name,
+        g.handicap,
+        mg.match_id,
         t.name AS team_name,
         t.color_hex AS team_color
     FROM match_golfers mg
     JOIN golfers g ON mg.golfer_id = g.golfer_id
     JOIN tournament_golfers tg ON g.golfer_id = tg.golfer_id AND tg.tournament_id = ?
-    JOIN teams t ON tg.team_id = t.team_id
+    LEFT JOIN teams t ON tg.team_id = t.team_id
     WHERE mg.match_id IN (" . implode(',', array_fill(0, count($matches), '?')) . ")
 ");
 $golferSql->bind_param(str_repeat('i', count($matches) + 1), $tournament_id, ...$matches);

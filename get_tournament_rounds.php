@@ -62,16 +62,17 @@ foreach ($rounds as &$round) {
 
         // 4. For each match, get golfers (with team color)
         foreach ($matches as &$match) {
-            // Get golfers (with team color)
+            // Get golfers (with team color and player_order for Guys Trip)
             $sql = "
                 SELECT
                     g.first_name AS name,
                     t.color_hex AS team_color,
-                    t.name AS team_name
+                    t.name AS team_name,
+                    mg.player_order
                 FROM match_golfers mg
                 JOIN golfers g ON mg.golfer_id = g.golfer_id
                 JOIN tournament_golfers tg ON g.golfer_id = tg.golfer_id AND tg.tournament_id = ?
-                JOIN teams t ON tg.team_id = t.team_id
+                LEFT JOIN teams t ON tg.team_id = t.team_id
                 WHERE mg.match_id = ?
                 ORDER BY t.name ASC
             ";
@@ -83,7 +84,8 @@ foreach ($rounds as &$round) {
                 $match['golfers'][] = [
                     'name' => $row2['name'],
                     'team_color' => $row2['team_color'],
-                    'team_name' => $row2['team_name']
+                    'team_name' => $row2['team_name'],
+                    'player_order' => $row2['player_order']
                 ];
             }
             $stmt2->close();

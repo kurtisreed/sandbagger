@@ -28,13 +28,14 @@ if ($conn->connect_error) {
 
 // Step 1: Get all matches for this round
 $sql = "
-SELECT 
+SELECT
   m.match_id,
   g.golfer_id,
   g.handicap,
   g.first_name,
   g.last_name,
-  t.name AS team_name
+  t.name AS team_name,
+  mg.player_order
 FROM matches m
 JOIN match_golfers mg ON m.match_id = mg.match_id
 JOIN golfers g ON mg.golfer_id = g.golfer_id

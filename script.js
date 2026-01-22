@@ -72,22 +72,43 @@ tabs.forEach(tab => {
 
 function loadPage(page) {
   content.innerHTML = '';
-  
+
   if (page === 'my-match') {
     const container = document.createElement("div");
     container.id = "score-entry-content";
     content.appendChild(container);
-    loadTodaysMatch();
+
+    // Check if this is a Guys Trip tournament
+    const formatId = parseInt(sessionStorage.getItem('selected_format_id'));
+    if (formatId === 4) {
+      loadGuysTripMatch();
+    } else {
+      loadTodaysMatch();
+    }
   } else if (page === 'today') {
     const container = document.createElement("div");
     container.id = "today-summary";
     content.appendChild(container);
-    loadTodaySummary();
+
+    // Check if this is a Guys Trip tournament
+    const formatId = parseInt(sessionStorage.getItem('selected_format_id'));
+    if (formatId === 4) {
+      loadGuysTripSummary();
+    } else {
+      loadTodaySummary();
+    }
   } else if (page === 'tournament') {
       const container = document.createElement("div");
       container.id = "tournament";
       content.appendChild(container);
-      loadTournamentPage(container);
+
+      // Check if this is a Guys Trip tournament
+      const formatId = parseInt(sessionStorage.getItem('selected_format_id'));
+      if (formatId === 4) {
+        loadGuysTripTournamentPage(container);
+      } else {
+        loadTournamentPage(container);
+      }
   }
 }
 
@@ -3418,7 +3439,7 @@ function loadTodaysMatch() {
         })))];
 
 
-      
+
       strokeMaps = {};
         matchGolfers.forEach(g => {
           strokeMaps[g.golfer_id] = buildStrokeMapForGolfer(calculatePlayingHandicap(g.handicap), holeInfo);
@@ -3632,6 +3653,329 @@ function loadTodaysMatch() {
     .catch(err => {
       console.error("Error loading match:", err);
     });
+}
+
+function loadGuysTripMatch() {
+  const roundId = sessionStorage.getItem('selected_round_id');
+  const tournamentId = sessionStorage.getItem('selected_tournament_id');
+  const golferId = currentUser?.golfer_id || sessionStorage.getItem('golfer_id');
+
+  if (!roundId || !tournamentId || !golferId) {
+    const container = document.getElementById("score-entry-content");
+    container.innerHTML = "<p>Missing round, tournament, or golfer information.</p>";
+    return;
+  }
+
+  const url = `${API_BASE_URL}/get_match_by_round.php?round_id=${roundId}&tournament_id=${tournamentId}&golfer_id=${golferId}`;
+
+  fetch(url, { credentials: 'include' })
+    .then(res => res.json())
+    .then(data => {
+      const matchGolfers = data.match;
+      holeInfo = data.holes;
+
+      if (data.error || !matchGolfers || matchGolfers.length === 0) {
+        const container = document.getElementById("score-entry-content");
+        container.innerHTML = "<p>No match found. Try logging out and reloading the app.</p>";
+        return;
+      }
+
+      // Set course data and tournament handicap percentage
+      const firstMatch = matchGolfers[0];
+      courses = {
+        course_name: firstMatch.course_name,
+        slope: firstMatch.slope,
+        rating: firstMatch.rating,
+        par: firstMatch.par
+      };
+      tournamentHandicapPct = parseFloat(data.tournament_handicap_pct || 100);
+
+      // Check if finalized
+      if (firstMatch && firstMatch.finalized && parseInt(firstMatch.finalized) === 1) {
+        loadMatchScorecard(firstMatch.match_id, "score-entry-content");
+        return;
+      }
+
+      const container = document.getElementById("score-entry-content");
+      currentMatchId = firstMatch.match_id;
+
+      // Group golfers by player_order
+      // player_order 1,2 = Partnership 1
+      // player_order 3,4 = Partnership 2
+      const partnership1 = [];
+      const partnership2 = [];
+
+      matchGolfers.forEach(row => {
+        const playerOrder = parseInt(row.player_order) || 1;
+        const golferData = {
+          id: row.golfer_id,
+          name: row.first_name,
+          handicap: calculatePlayingHandicap(row.handicap),
+          player_order: playerOrder
+        };
+
+        if (playerOrder <= 2) {
+          partnership1.push(golferData);
+        } else {
+          partnership2.push(golferData);
+        }
+      });
+
+      // Combine all golfers for display
+      golfers = [...partnership1, ...partnership2];
+
+      // Build stroke maps
+      strokeMaps = {};
+      matchGolfers.forEach(g => {
+        strokeMaps[g.golfer_id] = buildStrokeMapForGolfer(calculatePlayingHandicap(g.handicap), holeInfo);
+      });
+
+      // Create table
+      const table = document.createElement("table");
+      table.classList.add("score-table");
+
+      // Build header row
+      const header = document.createElement("tr");
+      header.innerHTML = `<th></th><th>#</th><th>P</th><th>HI</th>` + golfers.map(golfer => {
+        const bg = golfer.player_order <= 2 ? '#007bff' : '#28a745';
+        const textColor = '#ffffff';
+        return `<th style="background-color: ${bg}; color: ${textColor};">${golfer.name} (${parseFloat(golfer.handicap).toFixed(1)})</th>`;
+      }).join("");
+      table.appendChild(header);
+
+      // Build score rows
+      for (let i = 1; i <= 18; i++) {
+        const row = document.createElement("tr");
+        const par = holeInfo.find(h => h.hole_number === i)?.par || "-";
+        const index = holeInfo.find(h => h.hole_number === i)?.handicap_index || "-";
+
+        row.innerHTML = `<td></td><td>${i}</td><td>${par}</td><td>${index}</td>` + golfers.map(golfer => {
+          const strokeCount = strokeMaps[golfer.id]?.[i] || 0;
+          const select = `
+            <select data-hole="${i}" data-golfer="${golfer.id}">
+              <option value="">–</option>
+              ${[...Array(12).keys()].map(n => `<option value="${n + 1}">${n + 1}</option>`).join("")}
+            </select>
+          `;
+
+          let dots = '';
+          if (strokeCount === 1) {
+            dots = '<span class="corner-dot"></span>';
+          } else if (strokeCount === 2) {
+            dots = '<span class="corner-dot"></span><span class="corner-dot second-dot"></span>';
+          }
+          return `<td>${dots}${select}</td>`;
+        }).join("");
+        table.appendChild(row);
+
+        // Add Out subtotal row after hole 9
+        if (i === 9) {
+          const outRow = document.createElement("tr");
+          outRow.classList.add("subtotal-row");
+          const frontNinePar = holeInfo.filter(h => h.hole_number >= 1 && h.hole_number <= 9)
+            .reduce((sum, hole) => sum + (hole.par || 0), 0);
+
+          outRow.innerHTML = `<td></td><td>Out</td><td>${frontNinePar}</td><td></td>` + golfers.map(golfer => {
+            return `<td class="out-subtotal-cell" data-golfer="${golfer.id}">–</td>`;
+          }).join("");
+          table.appendChild(outRow);
+        }
+
+        // Add In subtotal row after hole 18
+        if (i === 18) {
+          const inRow = document.createElement("tr");
+          inRow.classList.add("subtotal-row");
+          const backNinePar = holeInfo.filter(h => h.hole_number >= 10 && h.hole_number <= 18)
+            .reduce((sum, hole) => sum + (hole.par || 0), 0);
+
+          inRow.innerHTML = `<td></td><td>In</td><td>${backNinePar}</td><td></td>` + golfers.map(golfer => {
+            return `<td class="in-subtotal-cell" data-golfer="${golfer.id}">–</td>`;
+          }).join("");
+          table.appendChild(inRow);
+        }
+      }
+
+      // Totals row
+      const totalsRow = document.createElement("tr");
+      totalsRow.id = "totals-row";
+      totalsRow.innerHTML = `<td></td><td></td><td></td><td></td>` + golfers.map(g => {
+        return `<td class="totals-cell" data-golfer="${g.id}">–</td>`;
+      }).join("");
+      table.appendChild(totalsRow);
+
+      container.appendChild(table);
+
+      // Finalize button
+      let finalizeButton = document.getElementById("finalize-results-btn");
+      if (!finalizeButton) {
+        finalizeButton = document.createElement("button");
+        finalizeButton.id = "finalize-results-btn";
+        finalizeButton.textContent = "Finalize Match Results";
+        finalizeButton.style.display = "none";
+        container.appendChild(finalizeButton);
+      }
+
+      finalizeButton.onclick = function() {
+        const points = calculateMatchPoints();
+        fetch(`${API_BASE_URL}/finalize_match_result.php`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            match_id: currentMatchId,
+            points
+          })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            alert("Results finalized!");
+            finalizeButton.style.display = "none";
+            loadGuysTripMatch();
+          } else {
+            alert("Error finalizing results: " + (data.error || "Unknown error"));
+          }
+        });
+      };
+
+      // Load existing scores
+      fetch(`${API_BASE_URL}/get_scores.php?match_id=${currentMatchId}`, {
+        credentials: 'include'
+      })
+      .then(res => res.json())
+      .then(scores => {
+        scores.forEach(score => {
+          const selector = `select[data-hole="${score.hole_number}"][data-golfer="${score.golfer_id}"]`;
+          const selectEl = document.querySelector(selector);
+          if (selectEl) {
+            selectEl.value = score.strokes;
+            const cell = selectEl.closest('td');
+            if (cell) {
+              cell.classList.remove("score-birdie", "score-bogey", "score-par");
+              const par = holeInfo.find(h => h.hole_number == score.hole_number)?.par;
+              const strokes = parseInt(score.strokes);
+              if (!isNaN(par) && !isNaN(strokes)) {
+                if (strokes < par) cell.classList.add("score-birdie");
+                else if (strokes > par) cell.classList.add("score-bogey");
+                else cell.classList.add("score-par");
+              }
+            }
+          }
+        });
+        calculateGuysTripBestBall();
+        updateTotalScores();
+        updateFinalizeButtonVisibility();
+      })
+      .catch(err => console.error("Error loading scores:", err));
+
+      // Add change listeners
+      table.querySelectorAll("select").forEach(select => {
+        select.addEventListener("change", function() {
+          const strokes = this.value;
+          const hole = this.dataset.hole;
+          const golfer_id = this.dataset.golfer;
+
+          if (!strokes || !golfer_id || !hole) return;
+
+          const payload = {
+            match_id: currentMatchId,
+            golfer_id: parseInt(golfer_id),
+            hole: parseInt(hole),
+            strokes: parseInt(strokes)
+          };
+
+          fetch("save_score.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              refreshScores();
+              calculateGuysTripBestBall();
+              updateTotalScores();
+              updateFinalizeButtonVisibility();
+              updateScoreCellClasses();
+            } else {
+              console.error("Save failed:", data.message);
+            }
+          })
+          .catch(err => console.error("Fetch error:", err));
+        });
+      });
+    })
+    .catch(err => {
+      console.error("Error loading Guys Trip match:", err);
+    });
+}
+
+function calculateGuysTripBestBall() {
+  // Similar to calculateBestBallStatus but uses player_order instead of team names
+  const scoreMap = {}; // { holeNumber: { partnership1: [scores], partnership2: [scores] } }
+
+  // Step 1: Organize NET scores by partnership and hole
+  document.querySelectorAll("select[data-hole][data-golfer]").forEach(select => {
+    const hole = parseInt(select.dataset.hole);
+    const golferId = parseInt(select.dataset.golfer);
+    const score = parseInt(select.value);
+    if (!score || isNaN(score)) return;
+
+    const golfer = golfers.find(g => g.id === golferId);
+    if (!golfer) return;
+
+    // Initialize scoreMap for the hole if it doesn't exist
+    if (!scoreMap[hole]) {
+      scoreMap[hole] = { partnership1: [], partnership2: [] };
+    }
+
+    // Subtract strokes for this golfer on this hole (NET score)
+    const strokes = strokeMaps[golferId]?.[hole] || 0;
+    const netScore = score - strokes;
+
+    // Add to appropriate partnership based on player_order
+    if (golfer.player_order <= 2) {
+      scoreMap[hole].partnership1.push(netScore);
+    } else {
+      scoreMap[hole].partnership2.push(netScore);
+    }
+  });
+
+  // Step 2: Walk through each hole and determine the score differential
+  let differential = 0;
+
+  for (let hole = 1; hole <= 18; hole++) {
+    // Account for subtotal rows: hole 10+ need to skip the Out row, hole 1+ need to account for header
+    let rowIndex = hole + 1; // +1 for header row
+    if (hole >= 10) rowIndex += 1; // +1 for Out subtotal row after hole 9
+
+    const holeCell = document.querySelector(`.score-table tr:nth-child(${rowIndex}) td:first-child`);
+    if (!holeCell || !scoreMap[hole]) continue;
+
+    const p1Best = Math.min(...scoreMap[hole].partnership1);
+    const p2Best = Math.min(...scoreMap[hole].partnership2);
+
+    if (!isFinite(p1Best) || !isFinite(p2Best)) continue; // not all scores in
+
+    if (p1Best < p2Best) {
+      differential += 1;
+    } else if (p2Best < p1Best) {
+      differential -= 1;
+    }
+
+    // Step 3: Update UI in the left column
+    holeCell.textContent = Math.abs(differential); // show lead magnitude
+    if (differential === 0) {
+      holeCell.style.backgroundColor = "#000"; // tie = black
+      holeCell.style.color = "#fff";
+    } else if (differential > 0) {
+      holeCell.style.backgroundColor = '#007bff'; // Partnership 1 lead (blue)
+      holeCell.style.color = '#ffffff';
+    } else {
+      holeCell.style.backgroundColor = '#28a745'; // Partnership 2 lead (green)
+      holeCell.style.color = '#ffffff';
+    }
+  }
 }
 
 // updates birdie/bogey/par status
@@ -4023,7 +4367,212 @@ function loadTodaySummary() {
     .catch(err => {
       console.error("Error loading matches:", err);
     });
-    
+
+}
+
+function loadGuysTripSummary() {
+  const roundId = sessionStorage.getItem('selected_round_id');
+  const tournamentId = sessionStorage.getItem('selected_tournament_id');
+
+  if (!roundId || !tournamentId) {
+    const container = document.getElementById("today-summary");
+    container.innerHTML = "<p>Missing round or tournament information.</p>";
+    return;
+  }
+
+  fetch(`${API_BASE_URL}/get_round_matches.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' })
+    .then(res => res.json())
+    .then(matches => {
+      const container = document.getElementById("today-summary");
+      container.innerHTML = "";
+
+      if (!Array.isArray(matches) || matches.length === 0) {
+        container.textContent = "No matches found. Try logging out and reloading the app.";
+        return;
+      }
+
+      container.innerHTML = "<h3>Matches (click match to see scorecard)</h3>";
+
+      matches.forEach(match => {
+        const div = document.createElement("div");
+        div.className = "match-summary";
+
+        // Filter golfers by player_order (1,2 = Partnership 1, 3,4 = Partnership 2)
+        const partnership1Golfers = match.golfers.filter(g => {
+          const order = parseInt(g.player_order) || 1;
+          return order <= 2;
+        });
+        const partnership2Golfers = match.golfers.filter(g => {
+          const order = parseInt(g.player_order) || 1;
+          return order > 2;
+        });
+
+        const partnership1Names = partnership1Golfers.map(g => g.first_name).join(" & ");
+        const partnership2Names = partnership2Golfers.map(g => g.first_name).join(" & ");
+
+        // Header with names
+        const header = `
+          <div class="teams-row">
+            <div class="team-box" style="background-color: #007bff; color: white;">${partnership1Names}</div>
+            <div class="vs">vs</div>
+            <div class="team-box" style="background-color: #28a745; color: white;">${partnership2Names}</div>
+          </div>`;
+
+        // Get status
+        const status = calculateMatchStatus(partnership1Golfers, partnership2Golfers, match.scores);
+        const statusClass = getMatchStatusClass(status);
+        const statusDisplay = `<div class="${statusClass}">${status}</div>`;
+        div.innerHTML = header + statusDisplay;
+
+        // Add click event to load match scorecard
+        div.addEventListener("click", () => {
+          loadMatchScorecard(match.match_id);
+        });
+
+        container.appendChild(div);
+      });
+
+      // Add placeholder div for skins
+      const skinsContainer = document.createElement("div");
+      skinsContainer.id = "skins-summary";
+      skinsContainer.innerHTML = "<h3>Individual Skins (handicap counts for 0.5)</h3>";
+      container.appendChild(skinsContainer);
+
+      // Fetch and render skins
+      fetch(`${API_BASE_URL}/get_individual_skins.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' })
+        .then(res => res.json())
+        .then(data => {
+          // Handle both new format (object with skins and skins_total) and old format (array)
+          const skins = Array.isArray(data) ? data : (data.skins || []);
+          const skinsTotal = data.skins_total || 450; // fallback to 450 if not set
+
+          skinsContainer.innerHTML = `<h3>Individual Skins (handicap counts for 0.5, total purse $${skinsTotal})</h3>`;
+
+          if (!Array.isArray(skins) || skins.length === 0) {
+            skinsContainer.innerHTML += "<p>No skins awarded yet.</p>";
+            return;
+          }
+
+          const table = document.createElement("table");
+          table.classList.add("skins-table");
+
+          const header = document.createElement("tr");
+          header.innerHTML = "<th>Hole</th><th>Player</th><th>Net Score</th><th>$</th>";
+          table.appendChild(header);
+
+          // Calculate skin value using dynamic skins total
+          const skinValue = skins.length > 0 ? (skinsTotal / skins.length).toFixed(2) : "0.00";
+
+          skins.forEach(skin => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+              <td>${skin.hole}</td>
+              <td>${skin.golfer_name}</td>
+              <td>${skin.net_score}</td>
+              <td>$${skinValue}</td>
+            `;
+            table.appendChild(row);
+          });
+
+          skinsContainer.innerHTML = `<h3>Individual Skins (handicap counts for 0.5, total purse $${skinsTotal})</h3>`;
+          skinsContainer.appendChild(table);
+        })
+        .catch(err => {
+          console.error("Error loading skins:", err);
+          skinsContainer.innerHTML += "<p>Error loading skins.</p>";
+        });
+
+      // Individual Gross Leaderboard
+      fetch(`${API_BASE_URL}/get_gross_leaderboard.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' })
+        .then(res => res.json())
+        .then(golfers => {
+          if (!Array.isArray(golfers) || golfers.length === 0) return;
+
+          const leaderboardDiv = document.createElement("div");
+          leaderboardDiv.className = "gross-leaderboard";
+          leaderboardDiv.innerHTML = "<h3>Individual Round Leaderboard - Gross</h3>";
+
+          const table = document.createElement("table");
+          table.classList.add("leaderboard-table");
+
+          // Sort golfers by score to par
+          golfers.sort((a, b) => (a.strokes - a.par) - (b.strokes - b.par));
+
+          const header = `<tr><th>Rank</th><th>Name</th><th>To Par</th><th>Thru</th></tr>`;
+          table.innerHTML = header;
+
+          golfers.forEach((g, i) => {
+            const toPar = g.strokes - g.par;
+            const toParStr = toPar === 0 ? "E" : (toPar > 0 ? `+${toPar}` : `${toPar}`);
+
+            let thruNum;
+            if (g.holes_played == 18) {
+              thruNum = "F";
+            } else {
+              thruNum = g.holes_played;
+            }
+            const row = document.createElement("tr");
+            row.innerHTML = `
+              <td>${i + 1}</td>
+              <td>${g.name}</td>
+              <td>${toParStr}</td>
+              <td>${thruNum}</td>
+            `;
+            table.appendChild(row);
+          });
+
+          leaderboardDiv.appendChild(table);
+          document.getElementById("today-summary").appendChild(leaderboardDiv);
+        })
+        .catch(err => console.error("Gross leaderboard error:", err));
+
+      // Individual Net Leaderboard
+      fetch(`${API_BASE_URL}/get_net_leaderboard.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' })
+        .then(res => res.json())
+        .then(golfers => {
+          if (!Array.isArray(golfers) || golfers.length === 0) return;
+
+          const netDiv = document.createElement("div");
+          netDiv.className = "net-leaderboard";
+          netDiv.innerHTML = "<h3>Individual Round Leaderboard - Net</h3>";
+
+          const table = document.createElement("table");
+          table.classList.add("leaderboard-table");
+
+          // Sort golfers by net score to par
+          golfers.sort((a, b) => (a.net_strokes - a.par) - (b.net_strokes - b.par));
+
+          const header = `<tr><th>Rank</th><th>Name</th><th>To Par</th><th>Thru</th></tr>`;
+          table.innerHTML = header;
+
+          golfers.forEach((g, i) => {
+            const toPar = g.net_strokes - g.par;
+            const toParStr = toPar === 0 ? "E" : (toPar > 0 ? `+${toPar}` : `${toPar}`);
+
+            let thruNum;
+            if (g.holes_played == 18) {
+              thruNum = "F";
+            } else {
+              thruNum = g.holes_played;
+            }
+            const row = document.createElement("tr");
+            row.innerHTML = `
+              <td>${i + 1}</td>
+              <td>${g.name}</td>
+              <td>${toParStr}</td>
+              <td>${thruNum}</td>
+            `;
+            table.appendChild(row);
+          });
+
+          netDiv.appendChild(table);
+          document.getElementById("today-summary").appendChild(netDiv);
+        })
+        .catch(err => console.error("Net leaderboard error:", err));
+    })
+    .catch(err => {
+      console.error("Error loading matches:", err);
+    });
 }
 
 
@@ -4433,6 +4982,80 @@ function renderNetLeaderboard(parentContainer, players) {
     parentContainer.appendChild(container);
 }
 
+// Guys Trip versions - without Team column
+function renderGuysTripGrossLeaderboard(parentContainer, golfers) {
+    if (!Array.isArray(golfers) || golfers.length === 0) return;
+    const { container, body } = createWidgetContainer('Individual Tournament Leaderboard - Gross', 'gross-leaderboard');
+
+      const leaderboardDiv = document.createElement("div");
+      leaderboardDiv.className = "gross-leaderboard";
+      const table = document.createElement("table");
+      table.classList.add("leaderboard-table");
+
+      // Sort golfers by score to par
+      golfers.sort((a, b) => (a.strokes - a.par) - (b.strokes - b.par));
+
+      const header = `<tr><th>Rank</th><th>Name</th><th>To Par</th><th>Thru</th></tr>`;
+      table.innerHTML = header;
+
+      golfers.forEach((g, i) => {
+        const toPar = g.strokes - g.par;
+        const toParStr = toPar === 0 ? "E" : (toPar > 0 ? `+${toPar}` : `${toPar}`);
+        let thruNum = g.holes_played;
+
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${i + 1}</td>
+          <td>${g.name}</td>
+          <td>${toParStr}</td>
+          <td>${thruNum}</td>
+        `;
+        table.appendChild(row);
+      });
+
+      leaderboardDiv.appendChild(table);
+      container.appendChild(leaderboardDiv);
+    parentContainer.appendChild(container);
+}
+
+function renderGuysTripNetLeaderboard(parentContainer, players) {
+    if (!Array.isArray(players) || players.length === 0) return;
+    const { container, body } = createWidgetContainer('Individual Tournament Leaderboard - Net', 'net-leaderboard');
+
+      const netDiv = document.createElement("div");
+      netDiv.className = "net-leaderboard";
+      const table = document.createElement("table");
+      table.classList.add("leaderboard-table");
+      table.innerHTML = `<tr>
+        <th>Rank</th><th>Name</th>
+        <th>To Par</th><th>Thru</th>
+      </tr>`;
+
+      // compute To Par and sort by net-to-par
+      players.forEach(p => {
+        p.toPar = p.net_strokes - p.par;
+      });
+      players.sort((a,b) => a.toPar - b.toPar);
+
+      players.forEach((p,i) => {
+        const toPar = p.toPar === 0 ? "E"
+                      : (p.toPar > 0 ? `+${p.toPar}` : `${p.toPar}`);
+
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${i + 1}</td>
+          <td>${p.name}</td>
+          <td>${toPar}</td>
+          <td>${p.holes_played}</td>
+        `;
+        table.appendChild(row);
+      });
+
+      netDiv.appendChild(table);
+      container.appendChild(netDiv);
+    parentContainer.appendChild(container);
+}
+
 // Renders the Rounds and Matchups table
 function renderRoundsAndMatchups(parentContainer, rounds) {
   if (!Array.isArray(rounds) || rounds.length === 0) return;
@@ -4530,6 +5153,103 @@ function renderRoundsAndMatchups(parentContainer, rounds) {
                 <td style="background:${team1Color};color:${team1TextColor};">${team1Names}</td>
                 <td style="background:${team2Color};color:${team2TextColor};">${team2Names}</td>
                 ${resultCell}
+              `;
+            }
+            table.appendChild(row);
+          });
+        }
+      });
+    }
+
+    roundsDiv.appendChild(table);
+  });
+
+  container.appendChild(roundsDiv);
+  parentContainer.appendChild(container);
+}
+
+function renderGuysTripRoundsAndMatchups(parentContainer, rounds) {
+  if (!Array.isArray(rounds) || rounds.length === 0) return;
+  const { container, body } = createWidgetContainer('Matchups and Tee Times (click row to see scorecard)', 'tournament-rounds-table-container');
+  if (!Array.isArray(rounds) || rounds.length === 0) return;
+
+  const roundsDiv = document.createElement("div");
+  roundsDiv.className = "tournament-rounds-table-container";
+
+  rounds.forEach(round => {
+    // Heading for round name and date
+    const heading = document.createElement("h4");
+    const [year, month, day] = round.round_date.split('-');
+    const dateObj = new Date(year, month - 1, day);
+    const monthDay = dateObj.toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
+    heading.innerHTML = `${round.round_name} <br>${monthDay}`;
+    heading.style.textAlign = "center";
+    roundsDiv.appendChild(heading);
+
+    const table = document.createElement("table");
+    table.className = "leaderboard-table matchup-table";
+
+    if (round.tee_times.length === 0) {
+      // No tee times for this round
+      const row = document.createElement("tr");
+      row.innerHTML = `<td colspan="2" style="text-align:center;">No tee times</td>`;
+      table.appendChild(row);
+    } else {
+      round.tee_times.forEach(teeTime => {
+        if (teeTime.matches.length === 0) {
+          const row = document.createElement("tr");
+          const formattedTime = formatTeeTime(teeTime.time);
+          row.innerHTML = `<td>${formattedTime}</td><td style="text-align:center;">Matchups not yet assigned</td>`;
+          table.appendChild(row);
+        } else {
+          teeTime.matches.forEach((match, idx) => {
+            // Group golfers by player_order
+            const partnership1 = match.golfers.filter(g => g.player_order === 1 || g.player_order === 2);
+            const partnership2 = match.golfers.filter(g => g.player_order === 3 || g.player_order === 4);
+
+            // Sort each partnership by player_order
+            partnership1.sort((a, b) => a.player_order - b.player_order);
+            partnership2.sort((a, b) => a.player_order - b.player_order);
+
+            const p1Color = "#007bff"; // blue
+            const p2Color = "#28a745"; // green
+            const p1TextColor = pickContrastColorFromHex(p1Color);
+            const p2TextColor = pickContrastColorFromHex(p2Color);
+
+            const p1Names = partnership1.map(g => g.name).join(' & ');
+            const p2Names = partnership2.map(g => g.name).join(' & ');
+
+            const row = document.createElement("tr");
+
+            // Make the row clickable if there's a match_id
+            if (match.match_id) {
+                row.dataset.matchId = match.match_id;
+                row.style.cursor = 'pointer';
+                row.title = "Click to view scorecard";
+
+                row.addEventListener('click', () => {
+                    parentContainer.innerHTML = '<h2>Loading Scorecard...</h2>';
+                    loadMatchScorecard(match.match_id, parentContainer.id);
+                });
+            }
+
+            const formattedTime = formatTeeTime(teeTime.time);
+            if (idx === 0) {
+              row.innerHTML = `
+                <td rowspan="${teeTime.matches.length}">${formattedTime}</td>
+                <td>
+                  <span style="background:${p1Color};color:${p1TextColor};padding:2px 6px;border-radius:3px;margin-right:5px;">${p1Names}</span>
+                  vs
+                  <span style="background:${p2Color};color:${p2TextColor};padding:2px 6px;border-radius:3px;margin-left:5px;">${p2Names}</span>
+                </td>
+              `;
+            } else {
+              row.innerHTML = `
+                <td>
+                  <span style="background:${p1Color};color:${p1TextColor};padding:2px 6px;border-radius:3px;margin-right:5px;">${p1Names}</span>
+                  vs
+                  <span style="background:${p2Color};color:${p2TextColor};padding:2px 6px;border-radius:3px;margin-left:5px;">${p2Names}</span>
+                </td>
               `;
             }
             table.appendChild(row);
@@ -4725,6 +5445,78 @@ async function loadTournamentPage(container) {
         // This would catch a fundamental error, e.g., if Promise.allSettled itself failed.
         container.innerHTML = '<h2>A critical error occurred while loading the page.</h2>';
         console.error("Fatal error in loadTournamentPage:", error);
+    }
+}
+
+async function loadGuysTripTournamentPage(container) {
+    // Guys Trip version - no scoreboard, no team columns in leaderboards
+    container.innerHTML = '<h2>Loading Tournament Data...</h2>';
+
+    const tournamentId = sessionStorage.getItem('selected_tournament_id');
+    if (!tournamentId) {
+        container.innerHTML = '<h2>Error: No tournament selected.</h2>';
+        return;
+    }
+
+    try {
+        // Fetch all data (no scoreboard for Guys Trip)
+        const promises = [
+            fetch(`${API_BASE_URL}/get_gross_leaderboard_all.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
+            fetch(`${API_BASE_URL}/get_net_leaderboard_all.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
+            fetch(`${API_BASE_URL}/get_tournament_rounds.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
+            Promise.all([
+                fetch(`${API_BASE_URL}/get_tournament_courses.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
+                fetch(`${API_BASE_URL}/get_tournament_golfers.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json())
+            ])
+        ];
+
+        const results = await Promise.allSettled(promises);
+        container.innerHTML = '';
+
+        const [
+            grossLeaderboardResult,
+            netLeaderboardResult,
+            roundsResult,
+            handicapResult
+        ] = results;
+
+        // Render Rounds & Matchups (Guys Trip version)
+        if (roundsResult.status === 'fulfilled') {
+            renderGuysTripRoundsAndMatchups(container, roundsResult.value);
+        } else {
+            console.error("Rounds/Matchups Error:", roundsResult.reason);
+            renderErrorWidget(container, 'Rounds & Matchups');
+        }
+
+        // Render Gross Leaderboard (Guys Trip version without Team column)
+        if (grossLeaderboardResult.status === 'fulfilled') {
+            renderGuysTripGrossLeaderboard(container, grossLeaderboardResult.value);
+        } else {
+            console.error("Gross Leaderboard Error:", grossLeaderboardResult.reason);
+            renderErrorWidget(container, 'Gross Leaderboard');
+        }
+
+        // Render Net Leaderboard (Guys Trip version without Team column)
+        if (netLeaderboardResult.status === 'fulfilled') {
+            renderGuysTripNetLeaderboard(container, netLeaderboardResult.value);
+        } else {
+            console.error("Net Leaderboard Error:", netLeaderboardResult.reason);
+            renderErrorWidget(container, 'Net Leaderboard');
+        }
+
+        // Render Handicap Table
+        if (handicapResult.status === 'fulfilled') {
+            const [courses, golfers] = handicapResult.value;
+            renderHandicapTable(container, courses, golfers);
+            renderCoursePDFLinks(container, courses);
+        } else {
+            console.error("Handicap Table Error:", handicapResult.reason);
+            renderErrorWidget(container, 'Handicap Table');
+        }
+
+    } catch (error) {
+        container.innerHTML = '<h2>A critical error occurred while loading the page.</h2>';
+        console.error("Fatal error in loadGuysTripTournamentPage:", error);
     }
 }
 
@@ -5598,6 +6390,7 @@ function loadTournamentRound(roundId, tournamentId, roundName = '') {
   sessionStorage.setItem('selected_tournament_id', tournamentId);
   sessionStorage.setItem('selected_round_name', roundName);
   sessionStorage.setItem('golfer_id', currentUser.golfer_id);
+  sessionStorage.removeItem('selected_format_id'); // Clear format_id for non-Guys Trip tournaments
 
   // Set the round name in the subheader and show round bar
   const roundNameEl = document.getElementById('round-name');
