@@ -29,6 +29,7 @@ SELECT DISTINCT
   t.name AS tournament_name,
   t.start_date,
   t.end_date,
+  t.format_id,
   r.round_id,
   r.round_name,
   r.round_date,
@@ -57,6 +58,7 @@ while ($row = $result->fetch_assoc()) {
       'tournament_name' => $row['tournament_name'],
       'start_date' => $row['start_date'],
       'end_date' => $row['end_date'],
+      'format_id' => $row['format_id'],
       'rounds' => []
     ];
   }

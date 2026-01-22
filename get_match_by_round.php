@@ -53,7 +53,7 @@ JOIN course_tees ct ON r.tee_id = ct.tee_id
 JOIN match_golfers mg2 ON mg.match_id = mg2.match_id
 JOIN golfers g ON mg2.golfer_id = g.golfer_id
 JOIN tournament_golfers tg ON g.golfer_id = tg.golfer_id AND tg.tournament_id = ?
-JOIN teams t ON tg.team_id = t.team_id
+LEFT JOIN teams t ON tg.team_id = t.team_id
 WHERE mg.golfer_id = ? AND m.round_id = ?
 ORDER BY 
   CASE

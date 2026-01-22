@@ -39,7 +39,7 @@ FROM matches m
 JOIN match_golfers mg ON m.match_id = mg.match_id
 JOIN golfers g ON mg.golfer_id = g.golfer_id
 JOIN tournament_golfers tg ON g.golfer_id = tg.golfer_id AND tg.tournament_id = ?
-JOIN teams t ON tg.team_id = t.team_id
+LEFT JOIN teams t ON tg.team_id = t.team_id
 WHERE m.round_id = ?
 ORDER BY m.match_id, t.name, g.last_name
 ";

@@ -1200,6 +1200,7 @@ function startWolfRound() {
 }
 
 function loadWolfScoring() {
+  console.log('loadWolfScoring called');
   const matchId = sessionStorage.getItem('wolf_match_id');
   const matchCode = sessionStorage.getItem('wolf_match_code');
 
@@ -1210,9 +1211,16 @@ function loadWolfScoring() {
 
   // Hide setup container and show scoring interface
   const setupContainer = document.getElementById('best-ball-setup');
-  setupContainer.style.display = 'none';
+  if (setupContainer) {
+    setupContainer.style.display = 'none';
+  }
 
   const appContent = document.getElementById('app-content');
+  if (!appContent) {
+    console.error('app-content element not found!');
+    alert('Error: app-content not found. Please refresh the page.');
+    return;
+  }
   appContent.style.display = 'block';
 
   // Hide the navigation tabs
@@ -1244,6 +1252,13 @@ function loadWolfScoring() {
   }
 
   const container = document.getElementById('score-entry-content');
+  if (!container) {
+    console.error('score-entry-content element not found!');
+    console.log('app-content:', appContent);
+    console.log('app-content display:', appContent.style.display);
+    alert('Error: score-entry-content not found. Please refresh the page.');
+    return;
+  }
   container.innerHTML = '';
 
   // Fetch match data
@@ -1740,6 +1755,7 @@ function startRabbitRound() {
 }
 
 function loadRabbitScoring() {
+  console.log('loadRabbitScoring called');
   const matchId = sessionStorage.getItem('rabbit_match_id');
   const matchCode = sessionStorage.getItem('rabbit_match_code');
 
@@ -1750,9 +1766,16 @@ function loadRabbitScoring() {
 
   // Hide setup container and show scoring interface
   const setupContainer = document.getElementById('best-ball-setup');
-  setupContainer.style.display = 'none';
+  if (setupContainer) {
+    setupContainer.style.display = 'none';
+  }
 
   const appContent = document.getElementById('app-content');
+  if (!appContent) {
+    console.error('app-content element not found!');
+    alert('Error: app-content not found. Please refresh the page.');
+    return;
+  }
   appContent.style.display = 'block';
 
   // Hide the navigation tabs
@@ -1784,6 +1807,13 @@ function loadRabbitScoring() {
   }
 
   const container = document.getElementById('score-entry-content');
+  if (!container) {
+    console.error('score-entry-content element not found!');
+    console.log('app-content:', appContent);
+    console.log('app-content display:', appContent.style.display);
+    alert('Error: score-entry-content not found. Please refresh the page.');
+    return;
+  }
   container.innerHTML = '';
 
   // Fetch match data
@@ -5299,7 +5329,7 @@ function loadUserTournaments(golferId) {
           html += '<div style="margin-top: 0.5rem;">';
           tournament.rounds.forEach(round => {
             html += `
-              <button class="tournament-round-btn" data-tournament-id="${tournament.tournament_id}" data-round-id="${round.round_id}" data-round-name="${round.round_name}" style="display: block; width: 100%; margin-bottom: 0.5rem; padding: 0.5rem; background: #4F2185; color: white; border: none; border-radius: 4px; cursor: pointer; text-align: left;">
+              <button class="tournament-round-btn" data-tournament-id="${tournament.tournament_id}" data-round-id="${round.round_id}" data-round-name="${round.round_name}" data-format-id="${tournament.format_id || ''}" style="display: block; width: 100%; margin-bottom: 0.5rem; padding: 0.5rem; background: #4F2185; color: white; border: none; border-radius: 4px; cursor: pointer; text-align: left;">
                 ${round.round_name} - ${round.course_name}
               </button>
             `;
@@ -5321,6 +5351,7 @@ function loadUserTournaments(golferId) {
           const roundId = this.dataset.roundId;
           const tournamentId = this.dataset.tournamentId;
           const roundName = this.dataset.roundName;
+          const formatId = this.dataset.formatId ? parseInt(this.dataset.formatId) : null;
 
           // Check if this is a Quick Round (Best Ball, Rabbit, Wolf)
           const isQuickRound = ['Best Ball', 'Rabbit', 'Wolf'].includes(roundName);
@@ -5331,6 +5362,9 @@ function loadUserTournaments(golferId) {
           if (isQuickRound) {
             // Load Quick Round view
             loadQuickRoundFromTournament(tournamentId, roundName);
+          } else if (formatId === 4) {
+            // Guys Trip tournament
+            loadGuysTripTournamentRound(roundId, tournamentId, roundName, formatId);
           } else {
             // Load regular tournament round
             loadTournamentRound(roundId, tournamentId, roundName);
@@ -5407,7 +5441,7 @@ function loadTournamentHistory(golferId) {
             html += '<div style="margin-top: 0.5rem;">';
             tournament.rounds.forEach(round => {
               html += `
-                <button class="tournament-round-btn" data-tournament-id="${tournament.tournament_id}" data-round-id="${round.round_id}" data-round-name="${round.round_name}" style="display: block; width: 100%; margin-bottom: 0.5rem; padding: 0.5rem; background: #4F2185; color: white; border: none; border-radius: 4px; cursor: pointer; text-align: left;">
+                <button class="tournament-round-btn" data-tournament-id="${tournament.tournament_id}" data-round-id="${round.round_id}" data-round-name="${round.round_name}" data-format-id="${tournament.format_id || ''}" style="display: block; width: 100%; margin-bottom: 0.5rem; padding: 0.5rem; background: #4F2185; color: white; border: none; border-radius: 4px; cursor: pointer; text-align: left;">
                   ${round.round_name} - ${round.course_name || 'Course TBD'}
                 </button>
               `;
@@ -5439,6 +5473,7 @@ function loadTournamentHistory(golferId) {
           const roundId = this.dataset.roundId;
           const tournamentId = this.dataset.tournamentId;
           const roundName = this.dataset.roundName;
+          const formatId = this.dataset.formatId ? parseInt(this.dataset.formatId) : null;
 
           // Check if this is a Quick Round
           const isQuickRound = ['Best Ball', 'Rabbit', 'Wolf'].includes(roundName);
@@ -5448,7 +5483,11 @@ function loadTournamentHistory(golferId) {
 
           if (isQuickRound) {
             loadQuickRoundFromTournament(tournamentId, roundName);
+          } else if (formatId === 4) {
+            // Guys Trip tournament
+            loadGuysTripTournamentRound(roundId, tournamentId, roundName, formatId);
           } else {
+            // Regular tournament (Ryder Cup, etc.)
             loadTournamentRound(roundId, tournamentId, roundName);
           }
         });
@@ -5635,6 +5674,79 @@ function loadTournamentRound(roundId, tournamentId, roundName = '') {
     document.getElementById('app-content').style.display = 'block';
     loadPage('my-match');
   });
+}
+
+function loadGuysTripTournamentRound(roundId, tournamentId, roundName = '', formatId = 4) {
+  console.log('Loading Guys Trip tournament round:', { roundId, tournamentId, roundName, formatId });
+
+  // Hide dashboard and other containers
+  document.getElementById('user-dashboard').style.display = 'none';
+  document.getElementById('round-history-container').style.display = 'none';
+  document.getElementById('best-ball-setup').style.display = 'none';
+  document.getElementById('tournament-history-container').style.display = 'none';
+  document.getElementById('edit-user-container').style.display = 'none';
+
+  // Store tournament and round info in sessionStorage
+  sessionStorage.setItem('selected_round_id', roundId);
+  sessionStorage.setItem('selected_tournament_id', tournamentId);
+  sessionStorage.setItem('selected_round_name', roundName);
+  sessionStorage.setItem('selected_format_id', formatId); // Store format_id so we can check it later
+  sessionStorage.setItem('golfer_id', currentUser.golfer_id);
+
+  // Set the round name in the subheader and show round bar
+  const roundNameEl = document.getElementById('round-name');
+  if (roundNameEl) {
+    roundNameEl.textContent = roundName;
+  }
+  const roundBar = document.getElementById('round-bar');
+  if (roundBar) {
+    roundBar.style.display = 'block';
+  }
+
+  // Ensure nav tabs are visible (they get hidden by Quick Rounds)
+  const appContent = document.getElementById('app-content');
+  const navElement = appContent.querySelector('nav');
+  if (navElement) {
+    navElement.style.display = 'block';
+  }
+
+  // For Guys Trip, we don't have traditional teams but we still want to set default colors
+  // Use purple as default primary color
+  primaryTeamName = 'Guys Trip';
+  primaryTeamColor = '#4F2185';
+  primaryTeamId = null;
+  secondaryTeamName = '';
+  secondaryTeamColor = '#FFC62F';
+  secondaryTeamId = null;
+
+  // Store in sessionStorage
+  sessionStorage.setItem('primary_team_name', primaryTeamName);
+  sessionStorage.setItem('primary_team_color', primaryTeamColor);
+  sessionStorage.setItem('secondary_team_name', secondaryTeamName);
+  sessionStorage.setItem('secondary_team_color', secondaryTeamColor);
+  sessionStorage.setItem('primary_team_id', '');
+  sessionStorage.setItem('secondary_team_id', '');
+  sessionStorage.setItem('team_id', '');
+
+  assignCSSColors(primaryTeamColor, secondaryTeamColor);
+
+  // Set round bar text color based on primary team color
+  if (roundBar && primaryTeamColor) {
+    roundBar.style.color = pickContrastColorFromHex(primaryTeamColor);
+  }
+
+  // Show the app content
+  document.getElementById('app-content').style.display = 'block';
+
+  // Set the my-match tab as active
+  document.querySelectorAll('.tabs button').forEach(btn => btn.classList.remove('active'));
+  const myMatchBtn = document.querySelector('button[data-page="my-match"]');
+  if (myMatchBtn) {
+    myMatchBtn.classList.add('active');
+  }
+
+  // Load the my-match page
+  loadPage('my-match');
 }
 
 function loadEditUserPage() {
