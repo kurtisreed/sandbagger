@@ -4208,7 +4208,7 @@ function loadTodaySummary() {
                 const skins = Array.isArray(data) ? data : (data.skins || []);
                 const skinsTotal = data.skins_total || 450; // fallback to 450 if not set
                 
-                skinsContainer.innerHTML = `<h3>Individual Skins (handicap counts for 0.5, total purse $${skinsTotal})</h3>`;
+                skinsContainer.innerHTML = `<h3>Individual Skins (handicap counts for 0.5)</h3>`;
                 
                 if (!Array.isArray(skins) || skins.length === 0) {
                   skinsContainer.innerHTML += "<p>No skins awarded yet.</p>";
@@ -4219,12 +4219,9 @@ function loadTodaySummary() {
                 table.classList.add("skins-table");
             
                 const header = document.createElement("tr");
-                header.innerHTML = "<th>Hole</th><th>Player</th><th>Team</th><th>Net Score</th><th>$</th>";
+                header.innerHTML = "<th>Hole</th><th>Player</th><th>Team</th><th>Net Score</th>";
                 table.appendChild(header);
-            
-                // Calculate skin value using dynamic skins total
-                const skinValue = skins.length > 0 ? (skinsTotal / skins.length).toFixed(2) : "0.00";
-            
+
                 skins.forEach(skin => {
                   let bgColor = skin.team_color || ""; // Use dynamic team color
                   let txtColor = pickContrastColorFromHex(bgColor);
@@ -4239,12 +4236,11 @@ function loadTodaySummary() {
                       ${skin.team}
                     </td>
                     <td>${skin.net_score}</td>
-                    <td>$${skinValue}</td>
                   `;
                   table.appendChild(row);
                 });
             
-                skinsContainer.innerHTML = `<h3>Individual Skins (handicap counts for 0.5, total purse $${skinsTotal})</h3>`;
+                skinsContainer.innerHTML = `<h3>Individual Skins (handicap counts for 0.5)</h3>`;
                 skinsContainer.appendChild(table);
               })
               .catch(err => {
@@ -4446,7 +4442,7 @@ function loadGuysTripSummary() {
           const skins = Array.isArray(data) ? data : (data.skins || []);
           const skinsTotal = data.skins_total || 450; // fallback to 450 if not set
 
-          skinsContainer.innerHTML = `<h3>Individual Skins (handicap counts for 0.5, total purse $${skinsTotal})</h3>`;
+          skinsContainer.innerHTML = `<h3>Individual Skins (handicap counts for 0.5)</h3>`;
 
           if (!Array.isArray(skins) || skins.length === 0) {
             skinsContainer.innerHTML += "<p>No skins awarded yet.</p>";
@@ -4457,11 +4453,8 @@ function loadGuysTripSummary() {
           table.classList.add("skins-table");
 
           const header = document.createElement("tr");
-          header.innerHTML = "<th>Hole</th><th>Player</th><th>Net Score</th><th>$</th>";
+          header.innerHTML = "<th>Hole</th><th>Player</th><th>Net Score</th>";
           table.appendChild(header);
-
-          // Calculate skin value using dynamic skins total
-          const skinValue = skins.length > 0 ? (skinsTotal / skins.length).toFixed(2) : "0.00";
 
           skins.forEach(skin => {
             const row = document.createElement("tr");
@@ -4469,12 +4462,11 @@ function loadGuysTripSummary() {
               <td>${skin.hole}</td>
               <td>${skin.golfer_name}</td>
               <td>${skin.net_score}</td>
-              <td>$${skinValue}</td>
             `;
             table.appendChild(row);
           });
 
-          skinsContainer.innerHTML = `<h3>Individual Skins (handicap counts for 0.5, total purse $${skinsTotal})</h3>`;
+          skinsContainer.innerHTML = `<h3>Individual Skins (handicap counts for 0.5)</h3>`;
           skinsContainer.appendChild(table);
         })
         .catch(err => {
@@ -5525,10 +5517,13 @@ async function loadGuysTripTournamentPage(container) {
 
 function loadMatchScorecard(match_id, container_id = "today-summary") {
   const tournamentId = sessionStorage.getItem('selected_tournament_id');
+  const formatId = parseInt(sessionStorage.getItem('selected_format_id'));
+  const isGuysTripFormat = formatId === 4;
+
   fetch(`${API_BASE_URL}/get_match_by_id.php?match_id=${match_id}&tournament_id=${tournamentId}`, { credentials: 'include' })
     .then(res => res.json())
     .then(data => {
-      
+
       const matchGolfers = data.match;
       holeInfo = data.holes;
       const container = document.getElementById(container_id);
@@ -5537,24 +5532,70 @@ function loadMatchScorecard(match_id, container_id = "today-summary") {
 
 
         const golferMap = new Map();
-        
+
         matchGolfers.forEach(row => {
           if (!golferMap.has(row.golfer_id)) {
+            // For Guys Trip, determine team color by player_order
+            let teamColor = row.team_color;
+            let teamName = row.team_name;
+
+            if (isGuysTripFormat) {
+              // Partnership 1: player_order 1 or 2 (blue)
+              // Partnership 2: player_order 3 or 4 (green)
+              if (row.player_order === 1 || row.player_order === 2) {
+                teamColor = "#007bff"; // blue
+                teamName = "Partnership 1";
+              } else if (row.player_order === 3 || row.player_order === 4) {
+                teamColor = "#28a745"; // green
+                teamName = "Partnership 2";
+              }
+            }
+
             golferMap.set(row.golfer_id, {
               id: row.golfer_id,
               name: row.first_name,
-              team: row.team_name,
-              team_color: row.team_color,
-              handicap: calculatePlayingHandicap(parseFloat(row.handicap))
+              team: teamName,
+              team_color: teamColor,
+              handicap: calculatePlayingHandicap(parseFloat(row.handicap)),
+              player_order: row.player_order // Keep for reference
             });
           }
         });
-        
 
-        
+
+
         const golfers = Array.from(golferMap.values());
-        
 
+        // For Guys Trip, sort by player_order to group partnerships
+        // For other formats, the database query already sorted by team name
+        if (isGuysTripFormat) {
+          golfers.sort((a, b) => a.player_order - b.player_order);
+
+          // Set global team variables for best-ball calculation
+          primaryTeamName = "Partnership 1";
+          secondaryTeamName = "Partnership 2";
+          primaryTeamColor = "#007bff"; // blue
+          secondaryTeamColor = "#28a745"; // green
+        } else {
+          // For Ryder Cup and other tournaments, set team variables from golfer data
+          // Get unique teams from golfers
+          const teamMap = new Map();
+          golfers.forEach(g => {
+            if (!teamMap.has(g.team)) {
+              teamMap.set(g.team, g.team_color);
+            }
+          });
+          const uniqueTeams = Array.from(teamMap.entries()).map(([name, color]) => ({ name, color }));
+
+          if (uniqueTeams.length >= 1) {
+            primaryTeamName = uniqueTeams[0].name;
+            primaryTeamColor = uniqueTeams[0].color;
+          }
+          if (uniqueTeams.length >= 2) {
+            secondaryTeamName = uniqueTeams[1].name;
+            secondaryTeamColor = uniqueTeams[1].color;
+          }
+        }
 
 
       strokeMaps = {};
