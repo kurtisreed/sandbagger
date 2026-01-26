@@ -3779,6 +3779,16 @@ function loadGuysTripMatch() {
             return `<td class="out-subtotal-cell" data-golfer="${golfer.id}">–</td>`;
           }).join("");
           table.appendChild(outRow);
+
+          // Add team best-ball Out row
+          const teamOutRow = document.createElement("tr");
+          teamOutRow.classList.add("team-score-row");
+          teamOutRow.style.fontWeight = "bold";
+          teamOutRow.style.backgroundColor = "#f0f0f0";
+          teamOutRow.innerHTML = `<td></td><td colspan="3" style="text-align: left; padding-left: 0.5rem;">Team (out)</td>` +
+            `<td colspan="2" class="team-out-cell" data-partnership="1" style="background-color: #007bff; color: #ffffff; text-align: center;">–</td>` +
+            `<td colspan="2" class="team-out-cell" data-partnership="2" style="background-color: #28a745; color: #ffffff; text-align: center;">–</td>`;
+          table.appendChild(teamOutRow);
         }
 
         // Add In subtotal row after hole 18
@@ -3792,6 +3802,16 @@ function loadGuysTripMatch() {
             return `<td class="in-subtotal-cell" data-golfer="${golfer.id}">–</td>`;
           }).join("");
           table.appendChild(inRow);
+
+          // Add team best-ball In row
+          const teamInRow = document.createElement("tr");
+          teamInRow.classList.add("team-score-row");
+          teamInRow.style.fontWeight = "bold";
+          teamInRow.style.backgroundColor = "#f0f0f0";
+          teamInRow.innerHTML = `<td></td><td colspan="3" style="text-align: left; padding-left: 0.5rem;">Team (in)</td>` +
+            `<td colspan="2" class="team-in-cell" data-partnership="1" style="background-color: #007bff; color: #ffffff; text-align: center;">–</td>` +
+            `<td colspan="2" class="team-in-cell" data-partnership="2" style="background-color: #28a745; color: #ffffff; text-align: center;">–</td>`;
+          table.appendChild(teamInRow);
         }
       }
 
@@ -3802,6 +3822,16 @@ function loadGuysTripMatch() {
         return `<td class="totals-cell" data-golfer="${g.id}">–</td>`;
       }).join("");
       table.appendChild(totalsRow);
+
+      // Add team best-ball Total row
+      const teamTotalRow = document.createElement("tr");
+      teamTotalRow.classList.add("team-score-row");
+      teamTotalRow.style.fontWeight = "bold";
+      teamTotalRow.style.backgroundColor = "#f0f0f0";
+      teamTotalRow.innerHTML = `<td></td><td colspan="3" style="text-align: left; padding-left: 0.5rem;">Team (total)</td>` +
+        `<td colspan="2" class="team-total-cell" data-partnership="1" style="background-color: #007bff; color: #ffffff; text-align: center;">–</td>` +
+        `<td colspan="2" class="team-total-cell" data-partnership="2" style="background-color: #28a745; color: #ffffff; text-align: center;">–</td>`;
+      table.appendChild(teamTotalRow);
 
       container.appendChild(table);
 
@@ -3975,6 +4005,233 @@ function calculateGuysTripBestBall() {
       holeCell.style.backgroundColor = '#28a745'; // Partnership 2 lead (green)
       holeCell.style.color = '#ffffff';
     }
+  }
+
+  // Update team stroke play scores
+  updateGuysTripTeamScores(scoreMap);
+}
+
+function updateGuysTripTeamScores(scoreMap) {
+  // Calculate best-ball stroke play scores for each partnership
+  const teamScores = {
+    partnership1: { front9: 0, back9: 0, total: 0, front9ToPar: 0, back9ToPar: 0, totalToPar: 0, front9Count: 0, back9Count: 0, totalCount: 0 },
+    partnership2: { front9: 0, back9: 0, total: 0, front9ToPar: 0, back9ToPar: 0, totalToPar: 0, front9Count: 0, back9Count: 0, totalCount: 0 }
+  };
+
+  // Calculate best ball scores for each hole
+  for (let hole = 1; hole <= 18; hole++) {
+    if (!scoreMap[hole]) continue;
+
+    const p1Best = Math.min(...scoreMap[hole].partnership1);
+    const p2Best = Math.min(...scoreMap[hole].partnership2);
+    const holePar = holeInfo.find(h => h.hole_number === hole)?.par || 0;
+
+    if (isFinite(p1Best)) {
+      teamScores.partnership1.total += p1Best;
+      teamScores.partnership1.totalToPar += (p1Best - holePar);
+      teamScores.partnership1.totalCount++;
+      if (hole <= 9) {
+        teamScores.partnership1.front9 += p1Best;
+        teamScores.partnership1.front9ToPar += (p1Best - holePar);
+        teamScores.partnership1.front9Count++;
+      } else {
+        teamScores.partnership1.back9 += p1Best;
+        teamScores.partnership1.back9ToPar += (p1Best - holePar);
+        teamScores.partnership1.back9Count++;
+      }
+    }
+
+    if (isFinite(p2Best)) {
+      teamScores.partnership2.total += p2Best;
+      teamScores.partnership2.totalToPar += (p2Best - holePar);
+      teamScores.partnership2.totalCount++;
+      if (hole <= 9) {
+        teamScores.partnership2.front9 += p2Best;
+        teamScores.partnership2.front9ToPar += (p2Best - holePar);
+        teamScores.partnership2.front9Count++;
+      } else {
+        teamScores.partnership2.back9 += p2Best;
+        teamScores.partnership2.back9ToPar += (p2Best - holePar);
+        teamScores.partnership2.back9Count++;
+      }
+    }
+  }
+
+  // Helper function to format score like individual player scores
+  function formatScore(strokes, toPar) {
+    if (toPar === 0) {
+      return `${strokes} (E)`;
+    }
+    return `${strokes} (${toPar > 0 ? "+" : ""}${toPar})`;
+  }
+
+  // Update front 9 scores
+  const p1OutCell = document.querySelector('.team-out-cell[data-partnership="1"]');
+  const p2OutCell = document.querySelector('.team-out-cell[data-partnership="2"]');
+  if (p1OutCell) {
+    p1OutCell.textContent = teamScores.partnership1.front9Count > 0
+      ? formatScore(teamScores.partnership1.front9, teamScores.partnership1.front9ToPar)
+      : '–';
+  }
+  if (p2OutCell) {
+    p2OutCell.textContent = teamScores.partnership2.front9Count > 0
+      ? formatScore(teamScores.partnership2.front9, teamScores.partnership2.front9ToPar)
+      : '–';
+  }
+
+  // Update back 9 scores
+  const p1InCell = document.querySelector('.team-in-cell[data-partnership="1"]');
+  const p2InCell = document.querySelector('.team-in-cell[data-partnership="2"]');
+  if (p1InCell) {
+    p1InCell.textContent = teamScores.partnership1.back9Count > 0
+      ? formatScore(teamScores.partnership1.back9, teamScores.partnership1.back9ToPar)
+      : '–';
+  }
+  if (p2InCell) {
+    p2InCell.textContent = teamScores.partnership2.back9Count > 0
+      ? formatScore(teamScores.partnership2.back9, teamScores.partnership2.back9ToPar)
+      : '–';
+  }
+
+  // Update total scores
+  const p1TotalCell = document.querySelector('.team-total-cell[data-partnership="1"]');
+  const p2TotalCell = document.querySelector('.team-total-cell[data-partnership="2"]');
+  if (p1TotalCell) {
+    p1TotalCell.textContent = teamScores.partnership1.totalCount > 0
+      ? formatScore(teamScores.partnership1.total, teamScores.partnership1.totalToPar)
+      : '–';
+  }
+  if (p2TotalCell) {
+    p2TotalCell.textContent = teamScores.partnership2.totalCount > 0
+      ? formatScore(teamScores.partnership2.total, teamScores.partnership2.totalToPar)
+      : '–';
+  }
+}
+
+function updateGuysTripTeamScoresReadOnly(golfers, strokeMaps, holeInfo) {
+  // Calculate best-ball stroke play scores for each partnership (read-only version)
+  const teamScores = {
+    partnership1: { front9: 0, back9: 0, total: 0, front9ToPar: 0, back9ToPar: 0, totalToPar: 0, front9Count: 0, back9Count: 0, totalCount: 0 },
+    partnership2: { front9: 0, back9: 0, total: 0, front9ToPar: 0, back9ToPar: 0, totalToPar: 0, front9Count: 0, back9Count: 0, totalCount: 0 }
+  };
+
+  // Organize NET scores by partnership and hole
+  const scoreMap = {}; // { holeNumber: { partnership1: [scores], partnership2: [scores] } }
+
+  document.querySelectorAll("td.readonly-score-cell").forEach(cell => {
+    const hole = parseInt(cell.dataset.hole);
+    const golferId = parseInt(cell.dataset.golfer);
+    const golfer = golfers.find(g => g.id === golferId);
+    if (!golfer) return;
+
+    const strokesText = cell.textContent.replace(/[^0-9]/g, '');
+    const score = parseInt(strokesText);
+    if (!score || isNaN(score)) return;
+
+    // Initialize scoreMap for the hole if it doesn't exist
+    if (!scoreMap[hole]) {
+      scoreMap[hole] = { partnership1: [], partnership2: [] };
+    }
+
+    // Subtract strokes for this golfer on this hole (NET score)
+    const strokes = strokeMaps[golferId]?.[hole] || 0;
+    const netScore = score - strokes;
+
+    // Add to appropriate partnership based on player_order
+    if (golfer.player_order <= 2) {
+      scoreMap[hole].partnership1.push(netScore);
+    } else {
+      scoreMap[hole].partnership2.push(netScore);
+    }
+  });
+
+  // Calculate best ball scores for each hole
+  for (let hole = 1; hole <= 18; hole++) {
+    if (!scoreMap[hole]) continue;
+
+    const p1Best = Math.min(...scoreMap[hole].partnership1);
+    const p2Best = Math.min(...scoreMap[hole].partnership2);
+    const holePar = holeInfo.find(h => h.hole_number === hole)?.par || 0;
+
+    if (isFinite(p1Best)) {
+      teamScores.partnership1.total += p1Best;
+      teamScores.partnership1.totalToPar += (p1Best - holePar);
+      teamScores.partnership1.totalCount++;
+      if (hole <= 9) {
+        teamScores.partnership1.front9 += p1Best;
+        teamScores.partnership1.front9ToPar += (p1Best - holePar);
+        teamScores.partnership1.front9Count++;
+      } else {
+        teamScores.partnership1.back9 += p1Best;
+        teamScores.partnership1.back9ToPar += (p1Best - holePar);
+        teamScores.partnership1.back9Count++;
+      }
+    }
+
+    if (isFinite(p2Best)) {
+      teamScores.partnership2.total += p2Best;
+      teamScores.partnership2.totalToPar += (p2Best - holePar);
+      teamScores.partnership2.totalCount++;
+      if (hole <= 9) {
+        teamScores.partnership2.front9 += p2Best;
+        teamScores.partnership2.front9ToPar += (p2Best - holePar);
+        teamScores.partnership2.front9Count++;
+      } else {
+        teamScores.partnership2.back9 += p2Best;
+        teamScores.partnership2.back9ToPar += (p2Best - holePar);
+        teamScores.partnership2.back9Count++;
+      }
+    }
+  }
+
+  // Helper function to format score like individual player scores
+  function formatScore(strokes, toPar) {
+    if (toPar === 0) {
+      return `${strokes} (E)`;
+    }
+    return `${strokes} (${toPar > 0 ? "+" : ""}${toPar})`;
+  }
+
+  // Update front 9 scores
+  const p1OutCell = document.querySelector('.team-out-cell-readonly[data-partnership="1"]');
+  const p2OutCell = document.querySelector('.team-out-cell-readonly[data-partnership="2"]');
+  if (p1OutCell) {
+    p1OutCell.textContent = teamScores.partnership1.front9Count > 0
+      ? formatScore(teamScores.partnership1.front9, teamScores.partnership1.front9ToPar)
+      : '–';
+  }
+  if (p2OutCell) {
+    p2OutCell.textContent = teamScores.partnership2.front9Count > 0
+      ? formatScore(teamScores.partnership2.front9, teamScores.partnership2.front9ToPar)
+      : '–';
+  }
+
+  // Update back 9 scores
+  const p1InCell = document.querySelector('.team-in-cell-readonly[data-partnership="1"]');
+  const p2InCell = document.querySelector('.team-in-cell-readonly[data-partnership="2"]');
+  if (p1InCell) {
+    p1InCell.textContent = teamScores.partnership1.back9Count > 0
+      ? formatScore(teamScores.partnership1.back9, teamScores.partnership1.back9ToPar)
+      : '–';
+  }
+  if (p2InCell) {
+    p2InCell.textContent = teamScores.partnership2.back9Count > 0
+      ? formatScore(teamScores.partnership2.back9, teamScores.partnership2.back9ToPar)
+      : '–';
+  }
+
+  // Update total scores
+  const p1TotalCell = document.querySelector('.team-total-cell-readonly[data-partnership="1"]');
+  const p2TotalCell = document.querySelector('.team-total-cell-readonly[data-partnership="2"]');
+  if (p1TotalCell) {
+    p1TotalCell.textContent = teamScores.partnership1.totalCount > 0
+      ? formatScore(teamScores.partnership1.total, teamScores.partnership1.totalToPar)
+      : '–';
+  }
+  if (p2TotalCell) {
+    p2TotalCell.textContent = teamScores.partnership2.totalCount > 0
+      ? formatScore(teamScores.partnership2.total, teamScores.partnership2.totalToPar)
+      : '–';
   }
 }
 
@@ -4369,6 +4626,7 @@ function loadTodaySummary() {
 function loadGuysTripSummary() {
   const roundId = sessionStorage.getItem('selected_round_id');
   const tournamentId = sessionStorage.getItem('selected_tournament_id');
+  const golferId = currentUser?.golfer_id || sessionStorage.getItem('golfer_id');
 
   if (!roundId || !tournamentId) {
     const container = document.getElementById("today-summary");
@@ -4376,9 +4634,25 @@ function loadGuysTripSummary() {
     return;
   }
 
-  fetch(`${API_BASE_URL}/get_round_matches.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' })
-    .then(res => res.json())
-    .then(matches => {
+  // Fetch holes data if not already available
+  const holesPromise = holeInfo && holeInfo.length > 0
+    ? Promise.resolve(holeInfo)
+    : fetch(`${API_BASE_URL}/get_match_by_round.php?round_id=${roundId}&tournament_id=${tournamentId}&golfer_id=${golferId}`, { credentials: 'include' })
+        .then(res => res.json())
+        .then(data => {
+          if (data.holes) {
+            holeInfo = data.holes;
+            return data.holes;
+          }
+          return [];
+        })
+        .catch(() => []);
+
+  Promise.all([
+    fetch(`${API_BASE_URL}/get_round_matches.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
+    holesPromise
+  ])
+    .then(([matches, holes]) => {
       const container = document.getElementById("today-summary");
       container.innerHTML = "";
 
@@ -4389,6 +4663,7 @@ function loadGuysTripSummary() {
 
       container.innerHTML = "<h3>Matches (click match to see scorecard)</h3>";
 
+      // Render matches - we'll use holeInfo from global scope if available
       matches.forEach(match => {
         const div = document.createElement("div");
         div.className = "match-summary";
@@ -4414,8 +4689,8 @@ function loadGuysTripSummary() {
             <div class="team-box" style="background-color: #28a745; color: white;">${partnership2Names}</div>
           </div>`;
 
-        // Get status
-        const status = calculateMatchStatus(partnership1Golfers, partnership2Golfers, match.scores);
+        // Get status - for Guys Trip, show stroke play scores
+        const status = calculateGuysTripMatchStatus(partnership1Golfers, partnership2Golfers, match.scores);
         const statusClass = getMatchStatusClass(status);
         const statusDisplay = `<div class="${statusClass}">${status}</div>`;
         div.innerHTML = header + statusDisplay;
@@ -4570,6 +4845,91 @@ function loadGuysTripSummary() {
 
 
 
+// Calculate Guys Trip stroke play status for match cards
+function calculateGuysTripMatchStatus(partnership1Golfers, partnership2Golfers, scores, holes) {
+  // If no hole info available, use global holeInfo if it exists
+  const holesData = holes || holeInfo;
+  if (!holesData) {
+    return "No scores yet";
+  }
+
+  const allGolfers = partnership1Golfers.concat(partnership2Golfers);
+
+  // Build stroke maps for all golfers
+  const strokeMaps = {};
+  allGolfers.forEach(golfer => {
+    strokeMaps[golfer.golfer_id] = buildStrokeMapForGolfer(calculatePlayingHandicap(golfer.handicap), holesData);
+  });
+
+  // Organize NET scores by partnership and hole
+  const scoresByHole = {}; // { holeNumber: { partnership1: [scores], partnership2: [scores] } }
+
+  scores.forEach(s => {
+    const holeNum = parseInt(s.hole_number);
+    const golfer = allGolfers.find(g => g.golfer_id == s.golfer_id);
+    if (!golfer || !strokeMaps[golfer.golfer_id]) return;
+
+    const strokesReceived = strokeMaps[golfer.golfer_id][holeNum] || 0;
+    const netScore = parseInt(s.strokes) - strokesReceived;
+
+    if (!scoresByHole[holeNum]) {
+      scoresByHole[holeNum] = { partnership1: [], partnership2: [] };
+    }
+
+    // Determine partnership based on player_order
+    const playerOrder = parseInt(golfer.player_order) || 1;
+    const partnership = playerOrder <= 2 ? 'partnership1' : 'partnership2';
+    scoresByHole[holeNum][partnership].push(netScore);
+  });
+
+  // Calculate best-ball stroke play scores
+  const teamScores = {
+    partnership1: { total: 0, toPar: 0, count: 0 },
+    partnership2: { total: 0, toPar: 0, count: 0 }
+  };
+
+  for (let hole = 1; hole <= 18; hole++) {
+    if (!scoresByHole[hole]) continue;
+
+    const p1Best = scoresByHole[hole].partnership1.length > 0 ? Math.min(...scoresByHole[hole].partnership1) : null;
+    const p2Best = scoresByHole[hole].partnership2.length > 0 ? Math.min(...scoresByHole[hole].partnership2) : null;
+    const holePar = holesData.find(h => h.hole_number === hole)?.par || 0;
+
+    if (p1Best !== null && isFinite(p1Best)) {
+      teamScores.partnership1.total += p1Best;
+      teamScores.partnership1.toPar += (p1Best - holePar);
+      teamScores.partnership1.count++;
+    }
+
+    if (p2Best !== null && isFinite(p2Best)) {
+      teamScores.partnership2.total += p2Best;
+      teamScores.partnership2.toPar += (p2Best - holePar);
+      teamScores.partnership2.count++;
+    }
+  }
+
+  // If no scores yet
+  if (teamScores.partnership1.count === 0 && teamScores.partnership2.count === 0) {
+    return "No scores yet";
+  }
+
+  // Format score display
+  function formatScore(strokes, toPar) {
+    if (toPar === 0) {
+      return `${strokes} (E)`;
+    }
+    return `${strokes} (${toPar > 0 ? "+" : ""}${toPar})`;
+  }
+
+  const p1Display = teamScores.partnership1.count > 0
+    ? formatScore(teamScores.partnership1.total, teamScores.partnership1.toPar)
+    : "–";
+  const p2Display = teamScores.partnership2.count > 0
+    ? formatScore(teamScores.partnership2.total, teamScores.partnership2.toPar)
+    : "–";
+
+  return `${p1Display} vs ${p2Display}`;
+}
 
 
 //used to show status of matches in today tab
@@ -5639,30 +5999,54 @@ function loadMatchScorecard(match_id, container_id = "today-summary") {
         if (i === 9) {
           const outRow = document.createElement("tr");
           outRow.classList.add("subtotal-row");
-          
+
           // Calculate front 9 par total
           const frontNinePar = holeInfo.filter(h => h.hole_number >= 1 && h.hole_number <= 9)
             .reduce((sum, hole) => sum + (hole.par || 0), 0);
-          
+
           outRow.innerHTML = `<td></td><td>Out</td><td>${frontNinePar}</td><td></td>` + golfers.map(golfer => {
             return `<td class="out-subtotal-cell-readonly" data-golfer="${golfer.id}">–</td>`;
           }).join("");
           table.appendChild(outRow);
+
+          // Add team best-ball Out row for Guys Trip
+          if (isGuysTripFormat) {
+            const teamOutRow = document.createElement("tr");
+            teamOutRow.classList.add("team-score-row");
+            teamOutRow.style.fontWeight = "bold";
+            teamOutRow.style.backgroundColor = "#f0f0f0";
+            teamOutRow.innerHTML = `<td></td><td colspan="3" style="text-align: left; padding-left: 0.5rem;">Team (out)</td>` +
+              `<td colspan="2" class="team-out-cell-readonly" data-partnership="1" style="background-color: #007bff; color: #ffffff; text-align: center;">–</td>` +
+              `<td colspan="2" class="team-out-cell-readonly" data-partnership="2" style="background-color: #28a745; color: #ffffff; text-align: center;">–</td>`;
+            table.appendChild(teamOutRow);
+          }
         }
         
         // Add In subtotal row after hole 18
         if (i === 18) {
           const inRow = document.createElement("tr");
           inRow.classList.add("subtotal-row");
-          
+
           // Calculate back 9 par total
           const backNinePar = holeInfo.filter(h => h.hole_number >= 10 && h.hole_number <= 18)
             .reduce((sum, hole) => sum + (hole.par || 0), 0);
-          
+
           inRow.innerHTML = `<td></td><td>In</td><td>${backNinePar}</td><td></td>` + golfers.map(golfer => {
             return `<td class="in-subtotal-cell-readonly" data-golfer="${golfer.id}">–</td>`;
           }).join("");
           table.appendChild(inRow);
+
+          // Add team best-ball In row for Guys Trip
+          if (isGuysTripFormat) {
+            const teamInRow = document.createElement("tr");
+            teamInRow.classList.add("team-score-row");
+            teamInRow.style.fontWeight = "bold";
+            teamInRow.style.backgroundColor = "#f0f0f0";
+            teamInRow.innerHTML = `<td></td><td colspan="3" style="text-align: left; padding-left: 0.5rem;">Team (in)</td>` +
+              `<td colspan="2" class="team-in-cell-readonly" data-partnership="1" style="background-color: #007bff; color: #ffffff; text-align: center;">–</td>` +
+              `<td colspan="2" class="team-in-cell-readonly" data-partnership="2" style="background-color: #28a745; color: #ffffff; text-align: center;">–</td>`;
+            table.appendChild(teamInRow);
+          }
         }
       }
 
@@ -5672,6 +6056,18 @@ function loadMatchScorecard(match_id, container_id = "today-summary") {
         return `<td class="totals-cell" data-golfer="${g.id}">–</td>`;
       }).join("");
       table.appendChild(totalsRow);
+
+      // Add team best-ball Total row for Guys Trip
+      if (isGuysTripFormat) {
+        const teamTotalRow = document.createElement("tr");
+        teamTotalRow.classList.add("team-score-row");
+        teamTotalRow.style.fontWeight = "bold";
+        teamTotalRow.style.backgroundColor = "#f0f0f0";
+        teamTotalRow.innerHTML = `<td></td><td colspan="3" style="text-align: left; padding-left: 0.5rem;">Team (total)</td>` +
+          `<td colspan="2" class="team-total-cell-readonly" data-partnership="1" style="background-color: #007bff; color: #ffffff; text-align: center;">–</td>` +
+          `<td colspan="2" class="team-total-cell-readonly" data-partnership="2" style="background-color: #28a745; color: #ffffff; text-align: center;">–</td>`;
+        table.appendChild(teamTotalRow);
+      }
 
       container.appendChild(table);
     
@@ -5705,6 +6101,11 @@ function loadMatchScorecard(match_id, container_id = "today-summary") {
 
           updateTotalScoresReadOnly(golfers, holeInfo);
           calculateBestBallStatusReadOnly(golfers, strokeMaps);
+
+          // Update team scores for Guys Trip
+          if (isGuysTripFormat) {
+            updateGuysTripTeamScoresReadOnly(golfers, strokeMaps, holeInfo);
+          }
         });
     });
 }
