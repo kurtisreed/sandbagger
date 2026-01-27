@@ -7094,8 +7094,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const roundName = item.dataset.roundName;
                 roundDropdown.style.display = 'none';
 
-                // Load the selected round
-                loadTournamentRound(roundId, tournamentId, roundName);
+                // Load the selected round - check format to call correct function
+                const formatId = parseInt(sessionStorage.getItem('selected_format_id'));
+                if (formatId === 4) {
+                  loadGuysTripTournamentRound(roundId, tournamentId, roundName, formatId);
+                } else {
+                  loadTournamentRound(roundId, tournamentId, roundName);
+                }
               });
             });
           }
