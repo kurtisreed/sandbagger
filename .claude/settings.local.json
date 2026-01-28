@@ -3,7 +3,10 @@
     "allow": [
       "Bash(git add:*)",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd safe area inset for status bar and fixed header\n\n- Add viewport-fit=cover meta tag for safe area support\n- Add body padding for safe area inset\n- Add purple pseudo-element to fill status bar area\n- Make user header bar fixed position below safe area\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
-      "Bash(git push)"
+      "Bash(git push)",
+      "Bash(git commit:*)",
+      "Bash(npm run build:user:*)",
+      "Bash(powershell -Command \"Get-ChildItem -Path . -Filter *.php -File | Where-Object { $_.Name -ne ''admin.php'' } | Copy-Item -Destination www\"\")"
     ]
   }
 }
