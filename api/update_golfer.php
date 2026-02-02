@@ -26,37 +26,26 @@ if (!$golferId || !$firstName || !$lastName) {
   exit;
 }
 
-$conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) {
+// Prepare the UPDATE statement
+$stmt = $conn->prepare("UPDATE golfers SET first_name = ?, last_name = ?, handicap = ?, email = ? WHERE golfer_id = ?");
+
+if ($stmt === false) {
   http_response_code(500);
-  echo json_encode(['success' => false, 'error' => 'Database connection failed']);
+  echo json_encode(['success' => false, 'error' => 'Database prepare failed: ' . $conn->error]);
   exit;
 }
 
-try {
-  $stmt = $conn->prepare("UPDATE golfers SET first_name = ?, last_name = ?, handicap = ?, email = ? WHERE golfer_id = ?");
-  $stmt->bind_param("ssdsi", $firstName, $lastName, $handicap, $email, $golferId);
+$stmt->bind_param("ssdsi", $firstName, $lastName, $handicap, $email, $golferId);
 
-  if ($stmt->execute()) {
-    if ($stmt->affected_rows > 0 || $stmt->affected_rows === 0) {
-      echo json_encode([
-        'success' => true,
-        'message' => 'Golfer updated successfully'
-      ]);
-    } else {
-      http_response_code(404);
-      echo json_encode(['success' => false, 'error' => 'Golfer not found']);
-    }
-  } else {
-    http_response_code(500);
-    echo json_encode(['success' => false, 'error' => 'Failed to update golfer']);
-  }
-
-  $stmt->close();
-} catch (Exception $e) {
+if ($stmt->execute()) {
+  echo json_encode([
+    'success' => true,
+    'message' => 'Golfer updated successfully'
+  ]);
+} else {
   http_response_code(500);
-  echo json_encode(['success' => false, 'error' => 'Database error: ' . $e->getMessage()]);
+  echo json_encode(['success' => false, 'error' => 'Execute failed: ' . $stmt->error]);
 }
 
-$conn->close();
+$stmt->close();
 ?>
