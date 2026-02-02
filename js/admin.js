@@ -883,7 +883,7 @@ document.getElementById('gt-r-course')?.addEventListener('change', (e) => {
         // API returns { tees: [...], holes: [...] }
         data.tees.forEach(t => {
           teeSelect.insertAdjacentHTML('beforeend',
-            `<option value="${t.tee_id}">${t.tee_name} (${t.slope}/${t.rating})</option>`
+            `<option value="${t.tee_id}">${t.tee_name} (${t.slope}/${t.rating}/${t.yardage})</option>`
           );
         });
       });
