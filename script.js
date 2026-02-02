@@ -6564,7 +6564,7 @@ function loadUserTournaments(golferId) {
           tournament.rounds.forEach(round => {
             html += `
               <button class="tournament-round-btn" data-tournament-id="${tournament.tournament_id}" data-round-id="${round.round_id}" data-round-name="${round.round_name}" data-format-id="${tournament.format_id || ''}" style="display: block; width: 100%; margin-bottom: 0.5rem; padding: 0.5rem; background: #4F2185; color: white; border: none; border-radius: 4px; cursor: pointer; text-align: left;">
-                ${round.round_name} - ${round.course_name}
+                ${round.round_name}
               </button>
             `;
           });
@@ -6676,7 +6676,7 @@ function loadTournamentHistory(golferId) {
             tournament.rounds.forEach(round => {
               html += `
                 <button class="tournament-round-btn" data-tournament-id="${tournament.tournament_id}" data-round-id="${round.round_id}" data-round-name="${round.round_name}" data-format-id="${tournament.format_id || ''}" style="display: block; width: 100%; margin-bottom: 0.5rem; padding: 0.5rem; background: #4F2185; color: white; border: none; border-radius: 4px; cursor: pointer; text-align: left;">
-                  ${round.round_name} - ${round.course_name || 'Course TBD'}
+                  ${round.round_name}
                 </button>
               `;
             });
