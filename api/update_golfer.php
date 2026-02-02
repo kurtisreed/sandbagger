@@ -18,7 +18,7 @@ $golferId = isset($data['golfer_id']) ? intval($data['golfer_id']) : null;
 $firstName = isset($data['first_name']) ? trim($data['first_name']) : null;
 $lastName = isset($data['last_name']) ? trim($data['last_name']) : null;
 $handicap = isset($data['handicap']) ? floatval($data['handicap']) : 0;
-$email = isset($data['email']) ? trim($data['email']) : null;
+$email = isset($data['email']) && $data['email'] !== null ? trim($data['email']) : '';
 
 if (!$golferId || !$firstName || !$lastName) {
   http_response_code(400);

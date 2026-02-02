@@ -22,7 +22,7 @@ if ($conn->connect_error) {
 }
 
 // Get tournaments the golfer is enrolled in
-// Include future tournaments and those within the past 3 months
+// Include future tournaments and those within the past 2 weeks
 $sql = "
 SELECT DISTINCT
   t.tournament_id,
@@ -39,7 +39,7 @@ JOIN tournaments t ON tg.tournament_id = t.tournament_id
 LEFT JOIN rounds r ON t.tournament_id = r.tournament_id
 LEFT JOIN courses c ON r.course_id = c.course_id
 WHERE tg.golfer_id = ?
-  AND t.end_date >= DATE_SUB(CURDATE(), INTERVAL 3 MONTH)
+  AND t.end_date >= DATE_SUB(CURDATE(), INTERVAL 2 WEEK)
 ORDER BY t.start_date DESC, r.round_date ASC
 ";
 
