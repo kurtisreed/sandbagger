@@ -39,9 +39,11 @@ while ($row = $res->fetch_assoc()) {
 }
 $stmt->close();
 
-// 3) Fetch all golfers
+// 3) Fetch all golfers with handicap snapshot if assigned
 $stmt = $conn->prepare("
-  SELECT g.golfer_id, g.first_name, g.last_name, g.handicap, tg.team_id
+  SELECT g.golfer_id, g.first_name, g.last_name,
+         COALESCE(tg.handicap_at_assignment, g.handicap) AS handicap,
+         tg.team_id
     FROM golfers AS g
     LEFT JOIN tournament_golfers AS tg
       ON g.golfer_id = tg.golfer_id AND tg.tournament_id = ?

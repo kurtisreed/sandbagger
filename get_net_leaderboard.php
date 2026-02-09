@@ -27,14 +27,15 @@ if ($conn->connect_error) {
   exit;
 }
 
-// Pull golfer handicap and hole handicap_index
+// Pull golfer handicap (snapshot from tournament assignment) and hole handicap_index
 $sql = "
   SELECT
     g.golfer_id,
     g.first_name,
     t.name AS team_name,
     t.color_hex AS team_color,
-    g.handicap,
+    COALESCE(tg.handicap_at_assignment, g.handicap) AS handicap,
+    COALESCE(tg.handicap_pct_at_assignment, (SELECT handicap_pct FROM tournaments WHERE tournament_id = ?)) AS handicap_pct_snapshot,
     s.hole_number,
     s.strokes,
     h.par,
@@ -51,7 +52,7 @@ $sql = "
 ";
 
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("ii", $tournament_id, $round_id);
+$stmt->bind_param("iii", $tournament_id, $tournament_id, $round_id);
 $stmt->execute();
 $result = $stmt->get_result();
 
@@ -78,14 +79,6 @@ $courseTeeRow = $courseTeeResult->fetch_assoc();
 $slope = floatval($courseTeeRow['slope']);
 $rating = floatval($courseTeeRow['rating']);
 
-// Get tournament handicap percent
-$tourSql = $conn->prepare("SELECT handicap_pct FROM tournaments WHERE tournament_id = ?");
-$tourSql->bind_param("i", $tournament_id);
-$tourSql->execute();
-$tourResult = $tourSql->get_result();
-$tourRow = $tourResult->fetch_assoc();
-$handicap_pct = floatval($tourRow['handicap_pct']);
-
 // We'll cache playing handicaps by golfer_id
 $playingHandicaps = [];
 
@@ -103,8 +96,9 @@ while ($row = $result->fetch_assoc()) {
       'par'         => 0,
       'holes_played'=> 0,
     ];
-    // Calculate and cache playing handicap for this golfer
+    // Calculate and cache playing handicap for this golfer using snapshot values
     $hcp = floatval($row['handicap']);
+    $handicap_pct = floatval($row['handicap_pct_snapshot']);
     $playing_handicap = ($hcp * ($slope / 113) + ($rating - 72)) * ($handicap_pct / 100);
     $playingHandicaps[$id] = round($playing_handicap); // round to nearest integer for allocation
   }

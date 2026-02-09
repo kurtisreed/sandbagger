@@ -42,7 +42,7 @@ SELECT
   g.first_name,
   t.name AS team_name,
   t.color_hex AS team_color,
-  g.handicap,
+  COALESCE(tg.handicap_at_assignment, g.handicap) AS handicap,
   mg.player_order
 FROM match_golfers mg
 JOIN matches m ON mg.match_id = m.match_id

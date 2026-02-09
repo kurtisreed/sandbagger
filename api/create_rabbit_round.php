@@ -85,14 +85,16 @@ try {
     $stmt->execute();
     $matchId = $stmt->insert_id;
 
-    // 6. Link golfers to tournament (no team assignments for Rabbit)
+    // 6. Link golfers to tournament with handicap snapshot (no team assignments for Rabbit)
     $stmt = $conn->prepare("
-        INSERT INTO tournament_golfers (tournament_id, golfer_id, team_id)
-        VALUES (?, ?, NULL)
+        INSERT INTO tournament_golfers (tournament_id, golfer_id, team_id, handicap_at_assignment, handicap_pct_at_assignment)
+        SELECT ?, ?, NULL, g.handicap, ?
+        FROM golfers g
+        WHERE g.golfer_id = ?
     ");
 
     foreach ($data['players'] as $golferId) {
-        $stmt->bind_param('ii', $tournamentId, $golferId);
+        $stmt->bind_param('iidi', $tournamentId, $golferId, $data['handicap_pct'], $golferId);
         $stmt->execute();
     }
 

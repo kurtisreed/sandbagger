@@ -53,6 +53,14 @@ switch ($method) {
       $conn->begin_transaction();
 
       try {
+        // Get tournament's handicap_pct for snapshot
+        $tournamentStmt = $conn->prepare("SELECT handicap_pct FROM tournaments WHERE tournament_id = ?");
+        $tournamentStmt->bind_param('i', $tournamentId);
+        $tournamentStmt->execute();
+        $tournamentResult = $tournamentStmt->get_result()->fetch_assoc();
+        $handicapPct = $tournamentResult['handicap_pct'] ?? null;
+        $tournamentStmt->close();
+
         // Delete existing assignments for this tournament (that have no team)
         // Keep team assignments intact for Ryder Cup style tournaments
         $stmt = $conn->prepare("
@@ -62,16 +70,18 @@ switch ($method) {
         $stmt->bind_param('i', $tournamentId);
         $stmt->execute();
 
-        // Insert new golfer assignments
+        // Insert new golfer assignments with handicap snapshot
         $insertStmt = $conn->prepare("
-          INSERT INTO tournament_golfers (tournament_id, golfer_id)
-          VALUES (?, ?)
+          INSERT INTO tournament_golfers (tournament_id, golfer_id, handicap_at_assignment, handicap_pct_at_assignment)
+          SELECT ?, ?, g.handicap, ?
+          FROM golfers g
+          WHERE g.golfer_id = ?
         ");
 
         $insertCount = 0;
         foreach ($golferIds as $golferId) {
           $gid = intval($golferId);
-          $insertStmt->bind_param('ii', $tournamentId, $gid);
+          $insertStmt->bind_param('iidi', $tournamentId, $gid, $handicapPct, $gid);
           $insertStmt->execute();
           $insertCount++;
         }
@@ -86,16 +96,25 @@ switch ($method) {
       }
 
     } else {
-      // Single golfer assignment (original behavior)
+      // Single golfer assignment (original behavior) with handicap snapshot
+      $tournamentId = intval($data['tournament_id']);
+      $golferId = intval($data['golfer_id']);
+
+      // Get tournament's handicap_pct for snapshot
+      $tournamentStmt = $conn->prepare("SELECT handicap_pct FROM tournaments WHERE tournament_id = ?");
+      $tournamentStmt->bind_param('i', $tournamentId);
+      $tournamentStmt->execute();
+      $tournamentResult = $tournamentStmt->get_result()->fetch_assoc();
+      $handicapPct = $tournamentResult['handicap_pct'] ?? null;
+      $tournamentStmt->close();
+
       $stmt = $conn->prepare("
-        INSERT INTO tournament_golfers (tournament_id, golfer_id)
-        VALUES (?, ?)
+        INSERT INTO tournament_golfers (tournament_id, golfer_id, handicap_at_assignment, handicap_pct_at_assignment)
+        SELECT ?, ?, g.handicap, ?
+        FROM golfers g
+        WHERE g.golfer_id = ?
       ");
-      $stmt->bind_param(
-        'ii',
-        $data['tournament_id'],
-        $data['golfer_id']
-      );
+      $stmt->bind_param('iidi', $tournamentId, $golferId, $handicapPct, $golferId);
       $stmt->execute();
       echo json_encode(['affected_rows' => $stmt->affected_rows]);
     }

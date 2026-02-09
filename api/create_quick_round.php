@@ -102,26 +102,28 @@ try {
     $stmt->bind_param('ii', $tournamentId, $team2Id);
     $stmt->execute();
 
-    // 7. Link golfers to tournament with team assignments
+    // 7. Link golfers to tournament with team assignments and handicap snapshot
     $team1Golfers = [$data['team1_player1'], $data['team1_player2']];
     $team2Golfers = [$data['team2_player1'], $data['team2_player2']];
 
     $stmt = $conn->prepare("
-        INSERT INTO tournament_golfers (tournament_id, golfer_id, team_id)
-        VALUES (?, ?, ?)
+        INSERT INTO tournament_golfers (tournament_id, golfer_id, team_id, handicap_at_assignment, handicap_pct_at_assignment)
+        SELECT ?, ?, ?, g.handicap, ?
+        FROM golfers g
+        WHERE g.golfer_id = ?
     ");
 
     // Team 1
     foreach ($team1Golfers as $golferId) {
         $teamId = 1;
-        $stmt->bind_param('iii', $tournamentId, $golferId, $teamId);
+        $stmt->bind_param('iiidi', $tournamentId, $golferId, $teamId, $data['handicap_pct'], $golferId);
         $stmt->execute();
     }
 
     // Team 2
     foreach ($team2Golfers as $golferId) {
         $teamId = 2;
-        $stmt->bind_param('iii', $tournamentId, $golferId, $teamId);
+        $stmt->bind_param('iiidi', $tournamentId, $golferId, $teamId, $data['handicap_pct'], $golferId);
         $stmt->execute();
     }
 

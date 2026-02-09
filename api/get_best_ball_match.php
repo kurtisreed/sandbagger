@@ -40,10 +40,10 @@ SELECT
   g.golfer_id,
   g.first_name,
   g.last_name,
-  g.handicap,
+  COALESCE(tg.handicap_at_assignment, g.handicap) AS handicap,
   tg.team_id,
   t.name AS team_name,
-  t.handicap_pct AS tournament_handicap_pct
+  COALESCE(tg.handicap_pct_at_assignment, t.handicap_pct) AS tournament_handicap_pct
 FROM matches m
 JOIN rounds r ON m.round_id = r.round_id
 JOIN tournaments t ON r.tournament_id = t.tournament_id

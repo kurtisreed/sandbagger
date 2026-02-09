@@ -44,7 +44,7 @@ SELECT
   tg.team_id,
   t.name AS team_name,
   t.color_hex AS team_color,
-  g.handicap,
+  COALESCE(tg.handicap_at_assignment, g.handicap) AS handicap,
   mg2.player_order
 FROM match_golfers mg
 JOIN matches m ON mg.match_id = m.match_id
@@ -96,9 +96,14 @@ if ($course_id) {
   }
 }
 
-// Get tournament handicap percentage
-$tournamentQuery = $conn->prepare("SELECT handicap_pct FROM tournaments WHERE tournament_id = ?");
-$tournamentQuery->bind_param("i", $tournament_id);
+// Get tournament handicap percentage from snapshot
+$tournamentQuery = $conn->prepare("
+  SELECT COALESCE(tg.handicap_pct_at_assignment, t.handicap_pct) AS handicap_pct
+  FROM tournament_golfers tg
+  JOIN tournaments t ON tg.tournament_id = t.tournament_id
+  WHERE tg.tournament_id = ? AND tg.golfer_id = ?
+");
+$tournamentQuery->bind_param("ii", $tournament_id, $golfer_id);
 $tournamentQuery->execute();
 $tournamentResult = $tournamentQuery->get_result();
 $tournamentRow = $tournamentResult->fetch_assoc();

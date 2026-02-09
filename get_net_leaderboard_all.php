@@ -24,14 +24,15 @@ if ($conn->connect_error) {
 
 
 
-// Pull golfer handicap and hole handicap_index for all rounds in the tournament
+// Pull golfer handicap (snapshot from tournament assignment) and hole handicap_index for all rounds in the tournament
 $sql = "
   SELECT
     g.golfer_id,
     g.first_name,
     t.name AS team_name,
     t.color_hex AS team_color,
-    g.handicap,
+    COALESCE(tg.handicap_at_assignment, g.handicap) AS handicap,
+    COALESCE(tg.handicap_pct_at_assignment, (SELECT handicap_pct FROM tournaments WHERE tournament_id = ?)) AS handicap_pct_snapshot,
     s.hole_number,
     s.strokes,
     h.par,
@@ -51,17 +52,9 @@ $sql = "
 ";
 
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("ii", $tournament_id, $tournament_id);
+$stmt->bind_param("iii", $tournament_id, $tournament_id, $tournament_id);
 $stmt->execute();
 $result = $stmt->get_result();
-
-// Get tournament handicap percent (same for all)
-$tourSql = $conn->prepare("SELECT handicap_pct FROM tournaments WHERE tournament_id = ?");
-$tourSql->bind_param("i", $tournament_id);
-$tourSql->execute();
-$tourResult = $tourSql->get_result();
-$tourRow = $tourResult->fetch_assoc();
-$handicap_pct = floatval($tourRow['handicap_pct']);
 
 $leaderboard = [];
 while ($row = $result->fetch_assoc()) {
@@ -86,8 +79,9 @@ while ($row = $result->fetch_assoc()) {
     $idx     = intval($row['handicap_index']);
     $slope   = floatval($row['slope']);
     $rating  = floatval($row['rating']);
+    $handicap_pct = floatval($row['handicap_pct_snapshot']);
 
-    // Calculate playing handicap for this course/round
+    // Calculate playing handicap for this course/round using snapshot values
     $playing_handicap = ($hcp * ($slope / 113) + ($rating - 72)) * ($handicap_pct / 100);
     $playing_hcp_rounded = round($playing_handicap);
 

@@ -40,9 +40,9 @@ while ($row = $rs->fetch_assoc()) {
 }
 $stmt->close();
 
-// 3) Fetch golfers for tournament with team_id
+// 3) Fetch golfers for tournament with team_id and handicap snapshot
 $golfers = [];
-$stmt = $conn->prepare("SELECT tg.golfer_id, tg.team_id, g.first_name, g.last_name, g.handicap FROM tournament_golfers tg JOIN golfers g ON tg.golfer_id = g.golfer_id WHERE tg.tournament_id = ? AND g.active = 1");
+$stmt = $conn->prepare("SELECT tg.golfer_id, tg.team_id, g.first_name, g.last_name, COALESCE(tg.handicap_at_assignment, g.handicap) AS handicap FROM tournament_golfers tg JOIN golfers g ON tg.golfer_id = g.golfer_id WHERE tg.tournament_id = ? AND g.active = 1");
 $stmt->bind_param('i', $tournament_id);
 $stmt->execute();
 $rs = $stmt->get_result();

@@ -37,9 +37,13 @@ switch ($method) {
       // Get golfers for each match
       foreach ($matches as &$match) {
         $stmt2 = $conn->prepare("
-          SELECT mg.golfer_id, mg.player_order, g.first_name, g.last_name, g.handicap
+          SELECT mg.golfer_id, mg.player_order, g.first_name, g.last_name,
+                 COALESCE(tg.handicap_at_assignment, g.handicap) AS handicap
           FROM match_golfers mg
           JOIN golfers g ON mg.golfer_id = g.golfer_id
+          JOIN matches m ON mg.match_id = m.match_id
+          JOIN rounds r ON m.round_id = r.round_id
+          LEFT JOIN tournament_golfers tg ON g.golfer_id = tg.golfer_id AND tg.tournament_id = r.tournament_id
           WHERE mg.match_id = ?
           ORDER BY mg.player_order
         ");

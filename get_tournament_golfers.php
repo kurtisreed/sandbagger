@@ -13,7 +13,8 @@ if (!$tournament_id) {
 }
 
 $sql = "
-    SELECT g.golfer_id, g.first_name, g.last_name, g.handicap
+    SELECT g.golfer_id, g.first_name, g.last_name,
+           COALESCE(tg.handicap_at_assignment, g.handicap) AS handicap
     FROM tournament_golfers tg
     JOIN golfers g ON tg.golfer_id = g.golfer_id
     WHERE tg.tournament_id = ?
