@@ -6565,17 +6565,25 @@ function loadUserTournaments(golferId) {
           tournament.rounds.forEach(round => {
             const isAdmin = currentUser && currentUser.role === 'administrator';
             const isGuysTrip = tournament.format_id === 4;
+            const hasScores = round.has_scores || false;
+            const isLocked = hasScores;
 
             html += `
               <div style="position: relative; margin-bottom: 0.5rem;">
-                <button class="tournament-round-btn" data-tournament-id="${tournament.tournament_id}" data-round-id="${round.round_id}" data-round-name="${round.round_name}" data-format-id="${tournament.format_id || ''}" style="display: block; width: 100%; padding: 0.5rem ${isAdmin && isGuysTrip ? '3.5rem' : '0.5rem'} 0.5rem 0.5rem; background: #4F2185; color: white; border: none; border-radius: 4px; cursor: pointer; text-align: left;">
+                <button class="tournament-round-btn" data-tournament-id="${tournament.tournament_id}" data-round-id="${round.round_id}" data-round-name="${round.round_name}" data-format-id="${tournament.format_id || ''}" style="display: block; width: 100%; padding: 0.5rem ${isAdmin && isGuysTrip ? '4rem' : '0.5rem'} 0.5rem 0.5rem; background: #4F2185; color: white; border: none; border-radius: 4px; cursor: pointer; text-align: left;">
                   ${round.round_name}
                 </button>
-                ${isAdmin && isGuysTrip ? `
-                  <button class="edit-round-btn" data-tournament-id="${tournament.tournament_id}" data-round-id="${round.round_id}" style="position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); padding: 0.25rem 0.75rem; background: #ffc107; color: #333; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: bold;">
-                    Edit
-                  </button>
-                ` : ''}
+                ${isAdmin && isGuysTrip ? (
+                  isLocked ? `
+                    <button class="locked-round-btn" style="position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); padding: 0.25rem 0.75rem; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: not-allowed; font-size: 0.85rem; font-weight: bold; opacity: 0.7;">
+                      Locked
+                    </button>
+                  ` : `
+                    <button class="edit-round-btn" data-tournament-id="${tournament.tournament_id}" data-round-id="${round.round_id}" style="position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); padding: 0.25rem 0.75rem; background: #ffc107; color: #333; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: bold;">
+                      Edit
+                    </button>
+                  `
+                ) : ''}
               </div>
             `;
           });
@@ -6857,9 +6865,26 @@ function renderMatches() {
   const matchesList = document.getElementById('matches-list');
   matchesList.innerHTML = '';
 
+  // Build a set of all assigned golfer IDs across all matches
+  const assignedGolfers = new Set();
+  matchesData.forEach(match => {
+    if (match.team1_player1) assignedGolfers.add(match.team1_player1);
+    if (match.team1_player2) assignedGolfers.add(match.team1_player2);
+    if (match.team2_player1) assignedGolfers.add(match.team2_player1);
+    if (match.team2_player2) assignedGolfers.add(match.team2_player2);
+  });
+
   matchesData.forEach((match, index) => {
     const matchDiv = document.createElement('div');
     matchDiv.style.cssText = 'border: 1px solid #ddd; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; background: white;';
+
+    // Helper function to generate player options with assigned status
+    const generatePlayerOptions = (currentSelection) => {
+      return tournamentPlayers.map(p => {
+        const isAssigned = assignedGolfers.has(p.golfer_id) && p.golfer_id != currentSelection;
+        return `<option value="${p.golfer_id}" ${currentSelection == p.golfer_id ? 'selected' : ''} ${isAssigned ? 'disabled' : ''}>${p.first_name} ${p.last_name} (${p.handicap})${isAssigned ? ' (Assigned)' : ''}</option>`;
+      }).join('');
+    };
 
     matchDiv.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
@@ -6872,11 +6897,11 @@ function renderMatches() {
         <div style="margin-bottom: 0.5rem;">
           <select class="match-player-select" data-match-index="${index}" data-team="1" data-position="1" style="width: 100%; padding: 0.5rem; font-size: 0.95rem; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 0.5rem;">
             <option value="">-- Select Player 1 --</option>
-            ${tournamentPlayers.map(p => `<option value="${p.golfer_id}" ${match.team1_player1 == p.golfer_id ? 'selected' : ''}>${p.first_name} ${p.last_name} (${p.handicap})</option>`).join('')}
+            ${generatePlayerOptions(match.team1_player1)}
           </select>
           <select class="match-player-select" data-match-index="${index}" data-team="1" data-position="2" style="width: 100%; padding: 0.5rem; font-size: 0.95rem; border: 1px solid #ccc; border-radius: 4px;">
             <option value="">-- Select Player 2 --</option>
-            ${tournamentPlayers.map(p => `<option value="${p.golfer_id}" ${match.team1_player2 == p.golfer_id ? 'selected' : ''}>${p.first_name} ${p.last_name} (${p.handicap})</option>`).join('')}
+            ${generatePlayerOptions(match.team1_player2)}
           </select>
         </div>
       </div>
@@ -6886,11 +6911,11 @@ function renderMatches() {
         <div>
           <select class="match-player-select" data-match-index="${index}" data-team="2" data-position="1" style="width: 100%; padding: 0.5rem; font-size: 0.95rem; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 0.5rem;">
             <option value="">-- Select Player 1 --</option>
-            ${tournamentPlayers.map(p => `<option value="${p.golfer_id}" ${match.team2_player1 == p.golfer_id ? 'selected' : ''}>${p.first_name} ${p.last_name} (${p.handicap})</option>`).join('')}
+            ${generatePlayerOptions(match.team2_player1)}
           </select>
           <select class="match-player-select" data-match-index="${index}" data-team="2" data-position="2" style="width: 100%; padding: 0.5rem; font-size: 0.95rem; border: 1px solid #ccc; border-radius: 4px;">
             <option value="">-- Select Player 2 --</option>
-            ${tournamentPlayers.map(p => `<option value="${p.golfer_id}" ${match.team2_player2 == p.golfer_id ? 'selected' : ''}>${p.first_name} ${p.last_name} (${p.handicap})</option>`).join('')}
+            ${generatePlayerOptions(match.team2_player2)}
           </select>
         </div>
       </div>
@@ -6907,6 +6932,8 @@ function renderMatches() {
       const position = this.dataset.position;
       const key = `team${team}_player${position}`;
       matchesData[matchIndex][key] = this.value;
+      // Re-render to update disabled states
+      renderMatches();
     });
   });
 
@@ -7562,7 +7589,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="round-dropdown-item ${isActive ? 'active' : ''}"
                      data-round-id="${round.round_id}"
                      data-round-name="${round.round_name}">
-                  ${round.round_name} - ${round.course_name || 'Course TBD'}
+                  ${round.round_name}
                 </div>
               `;
             }).join('');
@@ -8185,7 +8212,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Step 2: Save the matches
         const matchesPayload = matchesData.map((match, index) => ({
-          match_id: isEditingRound && match.match_id && !match.match_id.toString().startsWith('new-') ? match.match_id : null,
+          // Send match_id as-is (real ID for existing, temporary ID for new)
+          // API will use this as key in id_mapping for new matches
+          match_id: match.match_id || null,
           match_name: `Match ${index + 1} in ${roundData.round_name}`,
           golfers: [
             { golfer_id: parseInt(match.team1_player1), team_position: 1 },
@@ -8215,31 +8244,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Step 3: Create tee times and save assignments (if any tee times configured)
-        if (teeTimesData.length > 0 && teeTimesData.some(tt => tt.match_id)) {
-          // First, create the tee times
+        if (teeTimesData.length > 0) {
+          // First, create ALL tee times (regardless of whether they have matches assigned)
           const teeTimeIds = {};
 
           for (let i = 0; i < teeTimesData.length; i++) {
             const tt = teeTimesData[i];
-            if (tt.match_id) { // Only create tee times that have matches assigned
-              const time = `${tt.hour}:${tt.minute}`;
-              const teeTimeResponse = await fetch(`${API_BASE_URL}/api/tee_times.php`, {
-                method: 'POST',
-                credentials: 'include',
-                headers: {
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                  round_id: roundId,
-                  time: time
-                })
-              });
+            const time = `${tt.hour}:${tt.minute}`;
+            const teeTimeResponse = await fetch(`${API_BASE_URL}/api/tee_times.php`, {
+              method: 'POST',
+              credentials: 'include',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                round_id: roundId,
+                time: time
+              })
+            });
 
-              const teeTimeResult = await teeTimeResponse.json();
+            const teeTimeResult = await teeTimeResponse.json();
 
-              if (teeTimeResult.success && teeTimeResult.tee_time_id) {
-                teeTimeIds[tt.tee_time_id] = teeTimeResult.tee_time_id;
-              }
+            if (teeTimeResult.success && teeTimeResult.tee_time_id) {
+              // Map the temporary tee_time_id to the real one
+              teeTimeIds[tt.tee_time_id] = teeTimeResult.tee_time_id;
             }
           }
 

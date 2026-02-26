@@ -65,11 +65,26 @@ while ($row = $result->fetch_assoc()) {
   }
 
   if ($row['round_id']) {
+    // Check if this round has any scores entered
+    $checkScoresStmt = $conn->prepare("
+      SELECT COUNT(*) as score_count
+      FROM hole_scores hs
+      JOIN matches m ON hs.match_id = m.match_id
+      WHERE m.round_id = ?
+    ");
+    $checkScoresStmt->bind_param("i", $row['round_id']);
+    $checkScoresStmt->execute();
+    $scoresResult = $checkScoresStmt->get_result();
+    $scoresRow = $scoresResult->fetch_assoc();
+    $hasScores = $scoresRow['score_count'] > 0;
+    $checkScoresStmt->close();
+
     $tournaments[$tournamentId]['rounds'][] = [
       'round_id' => $row['round_id'],
       'round_name' => $row['round_name'],
       'round_date' => $row['round_date'],
-      'course_name' => $row['course_name']
+      'course_name' => $row['course_name'],
+      'has_scores' => $hasScores
     ];
   }
 }
