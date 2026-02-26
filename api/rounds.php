@@ -65,21 +65,21 @@ switch ($method) {
 
   case 'PUT':
     // update an existing round
-    parse_str(file_get_contents('php://input'), $data);
+    $data = json_decode(file_get_contents('php://input'), true);
     $stmt = $conn->prepare("
       UPDATE rounds
          SET tournament_id = ?,
              course_id     = ?,
-             tee_id        = ?,  // Assuming tee_id is part of the data
+             tee_id        = ?,
              round_name    = ?,
              round_date    = ?
        WHERE round_id     = ?
     ");
     $stmt->bind_param(
-      'iissi',
+      'iiissi',
       $data['tournament_id'],
       $data['course_id'],
-      $data['tee_id'], // Assuming tee_id is part of the data
+      $data['tee_id'],
       $data['round_name'],
       $data['round_date'],
       $id
@@ -89,10 +89,49 @@ switch ($method) {
     break;
 
   case 'DELETE':
-    $stmt = $conn->prepare("DELETE FROM rounds WHERE round_id = ?");
-    $stmt->bind_param('i', $id);
-    $stmt->execute();
-    echo json_encode(['deleted_rows' => $stmt->affected_rows]);
+    // Use transaction to ensure all related records are deleted
+    $conn->begin_transaction();
+
+    try {
+      // 1. Delete match_golfers for all matches in this round
+      $stmt = $conn->prepare("DELETE mg FROM match_golfers mg INNER JOIN matches m ON mg.match_id = m.match_id WHERE m.round_id = ?");
+      $stmt->bind_param('i', $id);
+      $stmt->execute();
+      $stmt->close();
+
+      // 2. Delete matches for this round
+      $stmt = $conn->prepare("DELETE FROM matches WHERE round_id = ?");
+      $stmt->bind_param('i', $id);
+      $stmt->execute();
+      $stmt->close();
+
+      // 3. Delete tee_times for this round
+      $stmt = $conn->prepare("DELETE FROM tee_times WHERE round_id = ?");
+      $stmt->bind_param('i', $id);
+      $stmt->execute();
+      $stmt->close();
+
+      // 4. Delete hole_scores for all matches in this round
+      $stmt = $conn->prepare("DELETE hs FROM hole_scores hs INNER JOIN matches m ON hs.match_id = m.match_id WHERE m.round_id = ?");
+      $stmt->bind_param('i', $id);
+      $stmt->execute();
+      $stmt->close();
+
+      // 5. Finally, delete the round itself
+      $stmt = $conn->prepare("DELETE FROM rounds WHERE round_id = ?");
+      $stmt->bind_param('i', $id);
+      $stmt->execute();
+      $affected = $stmt->affected_rows;
+      $stmt->close();
+
+      $conn->commit();
+      echo json_encode(['deleted_rows' => $affected, 'success' => true]);
+
+    } catch (Exception $e) {
+      $conn->rollback();
+      http_response_code(500);
+      echo json_encode(['error' => 'Failed to delete round: ' . $e->getMessage()]);
+    }
     break;
 
   default:

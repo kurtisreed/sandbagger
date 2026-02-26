@@ -14,7 +14,7 @@ if ($conn->connect_error) {
     exit;
 }
 
-$sql = "SELECT golfer_id, first_name, last_name, handicap FROM golfers WHERE active = 1 ORDER BY last_name, first_name";
+$sql = "SELECT golfer_id, first_name, last_name, handicap, role FROM golfers WHERE active = 1 ORDER BY last_name, first_name";
 $result = $conn->query($sql);
 
 $golfers = [];

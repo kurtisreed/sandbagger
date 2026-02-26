@@ -6559,19 +6559,40 @@ function loadUserTournaments(golferId) {
             <p style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: #666;">${tournament.start_date} to ${tournament.end_date}</p>
         `;
 
+        html += '<div style="margin-top: 0.5rem;">';
+
         if (tournament.rounds && tournament.rounds.length > 0) {
-          html += '<div style="margin-top: 0.5rem;">';
           tournament.rounds.forEach(round => {
+            const isAdmin = currentUser && currentUser.role === 'administrator';
+            const isGuysTrip = tournament.format_id === 4;
+
             html += `
-              <button class="tournament-round-btn" data-tournament-id="${tournament.tournament_id}" data-round-id="${round.round_id}" data-round-name="${round.round_name}" data-format-id="${tournament.format_id || ''}" style="display: block; width: 100%; margin-bottom: 0.5rem; padding: 0.5rem; background: #4F2185; color: white; border: none; border-radius: 4px; cursor: pointer; text-align: left;">
-                ${round.round_name}
-              </button>
+              <div style="position: relative; margin-bottom: 0.5rem;">
+                <button class="tournament-round-btn" data-tournament-id="${tournament.tournament_id}" data-round-id="${round.round_id}" data-round-name="${round.round_name}" data-format-id="${tournament.format_id || ''}" style="display: block; width: 100%; padding: 0.5rem ${isAdmin && isGuysTrip ? '3.5rem' : '0.5rem'} 0.5rem 0.5rem; background: #4F2185; color: white; border: none; border-radius: 4px; cursor: pointer; text-align: left;">
+                  ${round.round_name}
+                </button>
+                ${isAdmin && isGuysTrip ? `
+                  <button class="edit-round-btn" data-tournament-id="${tournament.tournament_id}" data-round-id="${round.round_id}" style="position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); padding: 0.25rem 0.75rem; background: #ffc107; color: #333; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: bold;">
+                    Edit
+                  </button>
+                ` : ''}
+              </div>
             `;
           });
-          html += '</div>';
         } else {
-          html += '<p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: #999;">No rounds scheduled</p>';
+          html += '<p style="margin: 0.5rem 0 0.5rem 0; font-size: 0.9rem; color: #999;">No rounds scheduled</p>';
         }
+
+        // Add "+ Add Round" button for administrators
+        if (currentUser && currentUser.role === 'administrator') {
+          html += `
+            <button class="add-round-btn" data-tournament-id="${tournament.tournament_id}" style="display: block; width: 100%; margin-bottom: 0.5rem; padding: 0.5rem; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; text-align: left;">
+              + Add Round
+            </button>
+          `;
+        }
+
+        html += '</div>';
 
         html += '</div>';
       });
@@ -6605,11 +6626,471 @@ function loadUserTournaments(golferId) {
           }
         });
       });
+
+      // Add click handlers for "+ Add Round" buttons
+      document.querySelectorAll('.add-round-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const tournamentId = this.dataset.tournamentId;
+          showAddRoundForm(tournamentId);
+        });
+      });
+
+      // Add click handlers for "Edit" buttons
+      document.querySelectorAll('.edit-round-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation(); // Prevent triggering the round button click
+          const tournamentId = this.dataset.tournamentId;
+          const roundId = this.dataset.roundId;
+          editRound(tournamentId, roundId);
+        });
+      });
     })
     .catch(err => {
       console.error('Error loading tournaments:', err);
       tournamentsList.innerHTML = '<p style="color: red;">Error loading tournaments</p>';
     });
+}
+
+function showAddRoundForm(tournamentId) {
+  // Hide dashboard, show add round form
+  document.getElementById('user-dashboard').style.display = 'none';
+  document.getElementById('add-round-container').style.display = 'block';
+
+  // Store tournament ID for later use
+  sessionStorage.setItem('add_round_tournament_id', tournamentId);
+
+  // Reset form
+  document.getElementById('add-round-form').reset();
+  document.getElementById('add-round-tees').innerHTML = '<option value="">-- Select Tees --</option>';
+
+  // Load courses
+  fetch(`${API_BASE_URL}/api/courses.php`, {
+    credentials: 'include'
+  })
+    .then(res => res.json())
+    .then(courses => {
+      const courseSelect = document.getElementById('add-round-course');
+      courseSelect.innerHTML = '<option value="">-- Select Course --</option>';
+      courses.forEach(course => {
+        const option = document.createElement('option');
+        option.value = course.course_id;
+        option.textContent = course.name;
+        courseSelect.appendChild(option);
+      });
+    })
+    .catch(err => {
+      console.error('Error loading courses:', err);
+      alert('Error loading courses. Please try again.');
+    });
+}
+
+let matchesData = [];
+let tournamentPlayers = [];
+let teeTimesData = [];
+let isEditingRound = false;
+let editingRoundId = null;
+
+async function editRound(tournamentId, roundId) {
+  isEditingRound = true;
+  editingRoundId = roundId;
+
+  // Hide dashboard, show add round form
+  document.getElementById('user-dashboard').style.display = 'none';
+  document.getElementById('add-round-container').style.display = 'block';
+
+  // Store tournament ID
+  sessionStorage.setItem('add_round_tournament_id', tournamentId);
+
+  try {
+    // Fetch round details
+    const roundResponse = await fetch(`${API_BASE_URL}/api/rounds.php?round_id=${roundId}`, {
+      credentials: 'include'
+    });
+    const roundData = await roundResponse.json();
+
+    // Load courses
+    const coursesResponse = await fetch(`${API_BASE_URL}/api/courses.php`, {
+      credentials: 'include'
+    });
+    const courses = await coursesResponse.json();
+
+    // Populate course dropdown
+    const courseSelect = document.getElementById('add-round-course');
+    courseSelect.innerHTML = '<option value="">-- Select Course --</option>';
+    courses.forEach(course => {
+      const option = document.createElement('option');
+      option.value = course.course_id;
+      option.textContent = course.name;
+      if (course.course_id == roundData.course_id) {
+        option.selected = true;
+      }
+      courseSelect.appendChild(option);
+    });
+
+    // Load tees for the selected course
+    if (roundData.course_id) {
+      const teesResponse = await fetch(`${API_BASE_URL}/api/get_course_tees.php?course_id=${roundData.course_id}`, {
+        credentials: 'include'
+      });
+      const teesData = await teesResponse.json();
+
+      const teesSelect = document.getElementById('add-round-tees');
+      teesSelect.innerHTML = '<option value="">-- Select Tees --</option>';
+      if (teesData.tees && teesData.tees.length > 0) {
+        teesData.tees.forEach(tee => {
+          const option = document.createElement('option');
+          option.value = tee.tee_id;
+          option.textContent = `${tee.tee_name} (${tee.slope}/${tee.rating}, ${tee.yardage} yds)`;
+          if (tee.tee_id == roundData.tee_id) {
+            option.selected = true;
+          }
+          teesSelect.appendChild(option);
+        });
+      }
+    }
+
+    // Set round date
+    document.getElementById('add-round-date').value = roundData.round_date;
+
+    // Change button text to "Continue"
+    const submitBtn = document.querySelector('#add-round-form button[type="submit"]');
+    submitBtn.textContent = 'Continue';
+
+  } catch (err) {
+    console.error('Error loading round data:', err);
+    alert('Error loading round data. Please try again.');
+    document.getElementById('add-round-container').style.display = 'none';
+    document.getElementById('user-dashboard').style.display = 'block';
+  }
+}
+
+async function loadExistingMatches(tournamentId, roundId) {
+  try {
+    // Load tournament players
+    const playersResponse = await fetch(`${API_BASE_URL}/api/tournament_golfers.php?tournament_id=${tournamentId}`, {
+      credentials: 'include'
+    });
+    tournamentPlayers = await playersResponse.json();
+
+    // Load existing matches (includes golfers with player_order)
+    const matchesResponse = await fetch(`${API_BASE_URL}/api/matches.php?round_id=${roundId}`, {
+      credentials: 'include'
+    });
+    const existingMatches = await matchesResponse.json();
+
+    // Reset and populate matchesData
+    matchesData = [];
+
+    if (existingMatches && existingMatches.length > 0) {
+      existingMatches.forEach(match => {
+        const golfers = match.golfers || [];
+
+        // Find golfers by team_position
+        const team1player1 = golfers.find(g => g.team_position === 1);
+        const team1player2 = golfers.find(g => g.team_position === 2);
+        const team2player1 = golfers.find(g => g.team_position === 3);
+        const team2player2 = golfers.find(g => g.team_position === 4);
+
+        matchesData.push({
+          match_id: match.match_id,
+          team1_player1: team1player1 ? team1player1.golfer_id : '',
+          team1_player2: team1player2 ? team1player2.golfer_id : '',
+          team2_player1: team2player1 ? team2player1.golfer_id : '',
+          team2_player2: team2player2 ? team2player2.golfer_id : ''
+        });
+      });
+    }
+
+    if (matchesData.length === 0) {
+      // No existing matches, start with one empty match
+      addNewMatch();
+    }
+
+    // Show matches screen
+    document.getElementById('add-matches-container').style.display = 'block';
+    renderMatches();
+
+  } catch (err) {
+    console.error('Error loading matches:', err);
+    alert('Error loading matches. Please try again.');
+  }
+}
+
+function showMatchesScreen(tournamentId) {
+  document.getElementById('add-matches-container').style.display = 'block';
+
+  // Reset matches data
+  matchesData = [];
+
+  // Load tournament players
+  fetch(`${API_BASE_URL}/api/tournament_golfers.php?tournament_id=${tournamentId}`, {
+    credentials: 'include'
+  })
+    .then(res => res.json())
+    .then(players => {
+      tournamentPlayers = players;
+      // Start with one empty match
+      addNewMatch();
+    })
+    .catch(err => {
+      console.error('Error loading players:', err);
+      alert('Error loading players. Please try again.');
+    });
+}
+
+function addNewMatch() {
+  const matchIndex = matchesData.length;
+  const matchId = `new-${Date.now()}-${matchIndex}`;
+
+  matchesData.push({
+    match_id: matchId,
+    team1_player1: '',
+    team1_player2: '',
+    team2_player1: '',
+    team2_player2: ''
+  });
+
+  renderMatches();
+}
+
+function renderMatches() {
+  const matchesList = document.getElementById('matches-list');
+  matchesList.innerHTML = '';
+
+  matchesData.forEach((match, index) => {
+    const matchDiv = document.createElement('div');
+    matchDiv.style.cssText = 'border: 1px solid #ddd; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; background: white;';
+
+    matchDiv.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="margin: 0; font-size: 1.1rem;">Match ${index + 1}</h3>
+        ${matchesData.length > 1 ? `<button class="remove-match-btn" data-index="${index}" style="background: #dc3545; color: white; border: none; padding: 0.25rem 0.75rem; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">Remove</button>` : ''}
+      </div>
+
+      <div style="margin-bottom: 1rem;">
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: bold; color: #4F2185;">Team 1</label>
+        <div style="margin-bottom: 0.5rem;">
+          <select class="match-player-select" data-match-index="${index}" data-team="1" data-position="1" style="width: 100%; padding: 0.5rem; font-size: 0.95rem; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 0.5rem;">
+            <option value="">-- Select Player 1 --</option>
+            ${tournamentPlayers.map(p => `<option value="${p.golfer_id}" ${match.team1_player1 == p.golfer_id ? 'selected' : ''}>${p.first_name} ${p.last_name} (${p.handicap})</option>`).join('')}
+          </select>
+          <select class="match-player-select" data-match-index="${index}" data-team="1" data-position="2" style="width: 100%; padding: 0.5rem; font-size: 0.95rem; border: 1px solid #ccc; border-radius: 4px;">
+            <option value="">-- Select Player 2 --</option>
+            ${tournamentPlayers.map(p => `<option value="${p.golfer_id}" ${match.team1_player2 == p.golfer_id ? 'selected' : ''}>${p.first_name} ${p.last_name} (${p.handicap})</option>`).join('')}
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 0;">
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: bold; color: #4F2185;">Team 2</label>
+        <div>
+          <select class="match-player-select" data-match-index="${index}" data-team="2" data-position="1" style="width: 100%; padding: 0.5rem; font-size: 0.95rem; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 0.5rem;">
+            <option value="">-- Select Player 1 --</option>
+            ${tournamentPlayers.map(p => `<option value="${p.golfer_id}" ${match.team2_player1 == p.golfer_id ? 'selected' : ''}>${p.first_name} ${p.last_name} (${p.handicap})</option>`).join('')}
+          </select>
+          <select class="match-player-select" data-match-index="${index}" data-team="2" data-position="2" style="width: 100%; padding: 0.5rem; font-size: 0.95rem; border: 1px solid #ccc; border-radius: 4px;">
+            <option value="">-- Select Player 2 --</option>
+            ${tournamentPlayers.map(p => `<option value="${p.golfer_id}" ${match.team2_player2 == p.golfer_id ? 'selected' : ''}>${p.first_name} ${p.last_name} (${p.handicap})</option>`).join('')}
+          </select>
+        </div>
+      </div>
+    `;
+
+    matchesList.appendChild(matchDiv);
+  });
+
+  // Add event listeners for player selection
+  document.querySelectorAll('.match-player-select').forEach(select => {
+    select.addEventListener('change', function() {
+      const matchIndex = parseInt(this.dataset.matchIndex);
+      const team = this.dataset.team;
+      const position = this.dataset.position;
+      const key = `team${team}_player${position}`;
+      matchesData[matchIndex][key] = this.value;
+    });
+  });
+
+  // Add event listeners for remove buttons
+  document.querySelectorAll('.remove-match-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const index = parseInt(this.dataset.index);
+      matchesData.splice(index, 1);
+      renderMatches();
+    });
+  });
+}
+
+async function loadExistingTeeTimes() {
+  try {
+    // Load tee time assignments
+    const response = await fetch(`${API_BASE_URL}/api/get_tee_time_assignments.php?round_id=${editingRoundId}`, {
+      credentials: 'include'
+    });
+    const data = await response.json();
+
+    // Reset tee times data
+    teeTimesData = [];
+
+    if (data.tee_times && data.tee_times.length > 0) {
+      // Create a map of match_id to match index
+      const matchIdToIndex = {};
+      data.matches.forEach((match, idx) => {
+        matchIdToIndex[match.match_id] = idx;
+      });
+
+      data.tee_times.forEach(tt => {
+        // Find which match is assigned to this tee time
+        const assignedMatch = data.matches.find(m => m.tee_time_id === tt.tee_time_id);
+        const matchId = assignedMatch ? `match-${matchIdToIndex[assignedMatch.match_id]}` : '';
+
+        // Parse time
+        const timeParts = tt.time.split(':');
+
+        teeTimesData.push({
+          tee_time_id: tt.tee_time_id,
+          hour: timeParts[0].padStart(2, '0'),
+          minute: timeParts[1].padStart(2, '0'),
+          match_id: matchId
+        });
+      });
+    }
+
+    if (teeTimesData.length === 0) {
+      // No existing tee times, start with one empty
+      addNewTeeTime();
+    }
+
+    // Show tee times screen
+    document.getElementById('add-tee-times-container').style.display = 'block';
+    renderTeeTimes();
+
+  } catch (err) {
+    console.error('Error loading tee times:', err);
+    alert('Error loading tee times. Please try again.');
+  }
+}
+
+function showTeeTimesScreen() {
+  document.getElementById('add-tee-times-container').style.display = 'block';
+
+  // Reset tee times data
+  teeTimesData = [];
+
+  // Start with one empty tee time
+  addNewTeeTime();
+}
+
+function addNewTeeTime() {
+  const teeTimeIndex = teeTimesData.length;
+  const teeTimeId = `new-${Date.now()}-${teeTimeIndex}`;
+
+  teeTimesData.push({
+    tee_time_id: teeTimeId,
+    hour: '08',
+    minute: '00',
+    match_id: ''
+  });
+
+  renderTeeTimes();
+}
+
+function getMatchDisplayName(match) {
+  // Get player names for this match
+  const team1Player1 = tournamentPlayers.find(p => p.golfer_id == match.team1_player1);
+  const team1Player2 = tournamentPlayers.find(p => p.golfer_id == match.team1_player2);
+  const team2Player1 = tournamentPlayers.find(p => p.golfer_id == match.team2_player1);
+  const team2Player2 = tournamentPlayers.find(p => p.golfer_id == match.team2_player2);
+
+  if (!team1Player1 || !team1Player2 || !team2Player1 || !team2Player2) {
+    return 'Match';
+  }
+
+  return `${team1Player1.first_name} & ${team1Player2.first_name} vs ${team2Player1.first_name} & ${team2Player2.first_name}`;
+}
+
+function renderTeeTimes() {
+  const teeTimesList = document.getElementById('tee-times-list');
+  teeTimesList.innerHTML = '';
+
+  // Track which matches are already assigned
+  const assignedMatches = new Set(teeTimesData.map(tt => tt.match_id).filter(id => id));
+
+  teeTimesData.forEach((teeTime, index) => {
+    const teeTimeDiv = document.createElement('div');
+    teeTimeDiv.style.cssText = 'border: 1px solid #ddd; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; background: white;';
+
+    teeTimeDiv.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="margin: 0; font-size: 1.1rem;">Tee Time ${index + 1}</h3>
+        ${teeTimesData.length > 1 ? `<button class="remove-tee-time-btn" data-index="${index}" style="background: #dc3545; color: white; border: none; padding: 0.25rem 0.75rem; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">Remove</button>` : ''}
+      </div>
+
+      <div style="margin-bottom: 1rem;">
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Time</label>
+        <div style="display: flex; gap: 0.5rem;">
+          <select class="tee-time-hour-select" data-index="${index}" style="flex: 1; padding: 0.5rem; font-size: 0.95rem; border: 1px solid #ccc; border-radius: 4px;">
+            ${Array.from({length: 12}, (_, i) => {
+              const hour = String(i + 6).padStart(2, '0');
+              return `<option value="${hour}" ${teeTime.hour === hour ? 'selected' : ''}>${hour}</option>`;
+            }).join('')}
+          </select>
+          <span style="font-size: 1.2rem; font-weight: bold;">:</span>
+          <select class="tee-time-minute-select" data-index="${index}" style="flex: 1; padding: 0.5rem; font-size: 0.95rem; border: 1px solid #ccc; border-radius: 4px;">
+            ${['00', '10', '20', '30', '40', '50'].map(min =>
+              `<option value="${min}" ${teeTime.minute === min ? 'selected' : ''}>${min}</option>`
+            ).join('')}
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Match</label>
+        <select class="tee-time-match-select" data-index="${index}" style="width: 100%; padding: 0.5rem; font-size: 0.95rem; border: 1px solid #ccc; border-radius: 4px;">
+          <option value="">-- Select Match --</option>
+          ${matchesData.map((match, matchIdx) => {
+            const matchId = `match-${matchIdx}`;
+            const isAssigned = assignedMatches.has(matchId) && teeTime.match_id !== matchId;
+            return `<option value="${matchId}" ${teeTime.match_id === matchId ? 'selected' : ''} ${isAssigned ? 'disabled' : ''}>${getMatchDisplayName(match)}${isAssigned ? ' (Assigned)' : ''}</option>`;
+          }).join('')}
+        </select>
+      </div>
+    `;
+
+    teeTimesList.appendChild(teeTimeDiv);
+  });
+
+  // Add event listeners for time selection
+  document.querySelectorAll('.tee-time-hour-select').forEach(select => {
+    select.addEventListener('change', function() {
+      const index = parseInt(this.dataset.index);
+      teeTimesData[index].hour = this.value;
+    });
+  });
+
+  document.querySelectorAll('.tee-time-minute-select').forEach(select => {
+    select.addEventListener('change', function() {
+      const index = parseInt(this.dataset.index);
+      teeTimesData[index].minute = this.value;
+    });
+  });
+
+  document.querySelectorAll('.tee-time-match-select').forEach(select => {
+    select.addEventListener('change', function() {
+      const index = parseInt(this.dataset.index);
+      teeTimesData[index].match_id = this.value;
+      // Re-render to update disabled states
+      renderTeeTimes();
+    });
+  });
+
+  // Add event listeners for remove buttons
+  document.querySelectorAll('.remove-tee-time-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const index = parseInt(this.dataset.index);
+      teeTimesData.splice(index, 1);
+      renderTeeTimes();
+    });
+  });
 }
 
 function loadTournamentHistory(golferId) {
@@ -7425,6 +7906,444 @@ document.addEventListener('DOMContentLoaded', () => {
     backFromRoundTypeBtn.addEventListener('click', () => {
       document.getElementById('quick-round-type-selector').style.display = 'none';
       document.getElementById('user-dashboard').style.display = 'block';
+    });
+  }
+
+  // Add Round form event handlers
+  const addRoundCourseSelect = document.getElementById('add-round-course');
+  if (addRoundCourseSelect) {
+    addRoundCourseSelect.addEventListener('change', function() {
+      const courseId = this.value;
+      const teesSelect = document.getElementById('add-round-tees');
+
+      if (!courseId) {
+        teesSelect.innerHTML = '<option value="">-- Select Tees --</option>';
+        return;
+      }
+
+      // Load tees for selected course
+      fetch(`${API_BASE_URL}/api/get_course_tees.php?course_id=${courseId}`, {
+        credentials: 'include'
+      })
+        .then(res => res.json())
+        .then(data => {
+          teesSelect.innerHTML = '<option value="">-- Select Tees --</option>';
+          if (data.tees && data.tees.length > 0) {
+            data.tees.forEach(tee => {
+              const option = document.createElement('option');
+              option.value = tee.tee_id;
+              option.textContent = `${tee.tee_name} (${tee.slope}/${tee.rating}, ${tee.yardage} yds)`;
+              teesSelect.appendChild(option);
+            });
+          } else {
+            teesSelect.innerHTML = '<option value="">No tees available</option>';
+          }
+        })
+        .catch(err => {
+          console.error('Error loading tees:', err);
+          teesSelect.innerHTML = '<option value="">Error loading tees</option>';
+        });
+    });
+  }
+
+  const addRoundForm = document.getElementById('add-round-form');
+  if (addRoundForm) {
+    addRoundForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const tournamentId = sessionStorage.getItem('add_round_tournament_id');
+      const roundDate = document.getElementById('add-round-date').value;
+      const courseId = document.getElementById('add-round-course').value;
+      const teeId = document.getElementById('add-round-tees').value;
+
+      if (!roundDate || !courseId || !teeId) {
+        alert('Please fill in all fields');
+        return;
+      }
+
+      // Get course name and tee name from the selected options
+      const courseSelect = document.getElementById('add-round-course');
+      const courseName = courseSelect.options[courseSelect.selectedIndex].textContent;
+      const teeSelect = document.getElementById('add-round-tees');
+      const teeText = teeSelect.options[teeSelect.selectedIndex].textContent;
+      // Extract tee name (before the parenthesis)
+      const teeName = teeText.split('(')[0].trim();
+
+      let roundName;
+
+      if (isEditingRound) {
+        // Get existing round to check if course/tees changed
+        const existingRound = await fetch(`${API_BASE_URL}/api/rounds.php?round_id=${editingRoundId}`, {
+          credentials: 'include'
+        }).then(r => r.json());
+
+        // Check if course or tees changed
+        const courseChanged = parseInt(courseId) !== parseInt(existingRound.course_id);
+        const teesChanged = parseInt(teeId) !== parseInt(existingRound.tee_id);
+
+        if (courseChanged || teesChanged) {
+          // Extract the round number from the existing name (e.g., "Round 3 at..." -> 3)
+          const roundNumMatch = existingRound.round_name.match(/^Round (\d+)/);
+          const roundNum = roundNumMatch ? roundNumMatch[1] : '1';
+
+          // Regenerate round name with new course/tees but same number
+          roundName = `Round ${roundNum} at ${courseName} (${teeName} tees)`;
+        } else {
+          // Keep existing name if course/tees unchanged
+          roundName = existingRound.round_name;
+        }
+      } else {
+        // Get next round number for new round
+        const rounds = await fetch(`${API_BASE_URL}/api/rounds.php?tournament_id=${tournamentId}`, {
+          credentials: 'include'
+        }).then(r => r.json());
+        const nextRoundNum = rounds.length + 1;
+
+        // Generate round name following admin.php convention
+        roundName = `Round ${nextRoundNum} at ${courseName} (${teeName} tees)`;
+      }
+
+      // Store round data for later creation/update
+      sessionStorage.setItem('pending_round_data', JSON.stringify({
+        round_id: isEditingRound ? editingRoundId : null,
+        tournament_id: parseInt(tournamentId),
+        course_id: parseInt(courseId),
+        tee_id: parseInt(teeId),
+        round_name: roundName,
+        round_date: roundDate
+      }));
+
+      // Hide add round form, show matches screen
+      document.getElementById('add-round-container').style.display = 'none';
+
+      if (isEditingRound) {
+        // Load existing matches and show matches screen
+        await loadExistingMatches(tournamentId, editingRoundId);
+      } else {
+        showMatchesScreen(tournamentId);
+      }
+    });
+  }
+
+  const backFromAddRoundBtn = document.getElementById('back-from-add-round-btn');
+  if (backFromAddRoundBtn) {
+    backFromAddRoundBtn.addEventListener('click', () => {
+      document.getElementById('add-round-container').style.display = 'none';
+      document.getElementById('user-dashboard').style.display = 'block';
+      sessionStorage.removeItem('add_round_tournament_id');
+    });
+  }
+
+  const cancelAddRoundBtn = document.getElementById('cancel-add-round-btn');
+  if (cancelAddRoundBtn) {
+    cancelAddRoundBtn.addEventListener('click', () => {
+      document.getElementById('add-round-container').style.display = 'none';
+      document.getElementById('user-dashboard').style.display = 'block';
+      sessionStorage.removeItem('add_round_tournament_id');
+      // Reset editing flags
+      isEditingRound = false;
+      editingRoundId = null;
+    });
+  }
+
+  // Matches screen event handlers
+  const addMatchBtn = document.getElementById('add-match-btn');
+  if (addMatchBtn) {
+    addMatchBtn.addEventListener('click', () => {
+      addNewMatch();
+    });
+  }
+
+  const continueToTeeTimesBtn = document.getElementById('continue-to-tee-times-btn');
+  if (continueToTeeTimesBtn) {
+    continueToTeeTimesBtn.addEventListener('click', async () => {
+      // Validate that all matches have 4 players
+      let isValid = true;
+      matchesData.forEach((match, index) => {
+        if (!match.team1_player1 || !match.team1_player2 || !match.team2_player1 || !match.team2_player2) {
+          alert(`Match ${index + 1} is incomplete. Please select all 4 players.`);
+          isValid = false;
+        }
+      });
+
+      if (!isValid) return;
+
+      // Check for duplicate players across all matches
+      const allPlayers = [];
+      matchesData.forEach(match => {
+        allPlayers.push(match.team1_player1, match.team1_player2, match.team2_player1, match.team2_player2);
+      });
+      const uniquePlayers = new Set(allPlayers);
+      if (uniquePlayers.size !== allPlayers.length) {
+        alert('A player cannot be in multiple matches. Please check your selections.');
+        return;
+      }
+
+      // Move to tee times screen
+      document.getElementById('add-matches-container').style.display = 'none';
+
+      if (isEditingRound) {
+        await loadExistingTeeTimes();
+      } else {
+        showTeeTimesScreen();
+      }
+    });
+  }
+
+  const backFromMatchesBtn = document.getElementById('back-from-matches-btn');
+  if (backFromMatchesBtn) {
+    backFromMatchesBtn.addEventListener('click', () => {
+      document.getElementById('add-matches-container').style.display = 'none';
+      document.getElementById('add-round-container').style.display = 'block';
+    });
+  }
+
+  const cancelMatchesBtn = document.getElementById('cancel-matches-btn');
+  if (cancelMatchesBtn) {
+    cancelMatchesBtn.addEventListener('click', () => {
+      document.getElementById('add-matches-container').style.display = 'none';
+      document.getElementById('user-dashboard').style.display = 'block';
+      sessionStorage.removeItem('add_round_tournament_id');
+      sessionStorage.removeItem('pending_round_data');
+      // Reset editing flags
+      isEditingRound = false;
+      editingRoundId = null;
+    });
+  }
+
+  // Tee Times screen event handlers
+  const addTeeTimeBtn = document.getElementById('add-tee-time-btn');
+  if (addTeeTimeBtn) {
+    addTeeTimeBtn.addEventListener('click', () => {
+      addNewTeeTime();
+    });
+  }
+
+  const saveAllBtn = document.getElementById('save-all-btn');
+  if (saveAllBtn) {
+    saveAllBtn.addEventListener('click', async () => {
+      // Disable button and show loading state
+      const originalText = saveAllBtn.textContent;
+      saveAllBtn.disabled = true;
+      saveAllBtn.textContent = 'Creating...';
+      saveAllBtn.style.opacity = '0.6';
+
+      try {
+        // Step 1: Create or update the round
+        const roundData = JSON.parse(sessionStorage.getItem('pending_round_data'));
+        let roundId;
+
+        if (isEditingRound) {
+          // Update existing round
+          const updateResponse = await fetch(`${API_BASE_URL}/api/rounds.php?round_id=${editingRoundId}`, {
+            method: 'PUT',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(roundData)
+          });
+
+          const updateResult = await updateResponse.json();
+          if (!updateResult.affected_rows && updateResult.affected_rows !== 0) {
+            throw new Error('Failed to update round');
+          }
+
+          roundId = editingRoundId;
+
+          // Delete existing tee times before creating new ones
+          const existingTeeTimes = await fetch(`${API_BASE_URL}/api/get_tee_time_assignments.php?round_id=${roundId}`, {
+            credentials: 'include'
+          }).then(r => r.json());
+
+          if (existingTeeTimes.tee_times) {
+            for (const tt of existingTeeTimes.tee_times) {
+              await fetch(`${API_BASE_URL}/api/delete_tee_time.php?tee_time_id=${tt.tee_time_id}`, {
+                method: 'DELETE',
+                credentials: 'include'
+              });
+            }
+          }
+        } else {
+          // Create new round
+          const roundResponse = await fetch(`${API_BASE_URL}/api/rounds.php`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(roundData)
+          });
+
+          const roundResult = await roundResponse.json();
+          if (!roundResult.inserted_id) {
+            throw new Error('Failed to create round');
+          }
+
+          roundId = roundResult.inserted_id;
+        }
+
+        // Step 2: Save the matches
+        const matchesPayload = matchesData.map((match, index) => ({
+          match_id: isEditingRound && match.match_id && !match.match_id.toString().startsWith('new-') ? match.match_id : null,
+          match_name: `Match ${index + 1} in ${roundData.round_name}`,
+          golfers: [
+            { golfer_id: parseInt(match.team1_player1), team_position: 1 },
+            { golfer_id: parseInt(match.team1_player2), team_position: 2 },
+            { golfer_id: parseInt(match.team2_player1), team_position: 3 },
+            { golfer_id: parseInt(match.team2_player2), team_position: 4 }
+          ]
+        }));
+
+        const matchesResponse = await fetch(`${API_BASE_URL}/api/save_guys_trip_matches.php`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            round_id: roundId,
+            tournament_id: roundData.tournament_id,
+            matches: matchesPayload
+          })
+        });
+
+        const matchesResult = await matchesResponse.json();
+
+        if (!matchesResult.success) {
+          throw new Error('Failed to save matches');
+        }
+
+        // Step 3: Create tee times and save assignments (if any tee times configured)
+        if (teeTimesData.length > 0 && teeTimesData.some(tt => tt.match_id)) {
+          // First, create the tee times
+          const teeTimeIds = {};
+
+          for (let i = 0; i < teeTimesData.length; i++) {
+            const tt = teeTimesData[i];
+            if (tt.match_id) { // Only create tee times that have matches assigned
+              const time = `${tt.hour}:${tt.minute}`;
+              const teeTimeResponse = await fetch(`${API_BASE_URL}/api/tee_times.php`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  round_id: roundId,
+                  time: time
+                })
+              });
+
+              const teeTimeResult = await teeTimeResponse.json();
+
+              if (teeTimeResult.success && teeTimeResult.tee_time_id) {
+                teeTimeIds[tt.tee_time_id] = teeTimeResult.tee_time_id;
+              }
+            }
+          }
+
+          // Now save tee time assignments
+          const assignments = [];
+          teeTimesData.forEach(tt => {
+            if (tt.match_id && teeTimeIds[tt.tee_time_id]) {
+              const matchIndex = parseInt(tt.match_id.replace('match-', ''));
+              const matchData = matchesData[matchIndex];
+
+              let actualMatchId;
+
+              // Check if this is an existing match or a new one
+              if (matchData.match_id && !matchData.match_id.toString().startsWith('new-')) {
+                // Existing match - use the match_id directly
+                actualMatchId = matchData.match_id;
+              } else {
+                // New match - get from id_mapping
+                if (matchesResult.id_mapping) {
+                  // Find the new match_id from the mapping
+                  const newMatchId = matchesResult.id_mapping[matchData.match_id];
+                  actualMatchId = newMatchId || Object.values(matchesResult.id_mapping)[matchIndex];
+                } else {
+                  actualMatchId = matchIndex + 1;
+                }
+              }
+
+              assignments.push({
+                match_id: actualMatchId,
+                tee_time_id: teeTimeIds[tt.tee_time_id]
+              });
+            }
+          });
+
+          if (assignments.length > 0) {
+            await fetch(`${API_BASE_URL}/api/save_tee_time_assignments.php`, {
+              method: 'POST',
+              credentials: 'include',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                round_id: roundId,
+                assignments: assignments
+              })
+            });
+          }
+        }
+
+        // Show success state
+        saveAllBtn.textContent = isEditingRound ? '✓ Updated' : '✓ Created';
+        saveAllBtn.style.background = '#28a745';
+        saveAllBtn.style.opacity = '1';
+
+        // Wait a moment then return to dashboard
+        setTimeout(() => {
+          document.getElementById('add-tee-times-container').style.display = 'none';
+          document.getElementById('user-dashboard').style.display = 'block';
+          sessionStorage.removeItem('add_round_tournament_id');
+          sessionStorage.removeItem('pending_round_data');
+
+          // Reset editing flags
+          isEditingRound = false;
+          editingRoundId = null;
+
+          // Reset button state
+          saveAllBtn.disabled = false;
+          saveAllBtn.textContent = originalText;
+          saveAllBtn.style.background = '#4F2185';
+
+          if (currentUser) {
+            loadUserTournaments(currentUser.golfer_id);
+          }
+        }, 1000);
+
+      } catch (err) {
+        console.error('Error creating/updating round, matches, and tee times:', err);
+        alert('Error saving round. Please try again.');
+        // Reset button on error
+        saveAllBtn.disabled = false;
+        saveAllBtn.textContent = originalText;
+        saveAllBtn.style.opacity = '1';
+      }
+    });
+  }
+
+  const backFromTeeTimesBtn = document.getElementById('back-from-tee-times-btn');
+  if (backFromTeeTimesBtn) {
+    backFromTeeTimesBtn.addEventListener('click', () => {
+      document.getElementById('add-tee-times-container').style.display = 'none';
+      document.getElementById('add-matches-container').style.display = 'block';
+    });
+  }
+
+  const cancelTeeTimesBtn = document.getElementById('cancel-tee-times-btn');
+  if (cancelTeeTimesBtn) {
+    cancelTeeTimesBtn.addEventListener('click', () => {
+      document.getElementById('add-tee-times-container').style.display = 'none';
+      document.getElementById('user-dashboard').style.display = 'block';
+      sessionStorage.removeItem('add_round_tournament_id');
+      sessionStorage.removeItem('pending_round_data');
+      // Reset editing flags
+      isEditingRound = false;
+      editingRoundId = null;
     });
   }
 });

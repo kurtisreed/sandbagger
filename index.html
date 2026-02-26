@@ -73,7 +73,7 @@
   <div id="dashboard-content">
     <!-- Tournaments Section -->
     <div id="tournaments-section" style="margin-bottom: 2rem;">
-      <h3 style="border-bottom: 2px solid #4F2185; padding-bottom: 0.5rem;">Recent and Upcoming Tournaments</h3>
+      <h3 style="border-bottom: 2px solid #4F2185; padding-bottom: 0.5rem;">Current Tournaments</h3>
       <div id="tournaments-list"></div>
     </div>
 
@@ -105,6 +105,65 @@
     </select>
     <button id="continue-round-type-btn" type="button" style="width: 100%; padding: 0.75rem; background: #4F2185; color: white; border: none; border-radius: 4px; font-size: 1rem; font-weight: bold; cursor: pointer;">Continue</button>
     <button id="cancel-round-type-btn" type="button" style="width: 100%; margin-top: 0.5rem; padding: 0.75rem; background: #ccc; color: #333; border: none; border-radius: 4px; font-size: 1rem; cursor: pointer;">Cancel</button>
+  </div>
+</div>
+
+<div class="container" id="add-round-container" style="display: none;">
+  <h2 style="text-align: center; margin-bottom: 1rem;">Add Round</h2>
+  <button id="back-from-add-round-btn" class="history-back-btn" style="margin-bottom: 1rem;">Back</button>
+
+  <form id="add-round-form" style="max-width: 400px; margin: 0 auto;">
+    <div style="margin-bottom: 1rem;">
+      <label for="add-round-date" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Round Date *</label>
+      <input type="date" id="add-round-date" required style="width: 100%; padding: 0.75rem; font-size: 1rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+    </div>
+
+    <div style="margin-bottom: 1rem;">
+      <label for="add-round-course" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Course *</label>
+      <select id="add-round-course" required style="width: 100%; padding: 0.75rem; font-size: 1rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+        <option value="">-- Select Course --</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom: 1.5rem;">
+      <label for="add-round-tees" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Tees *</label>
+      <select id="add-round-tees" required style="width: 100%; padding: 0.75rem; font-size: 1rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+        <option value="">-- Select Tees --</option>
+      </select>
+    </div>
+
+    <button type="submit" style="width: 100%; padding: 0.75rem; background: #4F2185; color: white; border: none; border-radius: 4px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-bottom: 0.5rem;">Continue</button>
+    <button type="button" id="cancel-add-round-btn" style="width: 100%; padding: 0.75rem; background: #ccc; color: #333; border: none; border-radius: 4px; font-size: 1rem; cursor: pointer;">Cancel</button>
+  </form>
+</div>
+
+<div class="container" id="add-matches-container" style="display: none;">
+  <h2 style="text-align: center; margin-bottom: 1rem;">Matches</h2>
+  <button id="back-from-matches-btn" class="history-back-btn" style="margin-bottom: 1rem;">Back</button>
+
+  <div id="matches-list" style="max-width: 500px; margin: 0 auto;">
+    <!-- Matches will be added here dynamically -->
+  </div>
+
+  <div style="max-width: 500px; margin: 1rem auto;">
+    <button id="add-match-btn" type="button" style="width: 100%; padding: 0.75rem; background: #28a745; color: white; border: none; border-radius: 4px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-bottom: 0.5rem;">+ Add Match</button>
+    <button id="continue-to-tee-times-btn" type="button" style="width: 100%; padding: 0.75rem; background: #4F2185; color: white; border: none; border-radius: 4px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-bottom: 0.5rem;">Continue</button>
+    <button id="cancel-matches-btn" type="button" style="width: 100%; padding: 0.75rem; background: #ccc; color: #333; border: none; border-radius: 4px; font-size: 1rem; cursor: pointer;">Cancel</button>
+  </div>
+</div>
+
+<div class="container" id="add-tee-times-container" style="display: none;">
+  <h2 style="text-align: center; margin-bottom: 1rem;">Tee Times</h2>
+  <button id="back-from-tee-times-btn" class="history-back-btn" style="margin-bottom: 1rem;">Back</button>
+
+  <div id="tee-times-list" style="max-width: 500px; margin: 0 auto;">
+    <!-- Tee times will be added here dynamically -->
+  </div>
+
+  <div style="max-width: 500px; margin: 1rem auto;">
+    <button id="add-tee-time-btn" type="button" style="width: 100%; padding: 0.75rem; background: #28a745; color: white; border: none; border-radius: 4px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-bottom: 0.5rem;">+ Add Tee Time</button>
+    <button id="save-all-btn" type="button" style="width: 100%; padding: 0.75rem; background: #4F2185; color: white; border: none; border-radius: 4px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-bottom: 0.5rem;">Create Round</button>
+    <button id="cancel-tee-times-btn" type="button" style="width: 100%; padding: 0.75rem; background: #ccc; color: #333; border: none; border-radius: 4px; font-size: 1rem; cursor: pointer;">Cancel</button>
   </div>
 </div>
 
