@@ -6866,12 +6866,13 @@ function renderMatches() {
   matchesList.innerHTML = '';
 
   // Build a set of all assigned golfer IDs across all matches
+  // Convert to strings for consistent comparison
   const assignedGolfers = new Set();
   matchesData.forEach(match => {
-    if (match.team1_player1) assignedGolfers.add(match.team1_player1);
-    if (match.team1_player2) assignedGolfers.add(match.team1_player2);
-    if (match.team2_player1) assignedGolfers.add(match.team2_player1);
-    if (match.team2_player2) assignedGolfers.add(match.team2_player2);
+    if (match.team1_player1) assignedGolfers.add(String(match.team1_player1));
+    if (match.team1_player2) assignedGolfers.add(String(match.team1_player2));
+    if (match.team2_player1) assignedGolfers.add(String(match.team2_player1));
+    if (match.team2_player2) assignedGolfers.add(String(match.team2_player2));
   });
 
   matchesData.forEach((match, index) => {
@@ -6881,7 +6882,7 @@ function renderMatches() {
     // Helper function to generate player options with assigned status
     const generatePlayerOptions = (currentSelection) => {
       return tournamentPlayers.map(p => {
-        const isAssigned = assignedGolfers.has(p.golfer_id) && p.golfer_id != currentSelection;
+        const isAssigned = assignedGolfers.has(String(p.golfer_id)) && p.golfer_id != currentSelection;
         return `<option value="${p.golfer_id}" ${currentSelection == p.golfer_id ? 'selected' : ''} ${isAssigned ? 'disabled' : ''}>${p.first_name} ${p.last_name} (${p.handicap})${isAssigned ? ' (Assigned)' : ''}</option>`;
       }).join('');
     };
