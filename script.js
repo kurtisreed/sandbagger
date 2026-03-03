@@ -3407,7 +3407,7 @@ function loadTodaysMatch() {
       holeInfo = data.holes;
       if (data.error || data.length === 0) {
         const container = document.getElementById("score-entry-content");
-        container.innerHTML = "<p>Matches not yet assigned.</p>";
+        container.innerHTML = "<p>No match found for today. Try logging out and reloading the app.</p>";
         return;
       }
 
@@ -3676,7 +3676,7 @@ function loadGuysTripMatch() {
 
       if (data.error || !matchGolfers || matchGolfers.length === 0) {
         const container = document.getElementById("score-entry-content");
-        container.innerHTML = "<p>Matches not yet assigned.</p>";
+        container.innerHTML = "<p>No match found. Try logging out and reloading the app.</p>";
         return;
       }
 
@@ -4412,7 +4412,7 @@ function loadTodaySummary() {
       container.innerHTML = "";
 
       if (!Array.isArray(matches) || matches.length === 0) {
-        container.textContent = "Matches not yet assigned.";
+        container.textContent = "No matches found. Try logging out and reloading the app.";
         return;
       }
       
@@ -4657,7 +4657,7 @@ function loadGuysTripSummary() {
       container.innerHTML = "";
 
       if (!Array.isArray(matches) || matches.length === 0) {
-        container.textContent = "Matches not yet assigned.";
+        container.textContent = "No matches found. Try logging out and reloading the app.";
         return;
       }
 
