@@ -40,7 +40,7 @@ LEFT JOIN rounds r ON t.tournament_id = r.tournament_id
 LEFT JOIN courses c ON r.course_id = c.course_id
 WHERE tg.golfer_id = ?
   AND t.end_date >= DATE_SUB(CURDATE(), INTERVAL 2 WEEK)
-ORDER BY t.start_date DESC, r.round_date ASC
+ORDER BY t.start_date DESC, r.round_date ASC, r.round_id ASC
 ";
 
 $stmt = $conn->prepare($sql);
