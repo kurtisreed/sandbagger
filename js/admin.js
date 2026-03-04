@@ -907,7 +907,7 @@ document.getElementById('gt-round-create-form')?.addEventListener('submit', asyn
   const nextRoundNum = await getNextRoundNumber(currentTourneyId);
 
   // Generate round name following existing convention
-  const roundName = `Round ${nextRoundNum} at ${courseName} (${teeName} tees)`;
+  const roundName = `Round ${nextRoundNum} at ${courseName}`;
 
   fetch(BASE + '/api/rounds.php', {
     method: 'POST',
@@ -1800,8 +1800,8 @@ document.getElementById('round-create-form').addEventListener('submit', async (e
   const nextRoundNum = await getNextRoundNumber(currentTourneyId);
   
   // Generate round name
-  const roundName = `Round ${nextRoundNum} at ${courseName} (${teeName} tees)`;
-  
+  const roundName = `Round ${nextRoundNum} at ${courseName}`;
+
   // Create the round
   fetch(BASE + '/api/rounds.php', {
     method: 'POST',

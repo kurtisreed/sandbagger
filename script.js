@@ -8006,7 +8006,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (courseChanged || teesChanged) {
         const roundNumMatch = existingRound.round_name.match(/^Round (\d+)/);
         const roundNum = roundNumMatch ? roundNumMatch[1] : '1';
-        roundName = `Round ${roundNum} at ${courseName} (${teeName} tees)`;
+        roundName = `Round ${roundNum} at ${courseName}`;
       } else {
         roundName = existingRound.round_name;
       }
@@ -8014,7 +8014,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const rounds = await fetch(`${API_BASE_URL}/api/rounds.php?tournament_id=${tournamentId}`, {
         credentials: 'include'
       }).then(r => r.json());
-      roundName = `Round ${rounds.length + 1} at ${courseName} (${teeName} tees)`;
+      roundName = `Round ${rounds.length + 1} at ${courseName}`;
     }
 
     return {
