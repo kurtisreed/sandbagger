@@ -79,12 +79,24 @@ while ($row = $result->fetch_assoc()) {
     $hasScores = $scoresRow['score_count'] > 0;
     $checkScoresStmt->close();
 
+    // Get tee times for this round
+    $teeTimesStmt = $conn->prepare("SELECT time FROM tee_times WHERE round_id = ? ORDER BY time ASC");
+    $teeTimesStmt->bind_param("i", $row['round_id']);
+    $teeTimesStmt->execute();
+    $teeTimesResult = $teeTimesStmt->get_result();
+    $teeTimes = [];
+    while ($ttRow = $teeTimesResult->fetch_assoc()) {
+      $teeTimes[] = $ttRow['time'];
+    }
+    $teeTimesStmt->close();
+
     $tournaments[$tournamentId]['rounds'][] = [
       'round_id' => $row['round_id'],
       'round_name' => $row['round_name'],
       'round_date' => $row['round_date'],
       'course_name' => $row['course_name'],
-      'has_scores' => $hasScores
+      'has_scores' => $hasScores,
+      'tee_times' => $teeTimes
     ];
   }
 }

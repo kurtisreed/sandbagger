@@ -6568,10 +6568,21 @@ function loadUserTournaments(golferId) {
             const hasScores = round.has_scores || false;
             const isLocked = hasScores;
 
+            const teeTimesDisplay = (round.tee_times && round.tee_times.length > 0)
+              ? round.tee_times.map(t => {
+                  const [h, m] = t.split(':');
+                  const hour = parseInt(h);
+                  const ampm = hour >= 12 ? 'PM' : 'AM';
+                  const hour12 = hour % 12 || 12;
+                  return `${hour12}:${m} ${ampm}`;
+                }).join(', ')
+              : 'not yet assigned';
+
             html += `
               <div style="position: relative; margin-bottom: 0.5rem;">
                 <button class="tournament-round-btn" data-tournament-id="${tournament.tournament_id}" data-round-id="${round.round_id}" data-round-name="${round.round_name}" data-format-id="${tournament.format_id || ''}" style="display: block; width: 100%; padding: 0.5rem ${isAdmin && isGuysTrip ? '4rem' : '0.5rem'} 0.5rem 0.5rem; background: #4F2185; color: white; border: none; border-radius: 4px; cursor: pointer; text-align: left;">
-                  ${round.round_name}
+                  <div>${round.round_name}</div>
+                  <div style="font-size: 0.8rem; opacity: 0.85; margin-top: 0.2rem;">Tee times: ${teeTimesDisplay}</div>
                 </button>
                 ${isAdmin && isGuysTrip ? (
                   isLocked ? `
