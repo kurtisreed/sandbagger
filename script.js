@@ -3749,7 +3749,7 @@ function loadGuysTripMatch() {
         const par = holeInfo.find(h => h.hole_number === i)?.par || "-";
         const index = holeInfo.find(h => h.hole_number === i)?.handicap_index || "-";
 
-        row.innerHTML = `<td></td><td>${i}</td><td>${par}</td><td>${index}</td>` + golfers.map(golfer => {
+        row.innerHTML = `<td class="match-result-cell" data-hole="${i}"></td><td>${i}</td><td>${par}</td><td>${index}</td>` + golfers.map(golfer => {
           const strokeCount = strokeMaps[golfer.id]?.[i] || 0;
           const select = `
             <select data-hole="${i}" data-golfer="${golfer.id}">
@@ -3975,11 +3975,7 @@ function calculateGuysTripBestBall() {
   let differential = 0;
 
   for (let hole = 1; hole <= 18; hole++) {
-    // Account for subtotal rows: hole 10+ need to skip the Out row, hole 1+ need to account for header
-    let rowIndex = hole + 1; // +1 for header row
-    if (hole >= 10) rowIndex += 1; // +1 for Out subtotal row after hole 9
-
-    const holeCell = document.querySelector(`.score-table tr:nth-child(${rowIndex}) td:first-child`);
+    const holeCell = document.querySelector(`.match-result-cell[data-hole="${hole}"]`);
     if (!holeCell || !scoreMap[hole]) continue;
 
     const p1Best = Math.min(...scoreMap[hole].partnership1);
