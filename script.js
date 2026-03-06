@@ -5982,7 +5982,7 @@ function loadMatchScorecard(match_id, container_id = "today-summary") {
         const row = document.createElement("tr");
         const par = holeInfo.find(h => h.hole_number === i)?.par || "-";
         const index = holeInfo.find(h => h.hole_number === i)?.handicap_index || "-";
-        row.innerHTML = `<td></td><td>${i}</td><td>${par}</td><td>${index}</td>` + golfers.map(golfer => {
+        row.innerHTML = `<td class="match-result-cell" data-hole="${i}"></td><td>${i}</td><td>${par}</td><td>${index}</td>` + golfers.map(golfer => {
           const stroke = strokeMaps[golfer.id]?.[i] || 0;
             let dots = '';
             if (stroke === 1) {
@@ -6189,7 +6189,7 @@ function updateTotalScoresReadOnly(golfers, holeInfo) {
 
 function calculateBestBallStatusReadOnly(golfers, strokeMaps) {
   const scoreMap = {}; // { holeNumber: { primaryTeamName: [net], secondaryTeamName: [net] } }
-  
+
   // Step 1: Loop through all read-only score cells
   document.querySelectorAll("td.readonly-score-cell").forEach(cell => {
     const hole = parseInt(cell.dataset.hole);
@@ -6213,23 +6213,18 @@ function calculateBestBallStatusReadOnly(golfers, strokeMaps) {
 
     // ✅ Subtract strokes for this golfer on this hole
     const strokes = strokeMaps[golferId]?.[hole] || 0;
-    
+
     const netScore = score - strokes;
 
     scoreMap[hole][golfer.team].push(netScore);
   });
 
-  
-
   // Step 2: Walk through each hole and determine the score differential
   let differential = 0;
 
   for (let hole = 1; hole <= 18; hole++) {
-    // Account for subtotal rows: hole 10+ need to skip the Out row, hole 1+ need to account for header
-    let rowIndex = hole + 1; // +1 for header row
-    if (hole >= 10) rowIndex += 1; // +1 for Out subtotal row after hole 9
-    
-    const holeCell = document.querySelector(`.score-table tr:nth-child(${rowIndex}) td:first-child`);
+    // Use data-hole attribute directly — robust regardless of extra subtotal rows in the table
+    const holeCell = document.querySelector(`.match-result-cell[data-hole="${hole}"]`);
     if (!holeCell || !scoreMap[hole]) continue;
 
     const primaryBest = Math.min(...scoreMap[hole][primaryTeamName]);
