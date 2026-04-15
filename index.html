@@ -51,20 +51,22 @@
             <h2 class="form-title">Sandbagger Scoring</h2>
             <img class="form-logo" src="/images/cartoon.png" alt="Sandbagger Logo">
 
-            <select id="selectUser" name="golfer_id" required>
-              <option value="">-- Choose Golfer --</option>
-              <option value="new">➕ Create New Golfer</option>
-            </select>
+            <div class="auth-card">
+              <select id="selectUser" name="golfer_id" required>
+                <option value="">— Who's playing? —</option>
+                <option value="new">➕ Create New Golfer</option>
+              </select>
 
-            <!-- New Golfer Form -->
-            <div id="new-golfer-form" style="display: none;">
-              <input type="text" id="new-golfer-first-name" placeholder="First Name" style="width: 100%; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box; margin-bottom: 0.5rem;">
-              <input type="text" id="new-golfer-last-name" placeholder="Last Name" style="width: 100%; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box; margin-bottom: 0.5rem;">
-              <input type="number" id="new-golfer-handicap" placeholder="Handicap Index" step="0.1" style="width: 100%; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box; margin-bottom: 0.5rem;">
-              <input type="email" id="new-golfer-email" placeholder="Email (optional)" style="width: 100%; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box;">
+              <!-- New Golfer Form -->
+              <div id="new-golfer-form" style="display: none;">
+                <input type="text" id="new-golfer-first-name" placeholder="First Name">
+                <input type="text" id="new-golfer-last-name" placeholder="Last Name">
+                <input type="number" id="new-golfer-handicap" placeholder="Handicap Index" step="0.1">
+                <input type="email" id="new-golfer-email" placeholder="Email (optional)">
+              </div>
+
+              <button type="submit">Let's Play →</button>
             </div>
-
-            <button type="submit">Continue</button>
         </form>
         <div id="auth-message"></div>
 </div>

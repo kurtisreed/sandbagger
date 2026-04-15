@@ -458,79 +458,133 @@ main {
 
 
 
-/* Center and style the authentication container */
+/* ── Login Screen ─────────────────────────────────── */
 #auth-container {
   position: fixed;
   inset: 0;
   overflow-y: auto;
-  padding: 2rem 1.5rem;
-  background-color: #4F2185;
+  padding: 3rem 1.25rem 3rem;
+  background: linear-gradient(160deg, #2e0d55 0%, #4F2185 55%, #3a1060 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
   z-index: 10;
 }
 
-/* Style the auth form itself */
 #auth-form {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  color: #fff;
-  width: 100%;
-  max-width: 400px;
   align-items: center;
+  width: 100%;
+  gap: 0;
 }
 
-/* Form heading */
+/* Title */
 #auth-form h2 {
-  margin: 0 0 0.5rem;
+  margin: 0 0 1.75rem;
   color: #fff;
   text-align: center;
-  width: 100vw;
+  width: 100%;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.4);
 }
 
-/* Labels, to ensure consistent spacing and color */
-#auth-form label {
-  font-size: 1rem;
-  margin-bottom: 0.2rem;
+/* Logo image */
+.form-logo {
+  display: block;
+  width: 92vw;
+  max-width: 92vw;
+  margin: 0 auto 2rem;
+  border-radius: 16px;
+  filter: drop-shadow(0 8px 28px rgba(0,0,0,0.45));
 }
 
-/* The select and input fields */
-#auth-form select,
-#auth-form input[type="password"],
-#auth-form input[type="text"],
-#auth-form input[type="number"],
-#auth-form input[type="email"] {
-  background-color: lightgray;
-  color: #000;
-  border: 1px solid #555;
-  border-radius: 4px;
-  padding: 0.5rem;
-  font-size: 1rem;
-  outline: none;
+/* Frosted glass card */
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 20px;
+  padding: 1.75rem 1.5rem;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+/* Select + inputs */
+.auth-card select,
+.auth-card input {
   width: 100%;
   box-sizing: border-box;
-  align-self: stretch;
-}
-
-/* The submit button and other form buttons */
-#auth-form button[type="submit"],
-#auth-form button[type="button"] {
-  background-color: lightgray;
-  color: #000;
-  border: none;
-  border-radius: 4px;
-  padding: 0.7rem 1rem;
+  padding: 0.85rem 1rem;
   font-size: 1rem;
-  font-weight: bold;
-  cursor: pointer;
-  align-self: stretch;
+  border: none;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #1a1a1a;
+  outline: none;
+  appearance: auto;
+  -webkit-appearance: auto;
+  transition: background 0.2s;
 }
 
-#auth-form button[type="submit"]:hover,
-#auth-form button[type="button"]:hover {
-  background-color: #d3d3d3;
+.auth-card select:focus,
+.auth-card input:focus {
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(255, 198, 47, 0.5);
+}
+
+/* New golfer sub-inputs */
+#new-golfer-form {
+  display: none;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+/* Continue button */
+.auth-card button[type="submit"] {
+  width: 100%;
+  padding: 0.95rem 1rem;
+  margin-top: 0.25rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  background: #FFC62F;
+  color: #1a1a1a;
+  transition: background 0.2s, transform 0.1s;
+  box-shadow: 0 4px 16px rgba(255, 198, 47, 0.35);
+}
+
+.auth-card button[type="submit"]:hover {
+  background: #f5b800;
+}
+
+.auth-card button[type="submit"]:active {
+  transform: scale(0.98);
+}
+
+/* Auth message */
+#auth-message {
+  margin-top: 1rem;
+  color: #ffe0e0;
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+/* Labels */
+#auth-form label {
+  font-size: 1rem;
+  color: #fff;
+  margin-bottom: 0.2rem;
 }
 
 /* Round History back button */

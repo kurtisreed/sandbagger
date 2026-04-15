@@ -7718,7 +7718,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Handle user selection
   selectUser.addEventListener('change', function() {
     if (this.value === 'new') {
-      newGolferForm.style.display = 'block';
+      newGolferForm.style.display = 'flex';
       continueBtn.style.display = 'block';
     } else if (this.value) {
       // Existing golfer selected - immediately load dashboard
