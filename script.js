@@ -6583,7 +6583,7 @@ function loadUserTournaments(golferId) {
                       Locked
                     </button>
                   ` : `
-                    <button class="edit-round-btn" data-tournament-id="${tournament.tournament_id}" data-round-id="${round.round_id}" style="position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); padding: 0.25rem 0.75rem; background: #ffc107; color: #333; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: bold;">
+                    <button class="edit-round-btn" data-tournament-id="${tournament.tournament_id}" data-round-id="${round.round_id}" data-format-id="${tournament.format_id || ''}" style="position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); padding: 0.25rem 0.75rem; background: #ffc107; color: #333; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: bold;">
                       Edit
                     </button>
                   `
@@ -6653,6 +6653,7 @@ function loadUserTournaments(golferId) {
           e.stopPropagation(); // Prevent triggering the round button click
           const tournamentId = this.dataset.tournamentId;
           const roundId = this.dataset.roundId;
+          sessionStorage.setItem('add_round_format_id', this.dataset.formatId || '');
           editRound(tournamentId, roundId);
         });
       });
@@ -6698,6 +6699,7 @@ function showAddRoundForm(tournamentId) {
 
 let matchesData = [];
 let tournamentPlayers = [];
+let tournamentTeams = [];
 let teeTimesData = [];
 let isEditingRound = false;
 let editingRoundId = null;
@@ -6778,17 +6780,22 @@ async function editRound(tournamentId, roundId) {
 
 async function loadExistingMatches(tournamentId, roundId) {
   try {
-    // Load tournament players
-    const playersResponse = await fetch(`${API_BASE_URL}/api/tournament_golfers.php?tournament_id=${tournamentId}`, {
-      credentials: 'include'
-    });
-    tournamentPlayers = await playersResponse.json();
+    const formatId = parseInt(sessionStorage.getItem('add_round_format_id'));
+    const isRyderCup = formatId === 3;
+    tournamentTeams = [];
 
-    // Load existing matches (includes golfers with player_order)
-    const matchesResponse = await fetch(`${API_BASE_URL}/api/matches.php?round_id=${roundId}`, {
-      credentials: 'include'
-    });
-    const existingMatches = await matchesResponse.json();
+    // Load tournament players and (for Ryder Cup) teams in parallel with existing matches
+    const fetches = [
+      fetch(`${API_BASE_URL}/api/tournament_golfers.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(r => r.json()),
+      fetch(`${API_BASE_URL}/api/matches.php?round_id=${roundId}`, { credentials: 'include' }).then(r => r.json())
+    ];
+    if (isRyderCup) {
+      fetches.push(fetch(`${API_BASE_URL}/api/tournament_teams.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(r => r.json()));
+    }
+    const results = await Promise.all(fetches);
+    tournamentPlayers = results[0];
+    const existingMatches = results[1];
+    if (isRyderCup && results[2]) tournamentTeams = results[2];
 
     // Reset and populate matchesData
     matchesData = [];
@@ -6823,25 +6830,29 @@ async function loadExistingMatches(tournamentId, roundId) {
   }
 }
 
-function showMatchesScreen(tournamentId) {
+async function showMatchesScreen(tournamentId) {
+  const formatId = parseInt(sessionStorage.getItem('add_round_format_id'));
+  const isRyderCup = formatId === 3;
+
   document.getElementById('add-matches-container').style.display = 'block';
-
-  // Reset matches data
   matchesData = [];
+  tournamentTeams = [];
 
-  // Load tournament players
-  fetch(`${API_BASE_URL}/api/tournament_golfers.php?tournament_id=${tournamentId}`, {
-    credentials: 'include'
-  })
-    .then(res => res.json())
-    .then(players => {
-      tournamentPlayers = players;
-      renderMatches();
-    })
-    .catch(err => {
-      console.error('Error loading players:', err);
-      alert('Error loading players. Please try again.');
-    });
+  try {
+    const fetches = [
+      fetch(`${API_BASE_URL}/api/tournament_golfers.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(r => r.json())
+    ];
+    if (isRyderCup) {
+      fetches.push(fetch(`${API_BASE_URL}/api/tournament_teams.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(r => r.json()));
+    }
+    const [players, teams] = await Promise.all(fetches);
+    tournamentPlayers = players;
+    if (isRyderCup && teams) tournamentTeams = teams;
+    renderMatches();
+  } catch (err) {
+    console.error('Error loading players:', err);
+    alert('Error loading players. Please try again.');
+  }
 }
 
 function addNewMatch() {
@@ -6863,6 +6874,10 @@ function renderMatches() {
   const matchesList = document.getElementById('matches-list');
   matchesList.innerHTML = '';
 
+  // Resolve team metadata — use DB teams for Ryder Cup, defaults otherwise
+  const team1 = tournamentTeams[0] || { name: 'Team 1', color_hex: '#4F2185', team_id: null };
+  const team2 = tournamentTeams[1] || { name: 'Team 2', color_hex: '#4F2185', team_id: null };
+
   // Build a set of all assigned golfer IDs across all matches
   // Convert to strings for consistent comparison
   const assignedGolfers = new Set();
@@ -6877,9 +6892,12 @@ function renderMatches() {
     const matchDiv = document.createElement('div');
     matchDiv.style.cssText = 'border: 1px solid #ddd; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; background: white;';
 
-    // Helper function to generate player options with assigned status
-    const generatePlayerOptions = (currentSelection) => {
-      return tournamentPlayers.map(p => {
+    // Helper function to generate player options filtered by team when applicable
+    const generatePlayerOptions = (currentSelection, teamId = null) => {
+      const eligible = teamId
+        ? tournamentPlayers.filter(p => String(p.team_id) === String(teamId))
+        : tournamentPlayers;
+      return eligible.map(p => {
         const isAssigned = assignedGolfers.has(String(p.golfer_id)) && p.golfer_id != currentSelection;
         return `<option value="${p.golfer_id}" ${currentSelection == p.golfer_id ? 'selected' : ''} ${isAssigned ? 'disabled' : ''}>${p.first_name} ${p.last_name} (${p.handicap})${isAssigned ? ' (Assigned)' : ''}</option>`;
       }).join('');
@@ -6892,29 +6910,29 @@ function renderMatches() {
       </div>
 
       <div style="margin-bottom: 1rem;">
-        <label style="display: block; margin-bottom: 0.5rem; font-weight: bold; color: #4F2185;">Team 1</label>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: bold; color: ${team1.color_hex};">${team1.name}</label>
         <div style="margin-bottom: 0.5rem;">
           <select class="match-player-select" data-match-index="${index}" data-team="1" data-position="1" style="width: 100%; padding: 0.5rem; font-size: 0.95rem; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 0.5rem;">
             <option value="">-- Select Player 1 --</option>
-            ${generatePlayerOptions(match.team1_player1)}
+            ${generatePlayerOptions(match.team1_player1, team1.team_id)}
           </select>
           <select class="match-player-select" data-match-index="${index}" data-team="1" data-position="2" style="width: 100%; padding: 0.5rem; font-size: 0.95rem; border: 1px solid #ccc; border-radius: 4px;">
             <option value="">-- Select Player 2 --</option>
-            ${generatePlayerOptions(match.team1_player2)}
+            ${generatePlayerOptions(match.team1_player2, team1.team_id)}
           </select>
         </div>
       </div>
 
       <div style="margin-bottom: 0;">
-        <label style="display: block; margin-bottom: 0.5rem; font-weight: bold; color: #4F2185;">Team 2</label>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: bold; color: ${team2.color_hex};">${team2.name}</label>
         <div>
           <select class="match-player-select" data-match-index="${index}" data-team="2" data-position="1" style="width: 100%; padding: 0.5rem; font-size: 0.95rem; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 0.5rem;">
             <option value="">-- Select Player 1 --</option>
-            ${generatePlayerOptions(match.team2_player1)}
+            ${generatePlayerOptions(match.team2_player1, team2.team_id)}
           </select>
           <select class="match-player-select" data-match-index="${index}" data-team="2" data-position="2" style="width: 100%; padding: 0.5rem; font-size: 0.95rem; border: 1px solid #ccc; border-radius: 4px;">
             <option value="">-- Select Player 2 --</option>
-            ${generatePlayerOptions(match.team2_player2)}
+            ${generatePlayerOptions(match.team2_player2, team2.team_id)}
           </select>
         </div>
       </div>
