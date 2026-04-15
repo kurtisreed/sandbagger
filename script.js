@@ -6556,6 +6556,8 @@ function loadUserTournaments(golferId) {
           tournament.rounds.forEach(round => {
             const isAdmin = currentUser && currentUser.role === 'administrator';
             const isGuysTrip = tournament.format_id === 4;
+            const isRyderCup = tournament.format_id === 3;
+            const hasEditButton = isGuysTrip || isRyderCup;
             const hasScores = round.has_scores || false;
             const isLocked = hasScores;
 
@@ -6571,11 +6573,11 @@ function loadUserTournaments(golferId) {
 
             html += `
               <div style="position: relative; margin-bottom: 0.5rem;">
-                <button class="tournament-round-btn" data-tournament-id="${tournament.tournament_id}" data-round-id="${round.round_id}" data-round-name="${round.round_name}" data-format-id="${tournament.format_id || ''}" style="display: block; width: 100%; padding: 0.5rem ${isAdmin && isGuysTrip ? '4rem' : '0.5rem'} 0.5rem 0.5rem; background: #4F2185; color: white; border: none; border-radius: 4px; cursor: pointer; text-align: left;">
+                <button class="tournament-round-btn" data-tournament-id="${tournament.tournament_id}" data-round-id="${round.round_id}" data-round-name="${round.round_name}" data-format-id="${tournament.format_id || ''}" style="display: block; width: 100%; padding: 0.5rem ${isAdmin && hasEditButton ? '4rem' : '0.5rem'} 0.5rem 0.5rem; background: #4F2185; color: white; border: none; border-radius: 4px; cursor: pointer; text-align: left;">
                   <div>${round.round_name}</div>
                   <div style="font-size: 0.8rem; opacity: 0.85; margin-top: 0.2rem;">Tee times: ${teeTimesDisplay}</div>
                 </button>
-                ${isAdmin && isGuysTrip ? (
+                ${isAdmin && hasEditButton ? (
                   isLocked ? `
                     <button class="locked-round-btn" style="position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); padding: 0.25rem 0.75rem; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: not-allowed; font-size: 0.85rem; font-weight: bold; opacity: 0.7;">
                       Locked
