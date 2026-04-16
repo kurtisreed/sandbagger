@@ -7085,7 +7085,7 @@ function renderTeeTimes() {
           </select>
           <span style="font-size: 1.2rem; font-weight: bold;">:</span>
           <select class="tee-time-minute-select" data-index="${index}" style="flex: 1; padding: 0.5rem; font-size: 0.95rem; border: 1px solid #ccc; border-radius: 4px;">
-            ${['00', '10', '20', '30', '40', '50'].map(min =>
+            ${Array.from({length: 60}, (_, i) => String(i).padStart(2, '0')).map(min =>
               `<option value="${min}" ${teeTime.minute === min ? 'selected' : ''}>${min}</option>`
             ).join('')}
           </select>
