@@ -1,5 +1,5 @@
 // Configure API base URL for mobile vs web
-let API_BASE_URL = '';
+let API_BASE_URL = '/sandbagger';
 
 function initializeApiUrl() {
   const isCapacitorApp = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
@@ -8,7 +8,7 @@ function initializeApiUrl() {
     // Production server for mobile apps
     API_BASE_URL = 'https://sandbaggerscoring.com';
   } else {
-    API_BASE_URL = ''; // Web browser - relative URLs work
+    API_BASE_URL = '/sandbagger'; // Web browser - relative URLs work
   }
 
   console.log('API_BASE_URL set to:', API_BASE_URL, 'isCapacitorApp:', isCapacitorApp);
@@ -6598,7 +6598,7 @@ function loadUserTournaments(golferId) {
         // Add "+ Add Round" button for administrators
         if (currentUser && currentUser.role === 'administrator') {
           html += `
-            <button class="add-round-btn" data-tournament-id="${tournament.tournament_id}" style="display: block; width: 100%; margin-bottom: 0.5rem; padding: 0.5rem; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; text-align: left;">
+            <button class="add-round-btn" data-tournament-id="${tournament.tournament_id}" data-format-id="${tournament.format_id || ''}" style="display: block; width: 100%; margin-bottom: 0.5rem; padding: 0.5rem; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; text-align: left;">
               + Add Round
             </button>
           `;
@@ -6643,6 +6643,7 @@ function loadUserTournaments(golferId) {
       document.querySelectorAll('.add-round-btn').forEach(btn => {
         btn.addEventListener('click', function() {
           const tournamentId = this.dataset.tournamentId;
+          sessionStorage.setItem('add_round_format_id', this.dataset.formatId || '');
           showAddRoundForm(tournamentId);
         });
       });
@@ -6665,6 +6666,10 @@ function loadUserTournaments(golferId) {
 }
 
 function showAddRoundForm(tournamentId) {
+  // Ensure we're in "new round" mode, not editing
+  isEditingRound = false;
+  editingRoundId = null;
+
   // Hide dashboard, show add round form
   document.getElementById('user-dashboard').style.display = 'none';
   document.getElementById('add-round-container').style.display = 'block';
