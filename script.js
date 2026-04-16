@@ -6911,7 +6911,7 @@ function renderMatches() {
     matchDiv.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
         <h3 style="margin: 0; font-size: 1.1rem;">Match ${index + 1}</h3>
-        ${matchesData.length > 1 ? `<button class="remove-match-btn" data-index="${index}" style="background: #dc3545; color: white; border: none; padding: 0.25rem 0.75rem; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">Remove</button>` : ''}
+        <button class="remove-match-btn" data-index="${index}" style="background: #dc3545; color: white; border: none; padding: 0.25rem 0.75rem; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">Remove</button>
       </div>
 
       <div style="margin-bottom: 1rem;">
