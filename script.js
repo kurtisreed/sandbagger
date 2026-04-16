@@ -6542,41 +6542,27 @@ function loadUserTournaments(golferId) {
         return;
       }
 
-      // Returns black or white for best contrast against a hex color
-      const contrastColor = hex => {
-        const r = parseInt(hex.slice(1,3),16);
-        const g = parseInt(hex.slice(3,5),16);
-        const b = parseInt(hex.slice(5,7),16);
-        const luminance = (0.299*r + 0.587*g + 0.114*b) / 255;
-        return luminance > 0.55 ? '#111' : '#fff';
-      };
-
       let html = '<div style="display: flex; flex-direction: column; gap: 1rem;">';
       data.tournaments.forEach(tournament => {
         const isRyderCupCard = parseInt(tournament.format_id) === 3;
         const teams = tournament.teams || [];
-        const myTeamId = tournament.my_team_id;
-        const myTeam = teams.find(t => parseInt(t.team_id) === parseInt(myTeamId));
-        const cardBg = (isRyderCupCard && myTeam) ? myTeam.color_hex : 'white';
-        const cardTextColor = (isRyderCupCard && myTeam) ? contrastColor(myTeam.color_hex) : 'inherit';
-        const cardBorderColor = (isRyderCupCard && myTeam) ? myTeam.color_hex : '#ddd';
 
         // Build team vs team subtitle for Ryder Cup
         let teamSubtitle = '';
         if (isRyderCupCard && teams.length >= 2) {
           teamSubtitle = `
             <p style="margin: 0 0 0.5rem 0; font-size: 1rem; font-weight: bold;">
-              <span style="color: ${teams[0].color_hex}; text-shadow: 0 0 4px rgba(0,0,0,0.3);">${teams[0].name}</span>
-              <span style="color: ${cardTextColor}; opacity: 0.8;"> vs </span>
-              <span style="color: ${teams[1].color_hex}; text-shadow: 0 0 4px rgba(0,0,0,0.3);">${teams[1].name}</span>
+              <span style="color: ${teams[0].color_hex};">${teams[0].name}</span>
+              <span style="color: #666;"> vs </span>
+              <span style="color: ${teams[1].color_hex};">${teams[1].name}</span>
             </p>`;
         }
 
         html += `
-          <div style="border: 1px solid ${cardBorderColor}; padding: 1rem; border-radius: 8px; background: ${cardBg}; color: ${cardTextColor};">
+          <div style="border: 1px solid #ddd; padding: 1rem; border-radius: 8px; background: white;">
             <h4 style="margin: 0 0 0.25rem 0;">${tournament.tournament_name}</h4>
             ${teamSubtitle}
-            <p style="margin: 0 0 0.5rem 0; font-size: 0.9rem; opacity: 0.75;">${tournament.start_date} to ${tournament.end_date}</p>
+            <p style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: #666;">${tournament.start_date} to ${tournament.end_date}</p>
         `;
 
         html += '<div style="margin-top: 0.5rem;">';
@@ -6600,12 +6586,9 @@ function loadUserTournaments(golferId) {
                 }).join(', ')
               : 'not yet assigned';
 
-            const roundBtnBg = isRyderCup
-              ? (cardTextColor === '#111' ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.25)')
-              : '#4F2185';
             html += `
               <div style="position: relative; margin-bottom: 0.5rem;">
-                <button class="tournament-round-btn" data-tournament-id="${tournament.tournament_id}" data-round-id="${round.round_id}" data-round-name="${round.round_name}" data-format-id="${tournament.format_id || ''}" style="display: block; width: 100%; padding: 0.5rem ${isAdmin && hasEditButton ? '4rem' : '0.5rem'} 0.5rem 0.5rem; background: ${roundBtnBg}; color: ${isRyderCup ? cardTextColor : 'white'}; border: none; border-radius: 4px; cursor: pointer; text-align: left;">
+                <button class="tournament-round-btn" data-tournament-id="${tournament.tournament_id}" data-round-id="${round.round_id}" data-round-name="${round.round_name}" data-format-id="${tournament.format_id || ''}" style="display: block; width: 100%; padding: 0.5rem ${isAdmin && hasEditButton ? '4rem' : '0.5rem'} 0.5rem 0.5rem; background: #4F2185; color: white; border: none; border-radius: 4px; cursor: pointer; text-align: left;">
                   <div>${round.round_name}</div>
                   <div style="font-size: 0.8rem; opacity: 0.85; margin-top: 0.2rem;">Tee times: ${teeTimesDisplay}</div>
                 </button>
@@ -6624,7 +6607,7 @@ function loadUserTournaments(golferId) {
             `;
           });
         } else {
-          html += `<p style="margin: 0.5rem 0 0.5rem 0; font-size: 0.9rem; color: ${isRyderCupCard ? 'rgba(255,255,255,0.7)' : '#999'}; ">No rounds scheduled</p>`;
+          html += '<p style="margin: 0.5rem 0 0.5rem 0; font-size: 0.9rem; color: #999;">No rounds scheduled</p>';
         }
 
         // Add "+ Add Round" button for administrators

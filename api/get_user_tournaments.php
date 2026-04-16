@@ -82,18 +82,6 @@ while ($row = $result->fetch_assoc()) {
     }
     $teamsStmt->close();
     $tournaments[$tournamentId]['teams'] = $teams;
-
-    // Find which team the current golfer is on
-    $myTeamStmt = $conn->prepare("
-      SELECT team_id FROM tournament_golfers
-      WHERE tournament_id = ? AND golfer_id = ?
-    ");
-    $myTeamStmt->bind_param("ii", $tournamentId, $golferId);
-    $myTeamStmt->execute();
-    $myTeamResult = $myTeamStmt->get_result();
-    $myTeamRow = $myTeamResult->fetch_assoc();
-    $tournaments[$tournamentId]['my_team_id'] = $myTeamRow ? (int)$myTeamRow['team_id'] : null;
-    $myTeamStmt->close();
   }
 
   if ($row['round_id']) {
