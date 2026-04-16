@@ -8156,21 +8156,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const continueToTeeTimesBtn = document.getElementById('continue-to-tee-times-btn');
   if (continueToTeeTimesBtn) {
     continueToTeeTimesBtn.addEventListener('click', async () => {
-      // Validate that all matches have 4 players
-      let isValid = true;
-      matchesData.forEach((match, index) => {
-        if (!match.team1_player1 || !match.team1_player2 || !match.team2_player1 || !match.team2_player2) {
-          alert(`Match ${index + 1} is incomplete. Please select all 4 players.`);
-          isValid = false;
-        }
-      });
-
-      if (!isValid) return;
-
-      // Check for duplicate players across all matches
+      // Check for duplicate players across all matches (ignoring empty slots)
       const allPlayers = [];
       matchesData.forEach(match => {
-        allPlayers.push(match.team1_player1, match.team1_player2, match.team2_player1, match.team2_player2);
+        [match.team1_player1, match.team1_player2, match.team2_player1, match.team2_player2]
+          .filter(p => p)
+          .forEach(p => allPlayers.push(p));
       });
       const uniquePlayers = new Set(allPlayers);
       if (uniquePlayers.size !== allPlayers.length) {
@@ -8276,7 +8267,7 @@ document.addEventListener('DOMContentLoaded', () => {
           { golfer_id: parseInt(match.team1_player2), team_position: 2 },
           { golfer_id: parseInt(match.team2_player1), team_position: 3 },
           { golfer_id: parseInt(match.team2_player2), team_position: 4 }
-        ]
+        ].filter(g => !isNaN(g.golfer_id) && g.golfer_id > 0)
       }));
 
       const matchesResponse = await fetch(`${API_BASE_URL}/api/save_guys_trip_matches.php`, {
@@ -8389,16 +8380,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const saveRoundFromMatchesBtn = document.getElementById('save-round-from-matches-btn');
   if (saveRoundFromMatchesBtn) {
     saveRoundFromMatchesBtn.addEventListener('click', async () => {
-      // Validate any partial matches (incomplete matches should be finished or removed)
-      for (let i = 0; i < matchesData.length; i++) {
-        const match = matchesData[i];
-        if (!match.team1_player1 || !match.team1_player2 || !match.team2_player1 || !match.team2_player2) {
-          alert(`Match ${i + 1} is incomplete. Please select all 4 players or remove the match.`);
-          return;
-        }
-      }
+      // Check for duplicate players across matches (ignoring empty slots)
       if (matchesData.length > 1) {
-        const allPlayers = matchesData.flatMap(m => [m.team1_player1, m.team1_player2, m.team2_player1, m.team2_player2]);
+        const allPlayers = matchesData.flatMap(m =>
+          [m.team1_player1, m.team1_player2, m.team2_player1, m.team2_player2].filter(p => p)
+        );
         if (new Set(allPlayers).size !== allPlayers.length) {
           alert('A player cannot be in multiple matches. Please check your selections.');
           return;
