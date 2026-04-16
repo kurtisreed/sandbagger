@@ -1,5 +1,5 @@
 // Configure API base URL for mobile vs web
-let API_BASE_URL = '/sandbagger';
+let API_BASE_URL = '';
 
 function initializeApiUrl() {
   const isCapacitorApp = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
@@ -8,7 +8,7 @@ function initializeApiUrl() {
     // Production server for mobile apps
     API_BASE_URL = 'https://sandbaggerscoring.com';
   } else {
-    API_BASE_URL = '/sandbagger'; // Web browser - relative URLs work
+    API_BASE_URL = ''; // Web browser - relative URLs work
   }
 
   console.log('API_BASE_URL set to:', API_BASE_URL, 'isCapacitorApp:', isCapacitorApp);
