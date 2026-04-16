@@ -6981,25 +6981,28 @@ async function loadExistingTeeTimes() {
     teeTimesData = [];
 
     if (data.tee_times && data.tee_times.length > 0) {
-      // Create a map of match_id to match index
+      // Map match_id → index in matchesData
       const matchIdToIndex = {};
       data.matches.forEach((match, idx) => {
         matchIdToIndex[match.match_id] = idx;
       });
 
+      // Group all assigned matches by tee_time_id (supports multiple matches per tee time)
+      const matchesByTeeTime = {};
+      data.matches.forEach(match => {
+        if (match.tee_time_id) {
+          if (!matchesByTeeTime[match.tee_time_id]) matchesByTeeTime[match.tee_time_id] = [];
+          matchesByTeeTime[match.tee_time_id].push(`match-${matchIdToIndex[match.match_id]}`);
+        }
+      });
+
       data.tee_times.forEach(tt => {
-        // Find which match is assigned to this tee time
-        const assignedMatch = data.matches.find(m => m.tee_time_id === tt.tee_time_id);
-        const matchId = assignedMatch ? `match-${matchIdToIndex[assignedMatch.match_id]}` : '';
-
-        // Parse time
         const timeParts = tt.time.split(':');
-
         teeTimesData.push({
           tee_time_id: tt.tee_time_id,
           hour: timeParts[0].padStart(2, '0'),
           minute: timeParts[1].padStart(2, '0'),
-          match_id: matchId
+          match_ids: matchesByTeeTime[tt.tee_time_id] || []
         });
       });
     }
@@ -7037,36 +7040,56 @@ function addNewTeeTime() {
     tee_time_id: teeTimeId,
     hour: '08',
     minute: '00',
-    match_id: ''
+    match_ids: []
   });
 
   renderTeeTimes();
 }
 
 function getMatchDisplayName(match) {
-  // Get player names for this match
-  const team1Player1 = tournamentPlayers.find(p => p.golfer_id == match.team1_player1);
-  const team1Player2 = tournamentPlayers.find(p => p.golfer_id == match.team1_player2);
-  const team2Player1 = tournamentPlayers.find(p => p.golfer_id == match.team2_player1);
-  const team2Player2 = tournamentPlayers.find(p => p.golfer_id == match.team2_player2);
+  const p1 = tournamentPlayers.find(p => p.golfer_id == match.team1_player1);
+  const p2 = tournamentPlayers.find(p => p.golfer_id == match.team1_player2);
+  const p3 = tournamentPlayers.find(p => p.golfer_id == match.team2_player1);
+  const p4 = tournamentPlayers.find(p => p.golfer_id == match.team2_player2);
 
-  if (!team1Player1 || !team1Player2 || !team2Player1 || !team2Player2) {
-    return 'Match';
-  }
+  const team1 = [p1, p2].filter(Boolean).map(p => p.first_name).join(' & ') || 'TBD';
+  const team2 = [p3, p4].filter(Boolean).map(p => p.first_name).join(' & ') || 'TBD';
 
-  return `${team1Player1.first_name} & ${team1Player2.first_name} vs ${team2Player1.first_name} & ${team2Player2.first_name}`;
+  return `${team1} vs ${team2}`;
 }
 
 function renderTeeTimes() {
   const teeTimesList = document.getElementById('tee-times-list');
   teeTimesList.innerHTML = '';
 
-  // Track which matches are already assigned
-  const assignedMatches = new Set(teeTimesData.map(tt => tt.match_id).filter(id => id));
+  // Build set of all assigned match IDs across all tee times
+  const allAssigned = new Set();
+  teeTimesData.forEach(tt => {
+    (tt.match_ids || []).forEach(mid => { if (mid) allAssigned.add(mid); });
+  });
+
+  // Generate match options for a specific slot (excludes that slot's current value from "taken" set)
+  const generateMatchOptions = (currentMatchId) => {
+    return matchesData.map((match, matchIdx) => {
+      const matchId = `match-${matchIdx}`;
+      const isTaken = allAssigned.has(matchId) && matchId !== currentMatchId;
+      return `<option value="${matchId}" ${currentMatchId === matchId ? 'selected' : ''} ${isTaken ? 'disabled' : ''}>${getMatchDisplayName(match)}${isTaken ? ' (Assigned)' : ''}</option>`;
+    }).join('');
+  };
 
   teeTimesData.forEach((teeTime, index) => {
     const teeTimeDiv = document.createElement('div');
     teeTimeDiv.style.cssText = 'border: 1px solid #ddd; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; background: white;';
+
+    const matchSlots = (teeTime.match_ids || []).map((matchId, slotIdx) => `
+      <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem; align-items: center;">
+        <select class="tee-time-match-select" data-tee-index="${index}" data-slot-index="${slotIdx}" style="flex: 1; padding: 0.5rem; font-size: 0.95rem; border: 1px solid #ccc; border-radius: 4px;">
+          <option value="">-- Select Match --</option>
+          ${generateMatchOptions(matchId)}
+        </select>
+        <button class="remove-match-from-tee-btn" data-tee-index="${index}" data-slot-index="${slotIdx}" style="background: #dc3545; color: white; border: none; padding: 0.4rem 0.6rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem; flex-shrink: 0;">✕</button>
+      </div>
+    `).join('');
 
     teeTimeDiv.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
@@ -7093,50 +7116,61 @@ function renderTeeTimes() {
       </div>
 
       <div>
-        <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Match</label>
-        <select class="tee-time-match-select" data-index="${index}" style="width: 100%; padding: 0.5rem; font-size: 0.95rem; border: 1px solid #ccc; border-radius: 4px;">
-          <option value="">-- Select Match --</option>
-          ${matchesData.map((match, matchIdx) => {
-            const matchId = `match-${matchIdx}`;
-            const isAssigned = assignedMatches.has(matchId) && teeTime.match_id !== matchId;
-            return `<option value="${matchId}" ${teeTime.match_id === matchId ? 'selected' : ''} ${isAssigned ? 'disabled' : ''}>${getMatchDisplayName(match)}${isAssigned ? ' (Assigned)' : ''}</option>`;
-          }).join('')}
-        </select>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Matches</label>
+        ${matchSlots}
+        <button class="add-match-to-tee-btn" data-tee-index="${index}" style="width: 100%; padding: 0.4rem; background: #e8e8e8; color: #333; border: 1px dashed #aaa; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">+ Add Match</button>
       </div>
     `;
 
     teeTimesList.appendChild(teeTimeDiv);
   });
 
-  // Add event listeners for time selection
+  // Time selects
   document.querySelectorAll('.tee-time-hour-select').forEach(select => {
     select.addEventListener('change', function() {
-      const index = parseInt(this.dataset.index);
-      teeTimesData[index].hour = this.value;
+      teeTimesData[parseInt(this.dataset.index)].hour = this.value;
     });
   });
 
   document.querySelectorAll('.tee-time-minute-select').forEach(select => {
     select.addEventListener('change', function() {
-      const index = parseInt(this.dataset.index);
-      teeTimesData[index].minute = this.value;
+      teeTimesData[parseInt(this.dataset.index)].minute = this.value;
     });
   });
 
+  // Match slot selects
   document.querySelectorAll('.tee-time-match-select').forEach(select => {
     select.addEventListener('change', function() {
-      const index = parseInt(this.dataset.index);
-      teeTimesData[index].match_id = this.value;
-      // Re-render to update disabled states
+      const teeIdx = parseInt(this.dataset.teeIndex);
+      const slotIdx = parseInt(this.dataset.slotIndex);
+      teeTimesData[teeIdx].match_ids[slotIdx] = this.value;
       renderTeeTimes();
     });
   });
 
-  // Add event listeners for remove buttons
+  // Remove a match slot from a tee time
+  document.querySelectorAll('.remove-match-from-tee-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const teeIdx = parseInt(this.dataset.teeIndex);
+      const slotIdx = parseInt(this.dataset.slotIndex);
+      teeTimesData[teeIdx].match_ids.splice(slotIdx, 1);
+      renderTeeTimes();
+    });
+  });
+
+  // Add a match slot to a tee time
+  document.querySelectorAll('.add-match-to-tee-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const teeIdx = parseInt(this.dataset.teeIndex);
+      teeTimesData[teeIdx].match_ids.push('');
+      renderTeeTimes();
+    });
+  });
+
+  // Remove entire tee time
   document.querySelectorAll('.remove-tee-time-btn').forEach(btn => {
     btn.addEventListener('click', function() {
-      const index = parseInt(this.dataset.index);
-      teeTimesData.splice(index, 1);
+      teeTimesData.splice(parseInt(this.dataset.index), 1);
       renderTeeTimes();
     });
   });
@@ -8306,8 +8340,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const assignments = [];
       teeTimesData.forEach(tt => {
-        if (tt.match_id && teeTimeIds[tt.tee_time_id]) {
-          const matchIndex = parseInt(tt.match_id.replace('match-', ''));
+        if (!teeTimeIds[tt.tee_time_id]) return;
+        (tt.match_ids || []).filter(mid => mid).forEach(mid => {
+          const matchIndex = parseInt(mid.replace('match-', ''));
           const matchData = matchesData[matchIndex];
           let actualMatchId;
           if (matchData.match_id && !matchData.match_id.toString().startsWith('new-')) {
@@ -8321,7 +8356,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
           }
           assignments.push({ match_id: actualMatchId, tee_time_id: teeTimeIds[tt.tee_time_id] });
-        }
+        });
       });
 
       if (assignments.length > 0) {
