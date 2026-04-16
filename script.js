@@ -8291,8 +8291,8 @@ document.addEventListener('DOMContentLoaded', () => {
       roundId = roundResult.inserted_id;
     }
 
-    // Step 2: Save matches only if any were added
-    if (matchesData.length > 0) {
+    // Step 2: Save matches (always call when editing so removed matches get deleted)
+    if (isEditingRound || matchesData.length > 0) {
       const matchesPayload = matchesData.map((match, index) => ({
         match_id: match.match_id || null,
         match_name: `Match ${index + 1} in ${roundData.round_name}`,
