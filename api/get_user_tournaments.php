@@ -64,6 +64,38 @@ while ($row = $result->fetch_assoc()) {
     ];
   }
 
+  // For Ryder Cup tournaments, fetch team data once per tournament
+  if (!isset($tournaments[$tournamentId]['teams']) && $row['format_id'] == 3) {
+    $teamsStmt = $conn->prepare("
+      SELECT t.team_id, t.name, t.color_hex
+      FROM tournament_teams tt
+      JOIN teams t ON tt.team_id = t.team_id
+      WHERE tt.tournament_id = ?
+      ORDER BY t.team_id ASC
+    ");
+    $teamsStmt->bind_param("i", $tournamentId);
+    $teamsStmt->execute();
+    $teamsResult = $teamsStmt->get_result();
+    $teams = [];
+    while ($teamRow = $teamsResult->fetch_assoc()) {
+      $teams[] = $teamRow;
+    }
+    $teamsStmt->close();
+    $tournaments[$tournamentId]['teams'] = $teams;
+
+    // Find which team the current golfer is on
+    $myTeamStmt = $conn->prepare("
+      SELECT team_id FROM tournament_golfers
+      WHERE tournament_id = ? AND golfer_id = ?
+    ");
+    $myTeamStmt->bind_param("ii", $tournamentId, $golferId);
+    $myTeamStmt->execute();
+    $myTeamResult = $myTeamStmt->get_result();
+    $myTeamRow = $myTeamResult->fetch_assoc();
+    $tournaments[$tournamentId]['my_team_id'] = $myTeamRow ? (int)$myTeamRow['team_id'] : null;
+    $myTeamStmt->close();
+  }
+
   if ($row['round_id']) {
     // Check if this round has any scores entered
     $checkScoresStmt = $conn->prepare("
