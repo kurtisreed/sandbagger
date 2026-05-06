@@ -6586,11 +6586,16 @@ function loadUserTournaments(golferId) {
                 }).join(', ')
               : 'not yet assigned';
 
+            const roundDateDisplay = round.round_date
+              ? new Date(round.round_date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
+              : '';
+
             html += `
               <div style="position: relative; margin-bottom: 0.5rem;">
                 <button class="tournament-round-btn" data-tournament-id="${tournament.tournament_id}" data-round-id="${round.round_id}" data-round-name="${round.round_name}" data-format-id="${tournament.format_id || ''}" style="display: block; width: 100%; padding: 0.5rem ${isAdmin && hasEditButton ? '4rem' : '0.5rem'} 0.5rem 0.5rem; background: #4F2185; color: white; border: none; border-radius: 4px; cursor: pointer; text-align: left;">
                   <div>${round.round_name}</div>
-                  <div style="font-size: 0.8rem; opacity: 0.85; margin-top: 0.2rem;">Tee times: ${teeTimesDisplay}</div>
+                  ${roundDateDisplay ? `<div style="font-size: 0.8rem; opacity: 0.85; margin-top: 0.1rem;">${roundDateDisplay}</div>` : ''}
+                  <div style="font-size: 0.8rem; opacity: 0.85; margin-top: 0.1rem;">Tee times: ${teeTimesDisplay}</div>
                 </button>
                 ${isAdmin && hasEditButton ? (
                   isLocked ? `
