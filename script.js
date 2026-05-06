@@ -6517,9 +6517,17 @@ function loadUserTournaments(golferId) {
             </p>`;
         }
 
+        const isAdminCard = currentUser && currentUser.role === 'administrator';
         html += `
           <div style="border: 1px solid #ddd; padding: 1rem; border-radius: 8px; background: white;">
-            <h4 style="margin: 0 0 0.25rem 0;">${tournament.tournament_name}</h4>
+            <div style="position: relative; margin-bottom: 0.25rem;">
+              <h4 style="margin: 0; padding-right: ${isAdminCard ? '4rem' : '0'};">${tournament.tournament_name}</h4>
+              ${isAdminCard ? `
+                <button class="edit-tournament-btn" data-tournament-id="${tournament.tournament_id}" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); padding: 0.2rem 0.6rem; background: #ffc107; color: #333; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold;">
+                  Edit
+                </button>
+              ` : ''}
+            </div>
             ${teamSubtitle}
             <p style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: #666;">${tournament.start_date} to ${tournament.end_date}</p>
         `;
@@ -6627,6 +6635,16 @@ function loadUserTournaments(golferId) {
         });
       });
 
+      // Add click handlers for "Edit Tournament" buttons
+      document.querySelectorAll('.edit-tournament-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          const tournamentId = this.dataset.tournamentId;
+          const tournament = data.tournaments.find(t => String(t.tournament_id) === String(tournamentId));
+          if (tournament) showEditTournamentForm(tournament);
+        });
+      });
+
       // Add click handlers for "Edit" buttons
       document.querySelectorAll('.edit-round-btn').forEach(btn => {
         btn.addEventListener('click', function(e) {
@@ -6642,6 +6660,191 @@ function loadUserTournaments(golferId) {
       console.error('Error loading tournaments:', err);
       tournamentsList.innerHTML = '<p style="color: red;">Error loading tournaments</p>';
     });
+}
+
+async function showEditTournamentForm(tournament) {
+  document.getElementById('user-dashboard').style.display = 'none';
+  const container = document.getElementById('edit-tournament-container');
+  container.style.display = 'block';
+
+  const content = document.getElementById('edit-tournament-content');
+  content.innerHTML = '<p style="color:#666;">Loading...</p>';
+
+  const isRyderCup = parseInt(tournament.format_id) === 3;
+
+  // Fetch teams, all golfers, and current tournament golfers in parallel
+  const [teams, allGolfers, tournamentGolfers] = await Promise.all([
+    fetch(`${API_BASE_URL}/api/tournament_teams.php?tournament_id=${tournament.tournament_id}`, { credentials: 'include' }).then(r => r.json()),
+    fetch(`${API_BASE_URL}/api/golfers.php`, { credentials: 'include' }).then(r => r.json()),
+    fetch(`${API_BASE_URL}/api/tournament_golfers.php?tournament_id=${tournament.tournament_id}`, { credentials: 'include' }).then(r => r.json()),
+  ]);
+
+  const assignedMap = {}; // golfer_id → team_id (or null)
+  tournamentGolfers.forEach(tg => { assignedMap[tg.golfer_id] = tg.team_id || null; });
+
+  // Build teams section (Ryder Cup only)
+  let teamsHtml = '';
+  if (isRyderCup && teams.length > 0) {
+    teamsHtml = `<div style="margin-bottom:1.5rem;">
+      <h3 style="margin:0 0 0.75rem 0; font-size:1rem; border-bottom:1px solid #eee; padding-bottom:0.4rem;">Teams</h3>`;
+    teams.forEach(team => {
+      teamsHtml += `
+        <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
+          <input type="text" class="team-name-input" data-team-id="${team.team_id}" value="${team.name}"
+            style="flex:1; padding:0.5rem; font-size:0.95rem; border:1px solid #ccc; border-radius:4px;">
+          <input type="color" class="team-color-input" data-team-id="${team.team_id}" value="${team.color_hex}"
+            style="width:2.5rem; height:2.2rem; padding:0.1rem; border:1px solid #ccc; border-radius:4px; cursor:pointer;">
+        </div>`;
+    });
+    teamsHtml += '</div>';
+  }
+
+  // Build golfer roster
+  let rosterHtml = `<div style="margin-bottom:1.5rem;">
+    <h3 style="margin:0 0 0.75rem 0; font-size:1rem; border-bottom:1px solid #eee; padding-bottom:0.4rem;">Golfers</h3>
+    <div style="max-height:300px; overflow-y:auto; border:1px solid #eee; border-radius:4px; padding:0.5rem;">`;
+
+  allGolfers.forEach(g => {
+    const isChecked = g.golfer_id in assignedMap;
+    const teamId = assignedMap[g.golfer_id];
+    const name = `${g.first_name} ${g.last_name}`;
+
+    let teamDropdown = '';
+    if (isRyderCup && teams.length > 0) {
+      const opts = teams.map(t =>
+        `<option value="${t.team_id}" ${teamId == t.team_id ? 'selected' : ''}>${t.name}</option>`
+      ).join('');
+      teamDropdown = `
+        <select class="golfer-team-select" data-golfer-id="${g.golfer_id}"
+          style="margin-left:0.5rem; padding:0.2rem 0.4rem; font-size:0.85rem; border:1px solid #ccc; border-radius:4px; ${isChecked ? '' : 'display:none;'}">
+          <option value="">-- No team --</option>
+          ${opts}
+        </select>`;
+    }
+
+    rosterHtml += `
+      <label style="display:flex; align-items:center; gap:0.4rem; padding:0.3rem 0; cursor:pointer;">
+        <input type="checkbox" class="golfer-checkbox" data-golfer-id="${g.golfer_id}" ${isChecked ? 'checked' : ''}
+          style="width:1rem; height:1rem; cursor:pointer;">
+        <span style="flex:1; font-size:0.95rem;">${name} <span style="color:#999; font-size:0.8rem;">(hdcp: ${g.handicap})</span></span>
+        ${teamDropdown}
+      </label>`;
+  });
+
+  rosterHtml += '</div></div>';
+
+  content.innerHTML = `
+    <div style="margin-bottom:1rem;">
+      <label style="display:block; margin-bottom:0.4rem; font-weight:bold;">Tournament Name</label>
+      <input type="text" id="edit-tournament-name" value="${tournament.tournament_name}"
+        style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
+    </div>
+    <div style="display:flex; gap:0.75rem; margin-bottom:1.5rem;">
+      <div style="flex:1;">
+        <label style="display:block; margin-bottom:0.4rem; font-weight:bold;">Start Date</label>
+        <input type="date" id="edit-tournament-start" value="${tournament.start_date}"
+          style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
+      </div>
+      <div style="flex:1;">
+        <label style="display:block; margin-bottom:0.4rem; font-weight:bold;">End Date</label>
+        <input type="date" id="edit-tournament-end" value="${tournament.end_date}"
+          style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
+      </div>
+    </div>
+    ${teamsHtml}
+    ${rosterHtml}
+    <button id="save-edit-tournament-btn" style="width:100%; padding:0.75rem; background:#4F2185; color:white; border:none; border-radius:4px; font-size:1rem; font-weight:bold; cursor:pointer; margin-bottom:0.5rem;">
+      Save Changes
+    </button>
+    <div id="edit-tournament-status" style="margin-top:0.5rem; font-size:0.9rem; text-align:center;"></div>
+  `;
+
+  // Show/hide team dropdown when checkbox toggled
+  if (isRyderCup) {
+    content.querySelectorAll('.golfer-checkbox').forEach(cb => {
+      cb.addEventListener('change', function() {
+        const sel = content.querySelector(`.golfer-team-select[data-golfer-id="${this.dataset.golferId}"]`);
+        if (sel) sel.style.display = this.checked ? '' : 'none';
+      });
+    });
+  }
+
+  document.getElementById('save-edit-tournament-btn').addEventListener('click', () => {
+    saveEditTournament(tournament, teams, isRyderCup);
+  });
+}
+
+async function saveEditTournament(tournament, teams, isRyderCup) {
+  const status = document.getElementById('edit-tournament-status');
+  const btn = document.getElementById('save-edit-tournament-btn');
+  btn.disabled = true;
+  status.textContent = 'Saving…';
+  status.style.color = '#666';
+
+  const name = document.getElementById('edit-tournament-name').value.trim();
+  const startDate = document.getElementById('edit-tournament-start').value;
+  const endDate = document.getElementById('edit-tournament-end').value;
+
+  if (!name || !startDate || !endDate) {
+    status.textContent = 'Name and dates are required.';
+    status.style.color = 'red';
+    btn.disabled = false;
+    return;
+  }
+
+  try {
+    // 1. Save tournament name + dates
+    await fetch(`${API_BASE_URL}/api/tournaments.php?tournament_id=${tournament.tournament_id}`, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, start_date: startDate, end_date: endDate, handicap_pct: tournament.handicap_pct ?? 100 }),
+    });
+
+    // 2. Save team names + colors (Ryder Cup)
+    if (isRyderCup && teams.length > 0) {
+      await Promise.all(teams.map(team => {
+        const nameInput = document.querySelector(`.team-name-input[data-team-id="${team.team_id}"]`);
+        const colorInput = document.querySelector(`.team-color-input[data-team-id="${team.team_id}"]`);
+        return fetch(`${API_BASE_URL}/api/tournament_teams.php?team_id=${team.team_id}`, {
+          method: 'PUT',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: nameInput.value.trim(), color: colorInput.value }),
+        });
+      }));
+    }
+
+    // 3. Save golfer roster + team assignments
+    const checkboxes = document.querySelectorAll('.golfer-checkbox:checked');
+    const assignments = Array.from(checkboxes).map(cb => {
+      const golferId = parseInt(cb.dataset.golferId);
+      const teamSel = document.querySelector(`.golfer-team-select[data-golfer-id="${golferId}"]`);
+      const teamId = teamSel && teamSel.value ? parseInt(teamSel.value) : null;
+      return { golfer_id: golferId, team_id: teamId };
+    });
+
+    await fetch(`${API_BASE_URL}/api/save_tournament_assignments.php`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tournament_id: tournament.tournament_id, assignments }),
+    });
+
+    status.textContent = 'Saved!';
+    status.style.color = 'green';
+    setTimeout(() => {
+      document.getElementById('edit-tournament-container').style.display = 'none';
+      document.getElementById('user-dashboard').style.display = 'block';
+      loadUserTournaments(currentUser.golfer_id);
+    }, 800);
+
+  } catch (err) {
+    console.error('Error saving tournament:', err);
+    status.textContent = 'Error saving. Please try again.';
+    status.style.color = 'red';
+    btn.disabled = false;
+  }
 }
 
 function showAddRoundForm(tournamentId) {
@@ -8134,6 +8337,14 @@ document.addEventListener('DOMContentLoaded', () => {
         saveRoundOnlyBtn.textContent = originalText;
         saveRoundOnlyBtn.style.opacity = '1';
       }
+    });
+  }
+
+  const backFromEditTournamentBtn = document.getElementById('back-from-edit-tournament-btn');
+  if (backFromEditTournamentBtn) {
+    backFromEditTournamentBtn.addEventListener('click', () => {
+      document.getElementById('edit-tournament-container').style.display = 'none';
+      document.getElementById('user-dashboard').style.display = 'block';
     });
   }
 

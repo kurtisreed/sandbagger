@@ -30,6 +30,7 @@ SELECT DISTINCT
   t.start_date,
   t.end_date,
   t.format_id,
+  t.handicap_pct,
   r.round_id,
   r.round_name,
   r.round_date,
@@ -60,6 +61,7 @@ while ($row = $result->fetch_assoc()) {
       'start_date' => $row['start_date'],
       'end_date' => $row['end_date'],
       'format_id' => $row['format_id'],
+      'handicap_pct' => $row['handicap_pct'],
       'rounds' => []
     ];
   }

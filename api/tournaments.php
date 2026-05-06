@@ -70,10 +70,10 @@ switch ($method) {
 
   case 'PUT':
     // update existing
-    parse_str(file_get_contents('php://input'), $data);
+    $data = json_decode(file_get_contents('php://input'), true);
     $stmt = $conn->prepare(
-      "UPDATE tournaments 
-         SET name = ?, start_date = ?, end_date = ?, handicap_pct = ? 
+      "UPDATE tournaments
+         SET name = ?, start_date = ?, end_date = ?, handicap_pct = ?
        WHERE tournament_id = ?"
     );
     $stmt->bind_param(
