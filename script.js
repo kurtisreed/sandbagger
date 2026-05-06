@@ -6523,7 +6523,7 @@ function loadUserTournaments(golferId) {
             <div style="position: relative; margin-bottom: 0.25rem;">
               <h4 style="margin: 0; padding-right: ${isAdminCard ? '4rem' : '0'};">${tournament.tournament_name}</h4>
               ${isAdminCard ? `
-                <button class="edit-tournament-btn" data-tournament-id="${tournament.tournament_id}" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); padding: 0.2rem 0.6rem; background: #ffc107; color: #333; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold;">
+                <button class="edit-tournament-btn" data-tournament-id="${tournament.tournament_id}" style="position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); padding: 0.25rem 0.75rem; background: #ffc107; color: #333; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: bold;">
                   Edit
                 </button>
               ` : ''}
