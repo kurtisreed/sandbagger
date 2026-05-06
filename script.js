@@ -1371,12 +1371,7 @@ function loadWolfScoring() {
           </td>` +
           golfers.map((golfer, idx) => {
             const stroke = strokeMaps[golfer.id]?.[i] || 0;
-            let dots = '';
-            if (stroke === 1) {
-              dots = '<span class="corner-dot"></span>';
-            } else if (stroke === 2) {
-              dots = '<span class="corner-dot"></span><span class="corner-dot second-dot"></span>';
-            }
+                        const dots = strokeDots(stroke);
 
             // Add wolf emoji if this player is the Wolf for this hole
             const wolfEmoji = (idx === wolfIndex) ? '<span style="position: absolute; top: 2px; left: 2px; font-size: 0.7rem;">🐺</span>' : '';
@@ -1905,12 +1900,7 @@ function loadRabbitScoring() {
         const index = holeInfo.find(h => h.hole_number === i)?.handicap_index || "-";
         row.innerHTML = `<td>${i}</td><td>${par}</td><td>${index}</td>` + golfers.map(golfer => {
           const stroke = strokeMaps[golfer.id]?.[i] || 0;
-          let dots = '';
-          if (stroke === 1) {
-            dots = '<span class="corner-dot"></span>';
-          } else if (stroke === 2) {
-            dots = '<span class="corner-dot"></span><span class="corner-dot second-dot"></span>';
-          }
+                    const dots = strokeDots(stroke);
           return `<td style="position:relative;">
             ${dots}
             <select class="score-input" data-hole="${i}" data-golfer="${golfer.id}" style="width: 100%; padding: 0.3rem; font-size: 1rem; border: 1px solid #ccc; border-radius: 3px; box-sizing: border-box;">
@@ -2166,12 +2156,7 @@ function loadWolfScorecardReadOnly() {
             `<td style="text-align: center; padding: 0.5rem;">${partnerText}</td>` +
             golfers.map((golfer, idx) => {
               const stroke = strokeMaps[golfer.id]?.[i] || 0;
-              let dots = '';
-              if (stroke === 1) {
-                dots = '<span class="corner-dot"></span>';
-              } else if (stroke === 2) {
-                dots = '<span class="corner-dot"></span><span class="corner-dot second-dot"></span>';
-              }
+                            const dots = strokeDots(stroke);
 
               const wolfEmoji = (idx === wolfIndex) ? '<span style="position: absolute; top: 2px; left: 2px; font-size: 0.7rem;">🐺</span>' : '';
               const scoreValue = scoreMap[i] && scoreMap[i][golfer.id] ? scoreMap[i][golfer.id] : '–';
@@ -2400,12 +2385,7 @@ function loadRabbitScorecardReadOnly() {
           const index = holeInfo.find(h => h.hole_number === i)?.handicap_index || "-";
           row.innerHTML = `<td>${i}</td><td>${par}</td><td>${index}</td>` + golfers.map(golfer => {
             const stroke = strokeMaps[golfer.id]?.[i] || 0;
-            let dots = '';
-            if (stroke === 1) {
-              dots = '<span class="corner-dot"></span>';
-            } else if (stroke === 2) {
-              dots = '<span class="corner-dot"></span><span class="corner-dot second-dot"></span>';
-            }
+                        const dots = strokeDots(stroke);
             const scoreValue = scoreMap[i] && scoreMap[i][golfer.id] ? scoreMap[i][golfer.id] : '–';
             return `<td style="position:relative; text-align: center; padding: 0.5rem;">
               ${dots}
@@ -2818,12 +2798,7 @@ function loadBestBallScoring() {
             </select>
           `;
 
-          let dots = '';
-          if (strokeCount === 1) {
-            dots = '<span class="corner-dot"></span>';
-          } else if (strokeCount === 2) {
-            dots = '<span class="corner-dot"></span><span class="corner-dot second-dot"></span>';
-          }
+                    const dots = strokeDots(strokeCount);
           return `<td>${dots}${select}</td>`;
         }).join("");
         table.appendChild(row);
@@ -3115,12 +3090,7 @@ function loadBestBallScorecardReadOnly() {
         const index = holeInfo.find(h => h.hole_number === i)?.handicap_index || "-";
         row.innerHTML = `<td class="match-result-cell" data-hole="${i}"></td><td>${i}</td><td>${par}</td><td>${index}</td>` + golfers.map(golfer => {
           const stroke = strokeMaps[golfer.id]?.[i] || 0;
-          let dots = '';
-          if (stroke === 1) {
-            dots = '<span class="corner-dot"></span>';
-          } else if (stroke === 2) {
-            dots = '<span class="corner-dot"></span><span class="corner-dot second-dot"></span>';
-          }
+                    const dots = strokeDots(stroke);
           return `<td class="readonly-score-cell" data-hole="${i}" data-golfer="${golfer.id}" style="position:relative;">${dots}</td>`;
         }).join("");
         table.appendChild(row);
@@ -3188,12 +3158,7 @@ function loadBestBallScorecardReadOnly() {
               }
               // Set the cell content (with or without the dot)
               const stroke = strokeMaps[score.golfer_id]?.[score.hole_number] || 0;
-              let dots = '';
-              if (stroke === 1) {
-                dots = '<span class="corner-dot"></span>';
-              } else if (stroke === 2) {
-                dots = '<span class="corner-dot"></span><span class="corner-dot second-dot"></span>';
-              }
+                            const dots = strokeDots(stroke);
               cell.innerHTML = `${dots}${strokes}`;
             }
           });
@@ -3488,12 +3453,7 @@ function loadTodaysMatch() {
               </select>
             `;
 
-            let dots = '';
-            if (strokeCount === 1) {
-              dots = '<span class="corner-dot"></span>';
-            } else if (strokeCount === 2) {
-              dots = '<span class="corner-dot"></span><span class="corner-dot second-dot"></span>';
-            }
+                        const dots = strokeDots(strokeCount);
             return `<td>${dots}${select}</td>`;
         }).join("");
         table.appendChild(row);
@@ -3758,12 +3718,7 @@ function loadGuysTripMatch() {
             </select>
           `;
 
-          let dots = '';
-          if (strokeCount === 1) {
-            dots = '<span class="corner-dot"></span>';
-          } else if (strokeCount === 2) {
-            dots = '<span class="corner-dot"></span><span class="corner-dot second-dot"></span>';
-          }
+                    const dots = strokeDots(strokeCount);
           return `<td>${dots}${select}</td>`;
         }).join("");
         table.appendChild(row);
@@ -5090,6 +5045,13 @@ function getStrokeMap(golfer) {
 
 
 
+function strokeDots(stroke) {
+  if (stroke === 1) return '<span class="corner-dot"></span>';
+  if (stroke === 2) return '<span class="corner-dot"></span><span class="corner-dot second-dot"></span>';
+  if (stroke === -1) return '<span class="corner-dot penalty-dot"></span>';
+  return '';
+}
+
 //stroke maps for golfers
 function buildStrokeMapForGolfer(golferHandicap, holeData) {
 
@@ -5101,8 +5063,15 @@ function buildStrokeMapForGolfer(golferHandicap, holeData) {
     const holeNum = hole.hole_number;
 
     let strokes = 0;
-    if (golferHandicap >= index) strokes = 1;
-    if (golferHandicap > 18 && golferHandicap - 18 >= index) strokes = 2;
+    if (golferHandicap >= 0) {
+      // Positive handicap: receive strokes on lowest-index (hardest) holes
+      if (golferHandicap >= index) strokes = 1;
+      if (golferHandicap > 18 && golferHandicap - 18 >= index) strokes = 2;
+    } else {
+      // Plus handicapper: pay penalty strokes on highest-index (easiest) holes
+      const absHcp = Math.abs(golferHandicap);
+      if (index > 18 - absHcp) strokes = -1;
+    }
 
     strokeMap[holeNum] = strokes;
   }
@@ -5980,12 +5949,7 @@ function loadMatchScorecard(match_id, container_id = "today-summary") {
         const index = holeInfo.find(h => h.hole_number === i)?.handicap_index || "-";
         row.innerHTML = `<td class="match-result-cell" data-hole="${i}"></td><td>${i}</td><td>${par}</td><td>${index}</td>` + golfers.map(golfer => {
           const stroke = strokeMaps[golfer.id]?.[i] || 0;
-            let dots = '';
-            if (stroke === 1) {
-              dots = '<span class="corner-dot"></span>';
-            } else if (stroke === 2) {
-              dots = '<span class="corner-dot"></span><span class="corner-dot second-dot"></span>';
-            }
+                        const dots = strokeDots(stroke);
             return `<td class="readonly-score-cell" data-hole="${i}" data-golfer="${golfer.id}" style="position:relative;">${dots}</td>`;
 
         }).join("");
@@ -6085,12 +6049,7 @@ function loadMatchScorecard(match_id, container_id = "today-summary") {
               }
               // Set the cell content (with or without the dot)
                 const stroke = strokeMaps[score.golfer_id]?.[score.hole_number] || 0;
-                let dots = '';
-                if (stroke === 1) {
-                  dots = '<span class="corner-dot"></span>';
-                } else if (stroke === 2) {
-                  dots = '<span class="corner-dot"></span><span class="corner-dot second-dot"></span>';
-                }
+                                const dots = strokeDots(stroke);
                 cell.innerHTML = `${dots}${strokes}`;
             }
           });

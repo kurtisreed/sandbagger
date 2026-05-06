@@ -336,6 +336,10 @@ main {
   right: 2px;
 }
 
+.penalty-dot {
+  background: #e53935;
+}
+
 /* for circle and square around scores */
 .score-birdie {
   background-color: #d0e8ff !important; /* light blue */

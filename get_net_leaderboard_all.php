@@ -85,10 +85,20 @@ while ($row = $result->fetch_assoc()) {
     $playing_handicap = ($hcp * ($slope / 113) + ($rating - 72)) * ($handicap_pct / 100);
     $playing_hcp_rounded = round($playing_handicap);
 
-    // Allocate strokes: base + 1 on the lowest-index holes
-    $baseStrokes       = intdiv($playing_hcp_rounded, 18);
-    $extraStrokeHoles  = $playing_hcp_rounded % 18;
-    $handicapStrokes   = $baseStrokes + ($idx <= $extraStrokeHoles ? 1 : 0);
+    // Allocate strokes hole by hole
+    if ($playing_hcp_rounded >= 0) {
+      // Positive handicap: receive strokes on lowest-index (hardest) holes
+      $baseStrokes      = intdiv($playing_hcp_rounded, 18);
+      $extraStrokeHoles = $playing_hcp_rounded % 18;
+      $handicapStrokes  = $baseStrokes + ($idx <= $extraStrokeHoles ? 1 : 0);
+    } else {
+      // Plus handicapper: pay penalty strokes on highest-index (easiest) holes
+      $absHcp           = abs($playing_hcp_rounded);
+      $baseStrokes      = intdiv($absHcp, 18);
+      $extraStrokeHoles = $absHcp % 18;
+      $penaltyStrokes   = $baseStrokes + ($idx > (18 - $extraStrokeHoles) ? 1 : 0);
+      $handicapStrokes  = -$penaltyStrokes;
+    }
 
     $netForHole = $strokes - $handicapStrokes;
 

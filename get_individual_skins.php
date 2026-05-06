@@ -160,9 +160,17 @@ while ($row = $scoreResult->fetch_assoc()) {
     $handicap = isset($golfers[$golfer_id]) ? $golfers[$golfer_id]['playing_handicap'] : 0;
     $index = $holeMap[$hole];
 
-    // Calculate handicap strokes: full 18 gets 1 per hole, >18 gets 2 on some
+    // Calculate handicap strokes (0.5 per stroke in skins)
     $bonus = 0;
-    if ($handicap >= $index) $bonus += 0.5;
+    if ($handicap >= 0) {
+      // Positive handicap: receive strokes on lowest-index (hardest) holes
+      if ($handicap >= $index) $bonus += 0.5;
+      if ($handicap > 18 && $handicap - 18 >= $index) $bonus += 0.5;
+    } else {
+      // Plus handicapper: pay penalty on highest-index (easiest) holes
+      $absHcp = abs($handicap);
+      if ($index > 18 - $absHcp) $bonus -= 0.5;
+    }
 
     $net = $strokes - $bonus;
 
