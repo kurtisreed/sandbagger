@@ -16,7 +16,68 @@ function initializeApiUrl() {
 
 // Initialize immediately and also when DOM is ready
 initializeApiUrl();
-document.addEventListener('DOMContentLoaded', initializeApiUrl);
+document.addEventListener('DOMContentLoaded', () => {
+  initializeApiUrl();
+  initOfflineBanner();
+});
+
+// ── Offline score save helper ─────────────────────────────────────────────────
+
+function updateOfflineBanner() {
+  const banner = document.getElementById('offline-banner');
+  const countEl = document.getElementById('offline-pending-count');
+  if (!banner) return;
+
+  if (!navigator.onLine) {
+    banner.style.display = 'block';
+    getPendingCount().then(n => {
+      countEl.textContent = n > 0 ? ` (${n} pending)` : '';
+    });
+  } else {
+    banner.style.display = 'none';
+    countEl.textContent = '';
+  }
+}
+
+function initOfflineBanner() {
+  updateOfflineBanner();
+
+  window.addEventListener('offline', updateOfflineBanner);
+
+  window.addEventListener('online', async () => {
+    const synced = await syncPendingScores(API_BASE_URL);
+    if (synced > 0) console.log(`Synced ${synced} offline score(s)`);
+    updateOfflineBanner();
+  });
+}
+
+async function saveScore(payload, onSuccess) {
+  if (navigator.onLine) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/save_score.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (data.success) {
+        onSuccess();
+      } else {
+        console.error('Save failed:', data.message);
+      }
+    } catch {
+      // Network error despite being "online" — queue it
+      await queueScore(payload);
+      updateOfflineBanner();
+      onSuccess(); // update UI optimistically
+    }
+  } else {
+    await queueScore(payload);
+    updateOfflineBanner();
+    onSuccess(); // update UI optimistically
+  }
+}
 
 if ('serviceWorker' in navigator && !API_BASE_URL) {
   // Only register service worker in web, not in native app
@@ -1432,6 +1493,7 @@ function loadWolfScoring() {
             updateScoreCellClasses();
           }
         });
+        applyPendingScores(matchId);
 
         // Load partner selections
         wolfPartners.forEach(partner => {
@@ -1465,23 +1527,11 @@ function loadWolfScoring() {
             strokes: parseInt(strokes)
           };
 
-          fetch(`${API_BASE_URL}/save_score.php`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-            credentials: 'include'
-          })
-          .then(res => res.json())
-          .then(data => {
-            if (data.success) {
-              updateTotalScores();
-              updateScoreCellClasses();
-              calculateWolfPoints();
-            } else {
-              console.error("Save failed:", data.message);
-            }
-          })
-          .catch(err => console.error("Fetch error:", err));
+          saveScore(payload, () => {
+            updateTotalScores();
+            updateScoreCellClasses();
+            calculateWolfPoints();
+          });
         });
       });
 
@@ -1957,6 +2007,7 @@ function loadRabbitScoring() {
             updateScoreCellClasses();
           }
         });
+        applyPendingScores(matchId);
         updateTotalScores();
         calculateRabbitWinners();
       });
@@ -1977,23 +2028,11 @@ function loadRabbitScoring() {
             strokes: parseInt(strokes)
           };
 
-          fetch(`${API_BASE_URL}/save_score.php`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-            credentials: 'include'
-          })
-          .then(res => res.json())
-          .then(data => {
-            if (data.success) {
-              updateTotalScores();
-              updateScoreCellClasses();
-              calculateRabbitWinners();
-            } else {
-              console.error("Save failed:", data.message);
-            }
-          })
-          .catch(err => console.error("Fetch error:", err));
+          saveScore(payload, () => {
+            updateTotalScores();
+            updateScoreCellClasses();
+            calculateRabbitWinners();
+          });
         });
       });
     })
@@ -2905,9 +2944,10 @@ function loadBestBallScoring() {
             }
           }
         });
+        applyPendingScores(matchId);
         updateTotalScores();
         updateFinalizeButtonVisibility();
-        calculateBestBallStatus(); // Calculate best ball results after loading scores
+        calculateBestBallStatus();
       });
 
       // Add score change listeners
@@ -2926,24 +2966,12 @@ function loadBestBallScoring() {
             strokes: parseInt(strokes)
           };
 
-          fetch(`${API_BASE_URL}/save_score.php`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-            credentials: 'include'
-          })
-          .then(res => res.json())
-          .then(data => {
-            if (data.success) {
-              updateTotalScores();
-              updateFinalizeButtonVisibility();
-              updateScoreCellClasses();
-              calculateBestBallStatus(); // Update best ball results after score change
-            } else {
-              console.error("Save failed:", data.message);
-            }
-          })
-          .catch(err => console.error("Fetch error:", err));
+          saveScore(payload, () => {
+            updateTotalScores();
+            updateFinalizeButtonVisibility();
+            updateScoreCellClasses();
+            calculateBestBallStatus();
+          });
         });
       });
     })
@@ -3163,6 +3191,7 @@ function loadBestBallScorecardReadOnly() {
             }
           });
 
+          applyPendingScores(matchId);
           updateTotalScoresReadOnly(golfers, holeInfo);
           calculateBestBallStatusReadOnly(golfers, strokeMaps);
         });
@@ -3561,6 +3590,7 @@ function loadTodaysMatch() {
               }
             }
           });
+          applyPendingScores(data.match[0].match_id);
           calculateBestBallStatus();
           updateTotalScores();
           updateFinalizeButtonVisibility();
@@ -3587,26 +3617,13 @@ function loadTodaysMatch() {
             strokes: parseInt(strokes)
           };
 
-          fetch("save_score.php", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-          })
-          .then(res => res.json())
-          .then(data => {
-            if (data.success) {
-              
-              refreshScores(); // 🔁 fetch latest after save
-              calculateBestBallStatus();
-              updateTotalScores();
-              updateFinalizeButtonVisibility();
-              updateScoreCellClasses();
-
-            } else {
-              console.error("❌ Save failed:", data.message);
-            }
-          })
-          .catch(err => console.error("Fetch error:", err));
+          saveScore(payload, () => {
+            refreshScores();
+            calculateBestBallStatus();
+            updateTotalScores();
+            updateFinalizeButtonVisibility();
+            updateScoreCellClasses();
+          });
         });
       });
     })
@@ -3847,6 +3864,7 @@ function loadGuysTripMatch() {
             }
           }
         });
+        applyPendingScores(currentMatchId);
         calculateGuysTripBestBall();
         updateTotalScores();
         updateFinalizeButtonVisibility();
@@ -3869,24 +3887,13 @@ function loadGuysTripMatch() {
             strokes: parseInt(strokes)
           };
 
-          fetch("save_score.php", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-          })
-          .then(res => res.json())
-          .then(data => {
-            if (data.success) {
-              refreshScores();
-              calculateGuysTripBestBall();
-              updateTotalScores();
-              updateFinalizeButtonVisibility();
-              updateScoreCellClasses();
-            } else {
-              console.error("Save failed:", data.message);
-            }
-          })
-          .catch(err => console.error("Fetch error:", err));
+          saveScore(payload, () => {
+            refreshScores();
+            calculateGuysTripBestBall();
+            updateTotalScores();
+            updateFinalizeButtonVisibility();
+            updateScoreCellClasses();
+          });
         });
       });
     })

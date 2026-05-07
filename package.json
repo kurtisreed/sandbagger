@@ -5,7 +5,7 @@
   "main": "index.html",
   "scripts": {
     "clean": "rm -rf www/* && mkdir -p www/api www/icons www/images www/js www/css",
-    "copy:core": "cp index.html script.js style.css manifest.json service-worker.js favicon.png www/ 2>/dev/null || true",
+    "copy:core": "cp index.html script.js style.css manifest.json service-worker.js offline-sync.js favicon.png www/ 2>/dev/null || true",
     "copy:php": "find . -maxdepth 1 -name '*.php' -not -name 'admin.php' -exec cp {} www/ \\;",
     "copy:dirs": "cp -r api icons images www/",
     "copy:admin": "cp admin.php tournament-assign.html www/ 2>/dev/null || true && cp -r js css www/",

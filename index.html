@@ -24,6 +24,12 @@
 <body>
 <button id="btnInstall" style="display:none;">Install Sandbagger App</button>
 
+<!-- Offline banner -->
+<div id="offline-banner" style="display:none; position:fixed; bottom:0; left:0; right:0; background:#e65100; color:white; text-align:center; padding:0.5rem 1rem; font-size:0.9rem; font-weight:bold; z-index:9999;">
+  Offline — scores are saved locally and will sync when connected
+  <span id="offline-pending-count"></span>
+</div>
+
 <!-- Universal User Header Bar -->
 <div id="user-header-bar" style="display: none;">
   <div class="user-header-content">
@@ -255,6 +261,7 @@
     <div id="score-entry-content" style="padding-bottom: 2rem;"></div>
   </main>
 </div>  
+  <script src="offline-sync.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
