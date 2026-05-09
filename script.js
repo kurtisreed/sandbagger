@@ -8301,6 +8301,61 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Delete Account
+  const deleteAccountBtn = document.getElementById('delete-account-btn');
+  const deleteAccountConfirm = document.getElementById('delete-account-confirm');
+  const deleteAccountConfirmBtn = document.getElementById('delete-account-confirm-btn');
+  const deleteAccountCancelBtn = document.getElementById('delete-account-cancel-btn');
+
+  if (deleteAccountBtn) {
+    deleteAccountBtn.addEventListener('click', () => {
+      deleteAccountConfirm.style.display = 'block';
+      deleteAccountBtn.style.display = 'none';
+    });
+  }
+
+  if (deleteAccountCancelBtn) {
+    deleteAccountCancelBtn.addEventListener('click', () => {
+      deleteAccountConfirm.style.display = 'none';
+      deleteAccountBtn.style.display = 'block';
+    });
+  }
+
+  if (deleteAccountConfirmBtn) {
+    deleteAccountConfirmBtn.addEventListener('click', () => {
+      deleteAccountConfirmBtn.disabled = true;
+      deleteAccountConfirmBtn.textContent = 'Deleting…';
+
+      fetch(`${API_BASE_URL}/api/delete_golfer.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ golfer_id: currentUser.golfer_id }),
+        credentials: 'include'
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            // Clear session and return to PIN screen
+            localStorage.removeItem('sb_golfer');
+            localStorage.removeItem('sb_pin_verified');
+            currentUser = null;
+            document.getElementById('edit-user-container').style.display = 'none';
+            document.getElementById('user-header-bar').style.display = 'none';
+            document.getElementById('pin-container').style.display = 'flex';
+          } else {
+            deleteAccountConfirmBtn.disabled = false;
+            deleteAccountConfirmBtn.textContent = 'Yes, Delete My Account';
+            alert('Error deleting account: ' + (data.error || 'Please try again.'));
+          }
+        })
+        .catch(() => {
+          deleteAccountConfirmBtn.disabled = false;
+          deleteAccountConfirmBtn.textContent = 'Yes, Delete My Account';
+          alert('Connection error. Please try again.');
+        });
+    });
+  }
+
   // Round Type Selector event handlers
   const continueRoundTypeBtn = document.getElementById('continue-round-type-btn');
   if (continueRoundTypeBtn) {

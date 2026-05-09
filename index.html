@@ -256,6 +256,20 @@
   </form>
 
   <div id="edit-user-message" style="margin-top: 1rem; text-align: center;"></div>
+
+  <div style="max-width: 500px; margin: 2rem auto 0; border-top: 1px solid #eee; padding-top: 1.5rem;">
+    <div id="delete-account-confirm" style="display: none; background: #fff3f3; border: 1px solid #f5c6c6; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+      <p style="margin: 0 0 0.75rem; font-weight: bold; color: #c0392b;">Are you sure?</p>
+      <p style="margin: 0 0 1rem; font-size: 0.9rem; color: #555;">This will deactivate your account. Your scoring history will be preserved.</p>
+      <div style="display: flex; gap: 0.75rem;">
+        <button id="delete-account-confirm-btn" style="flex: 1; padding: 0.65rem; background: #c0392b; color: white; border: none; border-radius: 4px; font-size: 0.95rem; font-weight: bold; cursor: pointer;">Yes, Delete My Account</button>
+        <button id="delete-account-cancel-btn" style="flex: 1; padding: 0.65rem; background: #eee; color: #333; border: none; border-radius: 4px; font-size: 0.95rem; cursor: pointer;">Cancel</button>
+      </div>
+    </div>
+    <button id="delete-account-btn" style="width: 100%; padding: 0.75rem; background: white; color: #c0392b; border: 2px solid #c0392b; border-radius: 4px; font-size: 1rem; font-weight: bold; cursor: pointer;">
+      Delete Account
+    </button>
+  </div>
 </div>
 
 <div class="container" id="app-content" style="display: none;">
