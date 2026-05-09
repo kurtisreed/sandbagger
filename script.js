@@ -7902,17 +7902,19 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Menu option: Dashboard
-  document.getElementById('menu-dashboard').addEventListener('click', () => {
+  function returnToDashboard() {
     hamburgerDropdown.classList.remove('show');
-    // Hide other containers
     document.getElementById('app-content').style.display = 'none';
     document.getElementById('round-history-container').style.display = 'none';
     document.getElementById('best-ball-setup').style.display = 'none';
     document.getElementById('tournament-history-container').style.display = 'none';
     document.getElementById('edit-user-container').style.display = 'none';
-    // Show dashboard
     document.getElementById('user-dashboard').style.display = 'block';
-  });
+  }
+
+  document.getElementById('menu-dashboard').addEventListener('click', returnToDashboard);
+
+  document.getElementById('user-header-name').addEventListener('click', returnToDashboard);
 
   // Menu option: My History
   document.getElementById('menu-my-history').addEventListener('click', () => {
