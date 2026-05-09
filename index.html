@@ -46,13 +46,28 @@
         <button id="menu-dashboard" type="button">Dashboard</button>
         <button id="menu-my-history" type="button">My History</button>
         <button id="menu-edit-user" type="button">Edit User</button>
+        <button id="menu-change-pin" type="button" style="display:none;">Change Group PIN</button>
         <button id="menu-logout" type="button">Logout</button>
       </div>
     </div>
   </div>
 </div>
 
-<div id="auth-container" class="container">
+<!-- PIN screen (shown on first launch / after logout) -->
+<div id="pin-container" style="display: none;">
+  <form id="pin-form">
+    <h2>Sandbagger Scoring</h2>
+    <img class="form-logo" src="/images/cartoon.png" alt="Sandbagger Logo">
+    <div class="auth-card">
+      <p class="pin-prompt">Enter your group PIN to continue</p>
+      <input type="password" id="pin-input" inputmode="numeric" maxlength="10" placeholder="Group PIN">
+      <button type="submit">Enter</button>
+      <p id="pin-error" style="display: none;">Incorrect PIN. Please try again.</p>
+    </div>
+  </form>
+</div>
+
+<div id="auth-container" class="container" style="display: none;">
         <form id="auth-form">
             <h2 class="form-title">Sandbagger Scoring</h2>
             <img class="form-logo" src="/images/cartoon.png" alt="Sandbagger Logo">
@@ -174,6 +189,20 @@
     <button id="add-tee-time-btn" type="button" style="width: 100%; padding: 0.75rem; background: #28a745; color: white; border: none; border-radius: 4px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-bottom: 0.5rem;">+ Add Tee Time</button>
     <button id="save-all-btn" type="button" style="width: 100%; padding: 0.75rem; background: #4F2185; color: white; border: none; border-radius: 4px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-bottom: 0.5rem;">Save Round</button>
     <button id="cancel-tee-times-btn" type="button" style="width: 100%; padding: 0.75rem; background: #ccc; color: #333; border: none; border-radius: 4px; font-size: 1rem; cursor: pointer;">Cancel</button>
+  </div>
+</div>
+
+<!-- Change PIN modal (admin only) -->
+<div id="change-pin-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:10000; align-items:center; justify-content:center;">
+  <div style="background:white; border-radius:8px; padding:1.5rem; width:90%; max-width:320px;">
+    <h3 style="margin:0 0 1rem 0;">Change Group PIN</h3>
+    <input type="password" id="new-pin-input" inputmode="numeric" maxlength="10" placeholder="New PIN"
+      style="width:100%; padding:0.6rem; font-size:1.1rem; text-align:center; border:1px solid #ccc; border-radius:4px; box-sizing:border-box; margin-bottom:0.75rem; letter-spacing:0.2rem;">
+    <input type="password" id="new-pin-confirm" inputmode="numeric" maxlength="10" placeholder="Confirm PIN"
+      style="width:100%; padding:0.6rem; font-size:1.1rem; text-align:center; border:1px solid #ccc; border-radius:4px; box-sizing:border-box; margin-bottom:0.75rem; letter-spacing:0.2rem;">
+    <p id="change-pin-error" style="color:red; font-size:0.85rem; margin:0 0 0.75rem 0; display:none;"></p>
+    <button id="save-pin-btn" style="width:100%; padding:0.65rem; background:#4F2185; color:white; border:none; border-radius:4px; font-size:1rem; font-weight:bold; cursor:pointer; margin-bottom:0.5rem;">Save PIN</button>
+    <button id="cancel-pin-btn" style="width:100%; padding:0.65rem; background:#ccc; color:#333; border:none; border-radius:4px; font-size:1rem; cursor:pointer;">Cancel</button>
   </div>
 </div>
 

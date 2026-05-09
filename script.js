@@ -6475,22 +6475,24 @@ let currentUser = null;
 
 function loadUserDashboard(golfer) {
   currentUser = golfer;
-  // Save to sessionStorage for page reloads
   sessionStorage.setItem('current_user', JSON.stringify(golfer));
 
-  const authContainer = document.getElementById('auth-container');
-  const dashboard = document.getElementById('user-dashboard');
+  // Persist login across sessions
+  localStorage.setItem('sb_golfer', JSON.stringify(golfer));
+  localStorage.setItem('sb_pin_verified', 'true');
+
+  document.getElementById('pin-container').style.display = 'none';
+  document.getElementById('auth-container').style.display = 'none';
+  document.getElementById('user-dashboard').style.display = 'block';
+
   const userHeaderBar = document.getElementById('user-header-bar');
-  const userHeaderName = document.getElementById('user-header-name');
-
-  authContainer.style.display = 'none';
-  dashboard.style.display = 'block';
-
-  // Show and update user header bar
   userHeaderBar.style.display = 'block';
-  userHeaderName.textContent = `${golfer.first_name} ${golfer.last_name}`;
+  document.getElementById('user-header-name').textContent = `${golfer.first_name} ${golfer.last_name}`;
 
-  // Load user's tournaments
+  // Show Change PIN option for admins
+  const changePinBtn = document.getElementById('menu-change-pin');
+  if (changePinBtn) changePinBtn.style.display = golfer.role === 'administrator' ? 'block' : 'none';
+
   loadUserTournaments(golfer.golfer_id);
 }
 
@@ -7792,6 +7794,10 @@ document.addEventListener('DOMContentLoaded', () => {
   hamburgerBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     hamburgerDropdown.classList.toggle('show');
+    const changePinBtn = document.getElementById('menu-change-pin');
+    if (changePinBtn) {
+      changePinBtn.style.display = (currentUser && currentUser.role === 'administrator') ? 'block' : 'none';
+    }
   });
 
   // Close menu when clicking outside
@@ -7908,14 +7914,142 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('tournament-history-container').style.display = 'none';
     document.getElementById('edit-user-container').style.display = 'none';
     document.getElementById('user-header-bar').style.display = 'none';
-    document.getElementById('auth-container').style.display = 'flex';
+    document.getElementById('auth-container').style.display = 'none';
     document.getElementById('auth-form').reset();
     newGolferForm.style.display = 'none';
+    // Return to PIN screen and clear persisted login
+    localStorage.removeItem('sb_golfer');
+    localStorage.removeItem('sb_pin_verified');
+    document.getElementById('pin-input').value = '';
+    document.getElementById('pin-error').style.display = 'none';
+    document.getElementById('pin-container').style.display = 'flex';
     sessionStorage.clear();
     currentUser = null;
   });
 
-  // Clear any Quick Round session data on page load - Quick Rounds don't persist across refreshes
+  // ── PIN screen & localStorage auto-login ───────────────────────────────────
+
+  const pinForm = document.getElementById('pin-form');
+  const pinInput = document.getElementById('pin-input');
+  const pinError = document.getElementById('pin-error');
+
+  // Check for persisted login — skip PIN + golfer picker entirely
+  const storedGolfer = localStorage.getItem('sb_golfer');
+  const pinVerified  = localStorage.getItem('sb_pin_verified');
+
+  if (storedGolfer && pinVerified === 'true') {
+    const golfer = JSON.parse(storedGolfer);
+    if (!golfer.role) {
+      // Stale stored golfer missing role — re-fetch to get complete data
+      fetch(`${API_BASE_URL}/get_golfers.php`)
+        .then(r => r.json())
+        .then(golfers => {
+          const fresh = golfers.find(g => g.golfer_id === golfer.golfer_id);
+          if (fresh) {
+            loadUserDashboard(fresh);
+          } else {
+            document.getElementById('pin-container').style.display = 'flex';
+          }
+        })
+        .catch(() => loadUserDashboard(golfer));
+    } else {
+      loadUserDashboard(golfer);
+    }
+  } else {
+    document.getElementById('pin-container').style.display = 'flex';
+  }
+
+  // PIN form submission
+  pinForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const pin = pinInput.value.trim();
+    if (!pin) return;
+    const submitBtn = pinForm.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Checking…';
+    pinError.style.display = 'none';
+    try {
+      const res  = await fetch(`${API_BASE_URL}/api/verify_pin.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin }),
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (data.success) {
+        document.getElementById('pin-container').style.display = 'none';
+        document.getElementById('auth-container').style.display = 'flex';
+      } else {
+        pinError.style.display = 'block';
+        pinInput.value = '';
+        pinInput.focus();
+      }
+    } catch {
+      pinError.textContent = 'Connection error. Please try again.';
+      pinError.style.display = 'block';
+    }
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Enter';
+  });
+
+  // ── Change PIN (admin only) ─────────────────────────────────────────────────
+
+  const changePinModal  = document.getElementById('change-pin-modal');
+  const newPinInput     = document.getElementById('new-pin-input');
+  const newPinConfirm   = document.getElementById('new-pin-confirm');
+  const changePinError  = document.getElementById('change-pin-error');
+
+  document.getElementById('menu-change-pin').addEventListener('click', () => {
+    hamburgerDropdown.classList.remove('show');
+    newPinInput.value = '';
+    newPinConfirm.value = '';
+    changePinError.style.display = 'none';
+    changePinModal.style.display = 'flex';
+    newPinInput.focus();
+  });
+
+  document.getElementById('cancel-pin-btn').addEventListener('click', () => {
+    changePinModal.style.display = 'none';
+  });
+
+  document.getElementById('save-pin-btn').addEventListener('click', async () => {
+    const val     = newPinInput.value.trim();
+    const confirm = newPinConfirm.value.trim();
+    changePinError.style.display = 'none';
+    if (!val) {
+      changePinError.textContent = 'Please enter a PIN.';
+      changePinError.style.display = 'block';
+      return;
+    }
+    if (val !== confirm) {
+      changePinError.textContent = 'PINs do not match.';
+      changePinError.style.display = 'block';
+      return;
+    }
+    const saveBtn = document.getElementById('save-pin-btn');
+    saveBtn.disabled = true;
+    try {
+      const res  = await fetch(`${API_BASE_URL}/api/app_settings.php`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: 'group_pin', value: val }),
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (data.success) {
+        changePinModal.style.display = 'none';
+      } else {
+        changePinError.textContent = 'Error saving PIN.';
+        changePinError.style.display = 'block';
+      }
+    } catch {
+      changePinError.textContent = 'Connection error. Please try again.';
+      changePinError.style.display = 'block';
+    }
+    saveBtn.disabled = false;
+  });
+
+  // ── Clear any Quick Round session data on page load - Quick Rounds don't persist across refreshes
   sessionStorage.removeItem('best_ball_match_id');
   sessionStorage.removeItem('rabbit_match_id');
   sessionStorage.removeItem('wolf_match_id');
