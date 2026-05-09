@@ -3399,9 +3399,14 @@ function loadTodaysMatch() {
     .then(data => {
       const matchGolfers = data.match;
       holeInfo = data.holes;
-      if (data.error || data.length === 0) {
+      if (data.error || !matchGolfers || matchGolfers.length === 0) {
         const container = document.getElementById("score-entry-content");
-        container.innerHTML = "<p>Matches not yet assigned.</p>";
+        container.innerHTML = `
+          <div class="no-match-card">
+            <img src="/images/cartoon.png" alt="Sandbagger" class="no-match-img">
+            <h2 class="no-match-title">No Matchups Yet</h2>
+            <p class="no-match-msg">The commissioner hasn't assigned matchups for this round. Check back soon!</p>
+          </div>`;
         return;
       }
 
@@ -3653,7 +3658,12 @@ function loadGuysTripMatch() {
 
       if (data.error || !matchGolfers || matchGolfers.length === 0) {
         const container = document.getElementById("score-entry-content");
-        container.innerHTML = "<p>Matches not yet assigned.</p>";
+        container.innerHTML = `
+          <div class="no-match-card">
+            <img src="/images/cartoon.png" alt="Sandbagger" class="no-match-img">
+            <h2 class="no-match-title">No Matchups Yet</h2>
+            <p class="no-match-msg">The commissioner hasn't assigned matchups for this round. Check back soon!</p>
+          </div>`;
         return;
       }
 
@@ -4370,10 +4380,15 @@ function loadTodaySummary() {
       container.innerHTML = "";
 
       if (!Array.isArray(matches) || matches.length === 0) {
-        container.textContent = "Matches not yet assigned.";
+        container.innerHTML = `
+          <div class="no-match-card">
+            <img src="/images/cartoon.png" alt="Sandbagger" class="no-match-img">
+            <h2 class="no-match-title">No Matchups Yet</h2>
+            <p class="no-match-msg">The commissioner hasn't assigned matchups for this round. Check back soon!</p>
+          </div>`;
         return;
       }
-      
+
       container.innerHTML = "<h3>Matches (click match to see scorecard)</h3>";
       assignCSSColors(primaryTeamColor, secondaryTeamColor);
       matches.forEach(match => {
@@ -4615,7 +4630,12 @@ function loadGuysTripSummary() {
       container.innerHTML = "";
 
       if (!Array.isArray(matches) || matches.length === 0) {
-        container.textContent = "Matches not yet assigned.";
+        container.innerHTML = `
+          <div class="no-match-card">
+            <img src="/images/cartoon.png" alt="Sandbagger" class="no-match-img">
+            <h2 class="no-match-title">No Matchups Yet</h2>
+            <p class="no-match-msg">The commissioner hasn't assigned matchups for this round. Check back soon!</p>
+          </div>`;
         return;
       }
 
@@ -7582,6 +7602,26 @@ function loadFullTournamentView(tournamentId) {
   document.getElementById('tournament-history-container').style.display = 'block';
 }
 
+function loadDefaultMatchTab(roundId, tournamentId, golferId) {
+  const url = `${API_BASE_URL}/get_match_by_round.php?round_id=${roundId}&tournament_id=${tournamentId}&golfer_id=${golferId}`;
+  fetch(url, { credentials: 'include' })
+    .then(res => res.json())
+    .then(data => {
+      const hasMatch = data.match && data.match.length > 0;
+      const page = hasMatch ? 'my-match' : 'tournament';
+      document.querySelectorAll('.tabs button').forEach(btn => btn.classList.remove('active'));
+      const tabBtn = document.querySelector(`button[data-page="${page}"]`);
+      if (tabBtn) tabBtn.classList.add('active');
+      loadPage(page);
+    })
+    .catch(() => {
+      document.querySelectorAll('.tabs button').forEach(btn => btn.classList.remove('active'));
+      const btn = document.querySelector('button[data-page="my-match"]');
+      if (btn) btn.classList.add('active');
+      loadPage('my-match');
+    });
+}
+
 function loadTournamentRound(roundId, tournamentId, roundName = '') {
   // Hide dashboard and other containers
   document.getElementById('user-dashboard').style.display = 'none';
@@ -7657,20 +7697,13 @@ function loadTournamentRound(roundId, tournamentId, roundName = '') {
     // Show the app content
     document.getElementById('app-content').style.display = 'block';
 
-    // Set the my-match tab as active
-    document.querySelectorAll('.tabs button').forEach(btn => btn.classList.remove('active'));
-    const myMatchBtn = document.querySelector('button[data-page="my-match"]');
-    if (myMatchBtn) {
-      myMatchBtn.classList.add('active');
-    }
-
-    // Load the my-match page
-    loadPage('my-match');
+    // Default to My Match, but fall back to Tournament tab if no matchups assigned yet
+    loadDefaultMatchTab(roundId, tournamentId, currentUser.golfer_id);
   })
   .catch(err => {
     console.error('Error loading tournament data:', err);
     document.getElementById('app-content').style.display = 'block';
-    loadPage('my-match');
+    loadDefaultMatchTab(roundId, tournamentId, currentUser.golfer_id);
   });
 }
 
@@ -7736,15 +7769,8 @@ function loadGuysTripTournamentRound(roundId, tournamentId, roundName = '', form
   // Show the app content
   document.getElementById('app-content').style.display = 'block';
 
-  // Set the my-match tab as active
-  document.querySelectorAll('.tabs button').forEach(btn => btn.classList.remove('active'));
-  const myMatchBtn = document.querySelector('button[data-page="my-match"]');
-  if (myMatchBtn) {
-    myMatchBtn.classList.add('active');
-  }
-
-  // Load the my-match page
-  loadPage('my-match');
+  // Default to My Match, but fall back to Tournament tab if no matchups assigned yet
+  loadDefaultMatchTab(roundId, tournamentId, currentUser.golfer_id);
 }
 
 function loadEditUserPage() {

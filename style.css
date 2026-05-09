@@ -367,6 +367,38 @@ main {
   max-height: 800px;
 }
 
+.no-match-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1.5rem 2.5rem;
+  text-align: center;
+}
+
+.no-match-img {
+  width: 80vw;
+  max-width: 320px;
+  border-radius: 16px;
+  margin-bottom: 1.5rem;
+  filter: drop-shadow(0 6px 20px rgba(0,0,0,0.2));
+}
+
+.no-match-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #4F2185;
+  margin: 0 0 0.6rem;
+  letter-spacing: 0.02em;
+}
+
+.no-match-msg {
+  font-size: 1rem;
+  color: #666;
+  max-width: 280px;
+  line-height: 1.5;
+  margin: 0;
+}
+
 .score-table td {
   position: relative;
 }
