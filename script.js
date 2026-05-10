@@ -6701,15 +6701,24 @@ async function showEditTournamentForm(tournament) {
 
   const isRyderCup = parseInt(tournament.format_id) === 3;
 
-  // Fetch teams, all golfers, and current tournament golfers in parallel
-  const [teams, allGolfers, tournamentGolfers] = await Promise.all([
+  // Fetch teams, all golfers, tournament golfers, and locked handicaps in parallel
+  const [teams, allGolfers, tournamentGolfers, lockedHcps] = await Promise.all([
     fetch(`${API_BASE_URL}/api/tournament_teams.php?tournament_id=${tournament.tournament_id}`, { credentials: 'include' }).then(r => r.json()),
     fetch(`${API_BASE_URL}/api/golfers.php`, { credentials: 'include' }).then(r => r.json()),
     fetch(`${API_BASE_URL}/api/tournament_golfers.php?tournament_id=${tournament.tournament_id}`, { credentials: 'include' }).then(r => r.json()),
+    fetch(`${API_BASE_URL}/api/lock_handicaps.php?tournament_id=${tournament.tournament_id}`, { credentials: 'include' }).then(r => r.json()).catch(() => []),
   ]);
 
   const assignedMap = {}; // golfer_id → team_id (or null)
   tournamentGolfers.forEach(tg => { assignedMap[tg.golfer_id] = tg.team_id || null; });
+
+  const lockedHcpMap = {}; // golfer_id → { live, locked (null if never explicitly set) }
+  lockedHcps.forEach(row => {
+    lockedHcpMap[row.golfer_id] = {
+      live:   parseFloat(row.live_handicap),
+      locked: row.handicap_at_assignment !== null ? parseFloat(row.handicap_at_assignment) : null,
+    };
+  });
 
   // Build teams section (Ryder Cup only)
   let teamsHtml = '';
@@ -6728,39 +6737,68 @@ async function showEditTournamentForm(tournament) {
     teamsHtml += '</div>';
   }
 
-  // Build golfer roster
-  let rosterHtml = `<div style="margin-bottom:1.5rem;">
-    <h3 style="margin:0 0 0.75rem 0; font-size:1rem; border-bottom:1px solid #eee; padding-bottom:0.4rem;">Golfers</h3>
-    <div style="max-height:300px; overflow-y:auto; border:1px solid #eee; border-radius:4px; padding:0.5rem;">`;
+  // Build golfer roster table
+  const thStyle = 'padding:0.4rem 0.5rem; font-size:0.78rem; color:#888; font-weight:600; text-align:left; border-bottom:2px solid #eee; white-space:nowrap; line-height:1.2;';
+  const tdStyle = 'padding:0.45rem 0.5rem; font-size:0.88rem; vertical-align:middle;';
 
+  let rosterRows = '';
   allGolfers.forEach(g => {
     const isChecked = g.golfer_id in assignedMap;
-    const teamId = assignedMap[g.golfer_id];
-    const name = `${g.first_name} ${g.last_name}`;
+    const teamId    = assignedMap[g.golfer_id];
+    const hcpData   = lockedHcpMap[g.golfer_id];
+    const liveHcp   = parseFloat(g.handicap);
+    const lockedHcp = hcpData?.locked;
 
-    let teamDropdown = '';
+    const lockedCell = isChecked
+      ? (lockedHcp !== null && lockedHcp !== undefined
+          ? `<span style="font-weight:bold;${lockedHcp !== liveHcp ? ' color:#b8860b;' : ''}">${lockedHcp}</span>`
+          : `<span style="color:#aaa;">—</span>`)
+      : `<span style="color:#ddd;">—</span>`;
+
+    let teamCell = '—';
     if (isRyderCup && teams.length > 0) {
       const opts = teams.map(t =>
         `<option value="${t.team_id}" ${teamId == t.team_id ? 'selected' : ''}>${t.name}</option>`
       ).join('');
-      teamDropdown = `
-        <select class="golfer-team-select" data-golfer-id="${g.golfer_id}"
-          style="margin-left:0.5rem; padding:0.2rem 0.4rem; font-size:0.85rem; border:1px solid #ccc; border-radius:4px; ${isChecked ? '' : 'display:none;'}">
-          <option value="">-- No team --</option>
-          ${opts}
-        </select>`;
+      teamCell = `<select class="golfer-team-select" data-golfer-id="${g.golfer_id}"
+        style="padding:0.2rem 0.3rem; font-size:0.82rem; border:1px solid #ccc; border-radius:4px; ${isChecked ? '' : 'display:none;'}">
+        <option value="">— no team —</option>${opts}
+      </select>`;
     }
 
-    rosterHtml += `
-      <label style="display:flex; align-items:center; gap:0.4rem; padding:0.3rem 0; cursor:pointer;">
-        <input type="checkbox" class="golfer-checkbox" data-golfer-id="${g.golfer_id}" ${isChecked ? 'checked' : ''}
-          style="width:1rem; height:1rem; cursor:pointer;">
-        <span style="flex:1; font-size:0.95rem;">${name} <span style="color:#999; font-size:0.8rem;">(hdcp: ${g.handicap})</span></span>
-        ${teamDropdown}
-      </label>`;
+    rosterRows += `
+      <tr style="border-bottom:1px solid #f2f2f2;${isChecked ? '' : ' opacity:0.5;'}">
+        <td style="${tdStyle}">
+          <label style="display:flex; align-items:center; gap:0.4rem; cursor:pointer; margin:0;">
+            <input type="checkbox" class="golfer-checkbox" data-golfer-id="${g.golfer_id}" ${isChecked ? 'checked' : ''}
+              style="width:1rem; height:1rem; cursor:pointer; flex-shrink:0;">
+            <span>${g.first_name} ${g.last_name}</span>
+          </label>
+        </td>
+        <td style="${tdStyle} text-align:center; color:#555;">${liveHcp}</td>
+        <td style="${tdStyle} text-align:center;">${lockedCell}</td>
+        <td style="${tdStyle}">${teamCell}</td>
+      </tr>`;
   });
 
-  rosterHtml += '</div></div>';
+  const teamHeader = isRyderCup ? `<th style="${thStyle}">Team</th>` : '';
+
+  let rosterHtml = `<div style="margin-bottom:1.5rem;">
+    <h3 style="margin:0 0 0.75rem 0; font-size:1rem; border-bottom:1px solid #eee; padding-bottom:0.4rem;">Golfers</h3>
+    <div style="max-height:360px; overflow-y:auto; border:1px solid #eee; border-radius:6px;">
+      <table style="width:100%; border-collapse:collapse;">
+        <thead style="position:sticky; top:0; background:#fafafa; z-index:1;">
+          <tr>
+            <th style="${thStyle}">Name</th>
+            <th style="${thStyle} text-align:center; white-space:normal; width:4rem;">Current<br>Hdcp</th>
+            <th style="${thStyle} text-align:center; white-space:normal; width:4rem;">Locked<br>Hdcp</th>
+            ${teamHeader}
+          </tr>
+        </thead>
+        <tbody>${rosterRows}</tbody>
+      </table>
+    </div>
+  </div>`;
 
   content.innerHTML = `
     <div style="margin-bottom:1rem;">
@@ -6785,21 +6823,144 @@ async function showEditTournamentForm(tournament) {
     <button id="save-edit-tournament-btn" style="width:100%; padding:0.75rem; background:#4F2185; color:white; border:none; border-radius:4px; font-size:1rem; font-weight:bold; cursor:pointer; margin-bottom:0.5rem;">
       Save Changes
     </button>
+    <button id="lock-handicaps-btn" style="width:100%; padding:0.75rem; background:white; color:#4F2185; border:2px solid #4F2185; border-radius:4px; font-size:1rem; font-weight:bold; cursor:pointer; margin-top:0.5rem;">
+      Lock Handicaps for Tournament
+    </button>
     <div id="edit-tournament-status" style="margin-top:0.5rem; font-size:0.9rem; text-align:center;"></div>
   `;
 
-  // Show/hide team dropdown when checkbox toggled
-  if (isRyderCup) {
-    content.querySelectorAll('.golfer-checkbox').forEach(cb => {
-      cb.addEventListener('change', function() {
+  // Checkbox toggles row dim + team dropdown visibility
+  content.querySelectorAll('.golfer-checkbox').forEach(cb => {
+    cb.addEventListener('change', function() {
+      const row = this.closest('tr');
+      if (row) row.style.opacity = this.checked ? '1' : '0.5';
+      if (isRyderCup) {
         const sel = content.querySelector(`.golfer-team-select[data-golfer-id="${this.dataset.golferId}"]`);
         if (sel) sel.style.display = this.checked ? '' : 'none';
-      });
+      }
     });
-  }
+  });
 
   document.getElementById('save-edit-tournament-btn').addEventListener('click', () => {
     saveEditTournament(tournament, teams, isRyderCup);
+  });
+
+  document.getElementById('lock-handicaps-btn').addEventListener('click', () => {
+    showLockHandicapsScreen(tournament);
+  });
+}
+
+async function showLockHandicapsScreen(tournament) {
+  const content = document.getElementById('edit-tournament-content');
+  content.innerHTML = '<p style="color:#666;">Loading golfers…</p>';
+
+  let golfers;
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/lock_handicaps.php?tournament_id=${tournament.tournament_id}`, { credentials: 'include' });
+    golfers = await res.json();
+  } catch {
+    content.innerHTML = '<p style="color:red;">Error loading golfers. Please try again.</p>';
+    return;
+  }
+
+  if (!golfers.length) {
+    content.innerHTML = '<p style="color:#666;">No golfers are assigned to this tournament yet.</p>';
+    return;
+  }
+
+  const rows = golfers.map(g => {
+    const locked = g.handicap_at_assignment !== null ? parseFloat(g.handicap_at_assignment) : parseFloat(g.live_handicap);
+    const live   = parseFloat(g.live_handicap);
+    const differs = locked !== live;
+    return `
+      <tr style="border-bottom:1px solid #eee;">
+        <td style="padding:0.6rem 0.4rem; font-size:0.95rem;">${g.first_name} ${g.last_name}</td>
+        <td style="padding:0.6rem 0.4rem; font-size:0.9rem; color:#888; text-align:center;">${live}</td>
+        <td style="padding:0.6rem 0.4rem; text-align:center;">
+          <input type="number" step="0.1"
+            class="hdcp-lock-input"
+            data-golfer-id="${g.golfer_id}"
+            value="${locked}"
+            style="width:5rem; padding:0.35rem 0.4rem; font-size:0.95rem; border:1px solid ${differs ? '#FFC62F' : '#ccc'}; border-radius:4px; text-align:center; font-weight:${differs ? 'bold' : 'normal'};">
+        </td>
+      </tr>`;
+  }).join('');
+
+  content.innerHTML = `
+    <button id="back-from-lock-handicaps" style="margin-bottom:1rem; padding:0.4rem 1rem; background:#eee; border:none; border-radius:4px; cursor:pointer; font-size:0.9rem;">← Back</button>
+    <h3 style="margin:0 0 0.25rem;">Lock Handicaps</h3>
+    <p style="margin:0 0 1rem; font-size:0.85rem; color:#666;">Edit each golfer's handicap for this tournament. Highlighted values differ from their current live handicap.</p>
+    <table style="width:100%; border-collapse:collapse; margin-bottom:1rem;">
+      <thead>
+        <tr style="border-bottom:2px solid #eee;">
+          <th style="padding:0.5rem 0.4rem; text-align:left; font-size:0.85rem; color:#888;">Golfer</th>
+          <th style="padding:0.5rem 0.4rem; text-align:center; font-size:0.85rem; color:#888;">Live Hdcp</th>
+          <th style="padding:0.5rem 0.4rem; text-align:center; font-size:0.85rem; color:#888;">Locked Hdcp</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <button id="save-lock-handicaps-btn" style="width:100%; padding:0.75rem; background:#4F2185; color:white; border:none; border-radius:4px; font-size:1rem; font-weight:bold; cursor:pointer;">
+      Lock Handicaps
+    </button>
+    <div id="lock-handicaps-status" style="margin-top:0.75rem; font-size:0.9rem; text-align:center;"></div>
+  `;
+
+  document.getElementById('back-from-lock-handicaps').addEventListener('click', () => {
+    showEditTournamentForm(tournament);
+  });
+
+  // Highlight row when value differs from live
+  content.querySelectorAll('.hdcp-lock-input').forEach(input => {
+    const golferId = input.dataset.golferId;
+    const golfer = golfers.find(g => g.golfer_id == golferId);
+    const live = parseFloat(golfer.live_handicap);
+    input.addEventListener('input', function() {
+      const val = parseFloat(this.value);
+      const differs = !isNaN(val) && val !== live;
+      this.style.borderColor = differs ? '#FFC62F' : '#ccc';
+      this.style.fontWeight  = differs ? 'bold' : 'normal';
+    });
+  });
+
+  document.getElementById('save-lock-handicaps-btn').addEventListener('click', async () => {
+    const btn    = document.getElementById('save-lock-handicaps-btn');
+    const status = document.getElementById('lock-handicaps-status');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    status.textContent = '';
+
+    const payload = [];
+    content.querySelectorAll('.hdcp-lock-input').forEach(input => {
+      payload.push({
+        golfer_id: parseInt(input.dataset.golferId),
+        handicap_at_assignment: parseFloat(input.value)
+      });
+    });
+
+    try {
+      const res  = await fetch(`${API_BASE_URL}/api/lock_handicaps.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tournament_id: tournament.tournament_id, golfers: payload }),
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (data.success) {
+        status.textContent = '✓ Handicaps locked successfully!';
+        status.style.color = '#4CAF50';
+        btn.textContent = 'Lock Handicaps';
+        btn.disabled = false;
+        setTimeout(() => showEditTournamentForm(tournament), 1500);
+      } else {
+        throw new Error(data.error || 'Unknown error');
+      }
+    } catch (err) {
+      status.textContent = 'Error: ' + err.message;
+      status.style.color = 'red';
+      btn.textContent = 'Lock Handicaps';
+      btn.disabled = false;
+    }
   });
 }
 
@@ -7773,6 +7934,232 @@ function loadGuysTripTournamentRound(roundId, tournamentId, roundName = '', form
   loadDefaultMatchTab(roundId, tournamentId, currentUser.golfer_id);
 }
 
+function loadEditGolfersPage() {
+  // Hide all other views
+  document.getElementById('user-dashboard').style.display = 'none';
+  document.getElementById('app-content').style.display = 'none';
+  document.getElementById('round-history-container').style.display = 'none';
+  document.getElementById('tournament-history-container').style.display = 'none';
+  document.getElementById('best-ball-setup').style.display = 'none';
+  document.getElementById('edit-user-container').style.display = 'none';
+
+  const container = document.getElementById('edit-golfers-container');
+  container.style.display = 'block';
+
+  // Reset add-golfer form
+  document.getElementById('add-golfer-form').style.display = 'none';
+  document.getElementById('add-golfer-btn').style.display = 'block';
+  ['new-golfer-first', 'new-golfer-last', 'new-golfer-handicap'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+
+  refreshGolferList();
+}
+
+function refreshGolferList() {
+  const list   = document.getElementById('edit-golfers-list');
+  const status = document.getElementById('edit-golfers-status');
+  list.innerHTML = '<p style="color:#888; text-align:center;">Loading…</p>';
+  status.textContent = '';
+
+  fetch(`${API_BASE_URL}/api/golfers.php`, { credentials: 'include' })
+    .then(r => r.json())
+    .then(golfers => {
+      list.innerHTML = '';
+      golfers.forEach(g => renderGolferCard(g, list));
+    })
+    .catch(() => {
+      list.innerHTML = '<p style="color:red; text-align:center;">Error loading golfers.</p>';
+    });
+}
+
+function renderGolferCard(g, list) {
+  const card = document.createElement('div');
+  card.dataset.golferId = g.golfer_id;
+  card.style.cssText = 'background:#fff; border:1px solid #eee; border-radius:8px; padding:0.75rem 1rem; margin-bottom:0.6rem; box-shadow:0 1px 3px rgba(0,0,0,0.05);';
+
+  function showView() {
+    card.innerHTML = `
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem;">
+        <div>
+          <span style="font-weight:600; font-size:1rem;">${g.first_name} ${g.last_name}</span>
+          <span style="color:#888; font-size:0.85rem; margin-left:0.5rem;">Hdcp: ${g.handicap}</span>
+        </div>
+        <div style="display:flex; gap:0.4rem; flex-shrink:0;">
+          <button class="golfer-edit-btn" style="padding:0.35rem 0.75rem; background:#f0e6ff; color:#4F2185; border:none; border-radius:4px; font-size:0.85rem; font-weight:bold; cursor:pointer;">Edit</button>
+          <button class="golfer-delete-btn" style="padding:0.35rem 0.75rem; background:#fff0f0; color:#c0392b; border:none; border-radius:4px; font-size:0.85rem; font-weight:bold; cursor:pointer;">Delete</button>
+        </div>
+      </div>`;
+
+    card.querySelector('.golfer-edit-btn').addEventListener('click', showEditView);
+    card.querySelector('.golfer-delete-btn').addEventListener('click', showDeleteConfirm);
+  }
+
+  function showEditView() {
+    card.innerHTML = `
+      <div style="display:flex; flex-direction:column; gap:0.5rem;">
+        <div style="display:flex; gap:0.4rem;">
+          <input class="ef-first" type="text" value="${g.first_name}" placeholder="First Name"
+            style="flex:1; padding:0.5rem; font-size:0.95rem; border:1px solid #ccc; border-radius:4px;">
+          <input class="ef-last" type="text" value="${g.last_name}" placeholder="Last Name"
+            style="flex:1; padding:0.5rem; font-size:0.95rem; border:1px solid #ccc; border-radius:4px;">
+        </div>
+        <input class="ef-hcp" type="number" step="0.1" value="${g.handicap}" placeholder="Handicap"
+          style="width:100%; padding:0.5rem; font-size:0.95rem; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
+        <div style="display:flex; gap:0.4rem;">
+          <button class="ef-save" style="flex:1; padding:0.55rem; background:#4F2185; color:white; border:none; border-radius:4px; font-size:0.9rem; font-weight:bold; cursor:pointer;">Save</button>
+          <button class="ef-cancel" style="flex:1; padding:0.55rem; background:#eee; color:#333; border:none; border-radius:4px; font-size:0.9rem; cursor:pointer;">Cancel</button>
+        </div>
+        <div class="ef-status" style="font-size:0.85rem; text-align:center;"></div>
+      </div>`;
+
+    card.querySelector('.ef-cancel').addEventListener('click', showView);
+    card.querySelector('.ef-save').addEventListener('click', () => {
+      const first  = card.querySelector('.ef-first').value.trim();
+      const last   = card.querySelector('.ef-last').value.trim();
+      const hcp    = parseFloat(card.querySelector('.ef-hcp').value);
+      const efStatus = card.querySelector('.ef-status');
+      if (!first || !last) { efStatus.textContent = 'Name is required.'; efStatus.style.color = 'red'; return; }
+
+      card.querySelector('.ef-save').disabled = true;
+      card.querySelector('.ef-save').textContent = 'Saving…';
+
+      fetch(`${API_BASE_URL}/api/golfers.php?golfer_id=${g.golfer_id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ first_name: first, last_name: last, handicap: hcp }),
+        credentials: 'include'
+      })
+        .then(r => r.json())
+        .then(() => {
+          g.first_name = first; g.last_name = last; g.handicap = hcp;
+          showView();
+          document.getElementById('edit-golfers-status').textContent = `✓ ${first} ${last} updated.`;
+          document.getElementById('edit-golfers-status').style.color = '#4CAF50';
+        })
+        .catch(() => { efStatus.textContent = 'Error saving. Please try again.'; efStatus.style.color = 'red'; });
+    });
+  }
+
+  function showDeleteConfirm() {
+    card.innerHTML = `
+      <div style="background:#fff3f3; border-radius:6px; padding:0.75rem;">
+        <p style="margin:0 0 0.5rem; font-weight:bold; color:#c0392b;">Delete ${g.first_name} ${g.last_name}?</p>
+        <p style="margin:0 0 0.75rem; font-size:0.85rem; color:#555;">Their scoring history will be preserved.</p>
+        <div style="display:flex; gap:0.5rem;">
+          <button class="del-confirm" style="flex:1; padding:0.55rem; background:#c0392b; color:white; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">Yes, Delete</button>
+          <button class="del-cancel" style="flex:1; padding:0.55rem; background:#eee; color:#333; border:none; border-radius:4px; cursor:pointer;">Cancel</button>
+        </div>
+      </div>`;
+
+    card.querySelector('.del-cancel').addEventListener('click', showView);
+    card.querySelector('.del-confirm').addEventListener('click', () => {
+      card.querySelector('.del-confirm').disabled = true;
+      card.querySelector('.del-confirm').textContent = 'Deleting…';
+
+      fetch(`${API_BASE_URL}/api/delete_golfer.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ golfer_id: g.golfer_id }),
+        credentials: 'include'
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            card.remove();
+            document.getElementById('edit-golfers-status').textContent = `✓ ${g.first_name} ${g.last_name} removed.`;
+            document.getElementById('edit-golfers-status').style.color = '#4CAF50';
+          } else {
+            showView();
+          }
+        })
+        .catch(() => showView());
+    });
+  }
+
+  showView();
+  list.appendChild(card);
+}
+
+// DOMContentLoaded: Edit Golfers page wiring
+document.addEventListener('DOMContentLoaded', () => {
+  const backBtn = document.getElementById('back-from-edit-golfers-btn');
+  if (backBtn) {
+    backBtn.addEventListener('click', () => {
+      document.getElementById('edit-golfers-container').style.display = 'none';
+      document.getElementById('user-dashboard').style.display = 'block';
+    });
+  }
+
+  const addBtn      = document.getElementById('add-golfer-btn');
+  const addForm     = document.getElementById('add-golfer-form');
+  const cancelNewBtn = document.getElementById('cancel-new-golfer-btn');
+  const saveNewBtn  = document.getElementById('save-new-golfer-btn');
+
+  if (addBtn) addBtn.addEventListener('click', () => {
+    addForm.style.display = 'block';
+    addBtn.style.display = 'none';
+    document.getElementById('new-golfer-first').focus();
+  });
+
+  if (cancelNewBtn) cancelNewBtn.addEventListener('click', () => {
+    addForm.style.display = 'none';
+    addBtn.style.display = 'block';
+    ['new-golfer-first', 'new-golfer-last', 'new-golfer-handicap'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+  });
+
+  if (saveNewBtn) saveNewBtn.addEventListener('click', () => {
+    const first = document.getElementById('new-golfer-first').value.trim();
+    const last  = document.getElementById('new-golfer-last').value.trim();
+    const hcp   = parseFloat(document.getElementById('new-golfer-handicap').value) || 0;
+    const status = document.getElementById('edit-golfers-status');
+
+    if (!first || !last) {
+      status.textContent = 'First and last name are required.';
+      status.style.color = 'red';
+      return;
+    }
+
+    saveNewBtn.disabled = true;
+    saveNewBtn.textContent = 'Saving…';
+
+    fetch(`${API_BASE_URL}/api/golfers.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ first_name: first, last_name: last, handicap: hcp }),
+      credentials: 'include'
+    })
+      .then(r => r.json())
+      .then(data => {
+        saveNewBtn.disabled = false;
+        saveNewBtn.textContent = 'Save';
+        if (data.inserted_id) {
+          // Add card to top of list
+          const newGolfer = { golfer_id: data.inserted_id, first_name: first, last_name: last, handicap: hcp };
+          const list = document.getElementById('edit-golfers-list');
+          renderGolferCard(newGolfer, list); // appends, then we move it
+          list.prepend(list.lastChild);
+
+          addForm.style.display = 'none';
+          document.getElementById('add-golfer-btn').style.display = 'block';
+          ['new-golfer-first', 'new-golfer-last', 'new-golfer-handicap'].forEach(id => {
+            document.getElementById(id).value = '';
+          });
+          status.textContent = `✓ ${first} ${last} added.`;
+          status.style.color = '#4CAF50';
+        }
+      })
+      .catch(() => {
+        saveNewBtn.disabled = false;
+        saveNewBtn.textContent = 'Save';
+        status.textContent = 'Error adding golfer. Please try again.';
+        status.style.color = 'red';
+      });
+  });
+});
+
 function loadEditUserPage() {
   const editUserContainer = document.getElementById('edit-user-container');
   const editUserMessage = document.getElementById('edit-user-message');
@@ -7820,10 +8207,11 @@ document.addEventListener('DOMContentLoaded', () => {
   hamburgerBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     hamburgerDropdown.classList.toggle('show');
+    const isAdmin = currentUser && currentUser.role === 'administrator';
     const changePinBtn = document.getElementById('menu-change-pin');
-    if (changePinBtn) {
-      changePinBtn.style.display = (currentUser && currentUser.role === 'administrator') ? 'block' : 'none';
-    }
+    if (changePinBtn) changePinBtn.style.display = isAdmin ? 'block' : 'none';
+    const editGolfersBtn = document.getElementById('menu-edit-golfers');
+    if (editGolfersBtn) editGolfersBtn.style.display = isAdmin ? 'block' : 'none';
   });
 
   // Close menu when clicking outside
@@ -7930,6 +8318,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (currentUser) {
       loadEditUserPage();
     }
+  });
+
+  // Menu option: Edit Golfers (admin only)
+  document.getElementById('menu-edit-golfers').addEventListener('click', () => {
+    hamburgerDropdown.classList.remove('show');
+    if (currentUser) loadEditGolfersPage();
   });
 
   // Menu option: Logout

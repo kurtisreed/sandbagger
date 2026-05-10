@@ -53,7 +53,7 @@ switch ($method) {
 
   case 'PUT':
     // Update an existing golfer
-    parse_str(file_get_contents('php://input'), $data);
+    $data = json_decode(file_get_contents('php://input'), true);
     $stmt = $conn->prepare("
       UPDATE golfers
          SET first_name = ?, last_name = ?, handicap = ?
