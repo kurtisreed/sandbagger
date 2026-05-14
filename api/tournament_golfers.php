@@ -61,6 +61,17 @@ switch ($method) {
         $handicapPct = $tournamentResult['handicap_pct'] ?? null;
         $tournamentStmt->close();
 
+        // Preserve any manually locked handicaps before deleting
+        $lockedStmt = $conn->prepare("SELECT golfer_id, handicap_at_assignment FROM tournament_golfers WHERE tournament_id = ? AND handicap_at_assignment IS NOT NULL");
+        $lockedStmt->bind_param('i', $tournamentId);
+        $lockedStmt->execute();
+        $lockedRows = $lockedStmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $lockedStmt->close();
+        $lockedMap = [];
+        foreach ($lockedRows as $row) {
+          $lockedMap[$row['golfer_id']] = $row['handicap_at_assignment'];
+        }
+
         // Delete existing assignments for this tournament (that have no team)
         // Keep team assignments intact for Ryder Cup style tournaments
         $stmt = $conn->prepare("
@@ -70,19 +81,28 @@ switch ($method) {
         $stmt->bind_param('i', $tournamentId);
         $stmt->execute();
 
-        // Insert new golfer assignments with handicap snapshot
-        $insertStmt = $conn->prepare("
+        // Re-insert — restore locked handicap if one existed, otherwise snapshot live
+        $insertWithLocked = $conn->prepare("
+          INSERT INTO tournament_golfers (tournament_id, golfer_id, handicap_at_assignment, handicap_pct_at_assignment)
+          VALUES (?, ?, ?, ?)
+        ");
+        $insertFromLive = $conn->prepare("
           INSERT INTO tournament_golfers (tournament_id, golfer_id, handicap_at_assignment, handicap_pct_at_assignment)
           SELECT ?, ?, g.handicap, ?
-          FROM golfers g
-          WHERE g.golfer_id = ?
+          FROM golfers g WHERE g.golfer_id = ?
         ");
 
         $insertCount = 0;
         foreach ($golferIds as $golferId) {
           $gid = intval($golferId);
-          $insertStmt->bind_param('iidi', $tournamentId, $gid, $handicapPct, $gid);
-          $insertStmt->execute();
+          if (isset($lockedMap[$gid])) {
+            $lockedHcp = $lockedMap[$gid];
+            $insertWithLocked->bind_param('iidi', $tournamentId, $gid, $lockedHcp, $handicapPct);
+            $insertWithLocked->execute();
+          } else {
+            $insertFromLive->bind_param('iidi', $tournamentId, $gid, $handicapPct, $gid);
+            $insertFromLive->execute();
+          }
           $insertCount++;
         }
 
