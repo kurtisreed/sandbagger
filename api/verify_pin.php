@@ -24,6 +24,11 @@ $data = json_decode(file_get_contents('php://input'), true);
 $entered = trim($data['pin'] ?? '');
 
 $stmt = $conn->prepare("SELECT setting_value FROM app_settings WHERE setting_key = 'group_pin'");
+if (!$stmt) {
+  // app_settings table doesn't exist yet — fall back to default PIN
+  echo json_encode(['success' => $entered === '1234']);
+  exit;
+}
 $stmt->execute();
 $row = $stmt->get_result()->fetch_assoc();
 $correct = $row['setting_value'] ?? '1234';
