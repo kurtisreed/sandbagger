@@ -2,19 +2,21 @@
 let API_BASE_URL = '';
 
 function initializeApiUrl() {
-  const isCapacitorApp = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
+  const cap = window.Capacitor;
+  const isCapacitorApp = cap && typeof cap.isNativePlatform === 'function' && cap.isNativePlatform();
+  const platform = cap && typeof cap.getPlatform === 'function' ? cap.getPlatform() : 'web';
 
   if (isCapacitorApp) {
-    // Production server for mobile apps
     API_BASE_URL = 'https://sandbaggerscoring.com';
   } else {
-    API_BASE_URL = ''; // Web browser - relative URLs work
+    API_BASE_URL = '';
   }
 
-  console.log('API_BASE_URL set to:', API_BASE_URL, 'isCapacitorApp:', isCapacitorApp);
+  console.log('[Sandbagger] platform:', platform, '| isNative:', isCapacitorApp, '| API_BASE_URL:', API_BASE_URL || '(relative)');
 }
 
-// Initialize immediately and also when DOM is ready
+// Initialize immediately — bridge should be ready on Android
+// DOMContentLoaded re-runs to catch iOS WKWebView late init
 initializeApiUrl();
 document.addEventListener('DOMContentLoaded', () => {
   initializeApiUrl();
@@ -8406,7 +8408,8 @@ document.addEventListener('DOMContentLoaded', () => {
         pinInput.value = '';
         pinInput.focus();
       }
-    } catch {
+    } catch (err) {
+      console.error('[Sandbagger] PIN verify error:', err, '| API_BASE_URL:', API_BASE_URL, '| URL attempted:', `${API_BASE_URL}/api/verify_pin.php`);
       pinError.textContent = 'Connection error. Please try again.';
       pinError.style.display = 'block';
     }

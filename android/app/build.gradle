@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.sandbagger.scoring"
+    namespace "com.kurtisreed.sandbagger"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.sandbagger.scoring"
+        applicationId "com.kurtisreed.sandbagger"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 2

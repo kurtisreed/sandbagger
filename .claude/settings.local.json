@@ -6,7 +6,16 @@
       "Bash(git push)",
       "Bash(git commit:*)",
       "Bash(npm run build:user:*)",
-      "Bash(powershell -Command \"Get-ChildItem -Path . -Filter *.php -File | Where-Object { $_.Name -ne ''admin.php'' } | Copy-Item -Destination www\"\")"
+      "Bash(powershell -Command \"Get-ChildItem -Path . -Filter *.php -File | Where-Object { $_.Name -ne ''admin.php'' } | Copy-Item -Destination www\"\")",
+      "Bash(/Applications/XAMPP/xamppfiles/bin/mysql:*)",
+      "Read(//opt/homebrew/Cellar/node/26.0.0/bin/**)",
+      "Read(//Users/kurtisreed/.nvm/versions/**)",
+      "Bash(/opt/homebrew/bin/npx cap *)",
+      "Bash(cat ~/.zshrc | grep -n \"LANG\\\\|LC_ALL\" | head -5)",
+      "Bash(echo '')",
+      "Bash(echo '# UTF-8 locale \\(required for CocoaPods\\)')",
+      "Bash(echo 'export LANG=en_US.UTF-8')",
+      "Bash(echo 'export LC_ALL=en_US.UTF-8')"
     ]
   }
 }

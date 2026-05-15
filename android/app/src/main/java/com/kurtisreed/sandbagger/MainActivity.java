@@ -1,4 +1,4 @@
-package com.sandbagger.scoring;
+package com.kurtisreed.sandbagger;
 
 import com.getcapacitor.BridgeActivity;
 

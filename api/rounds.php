@@ -4,7 +4,7 @@ header('Content-Type: application/json; charset=utf-8');
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Expires: 0");
 header("Pragma: no-cache");
-require_once 'db_connect.php';
+require_once __DIR__ . '/../db_connect.php';
 
 $method        = $_SERVER['REQUEST_METHOD'];
 $id            = isset($_GET['round_id'])      ? intval($_GET['round_id'])      : null;

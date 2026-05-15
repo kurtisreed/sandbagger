@@ -1,16 +1,18 @@
 {
-  "appId": "com.sandbagger.scoring",
+  "appId": "com.kurtisreed.sandbagger",
   "appName": "Sandbagger Scoring",
   "webDir": "www",
   "server": {
     "androidScheme": "https",
-    "iosScheme": "https",
     "allowNavigation": [
       "sandbaggerscoring.com",
       "*.sandbaggerscoring.com"
     ]
   },
   "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    },
     "SplashScreen": {
       "launchShowDuration": 2000,
       "backgroundColor": "#006837",

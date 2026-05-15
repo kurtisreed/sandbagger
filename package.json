@@ -7,7 +7,7 @@
     "clean": "rm -rf www/* && mkdir -p www/api www/icons www/images www/js www/css",
     "copy:core": "cp index.html script.js style.css manifest.json service-worker.js offline-sync.js favicon.png www/ 2>/dev/null || true",
     "copy:php": "find . -maxdepth 1 -name '*.php' -not -name 'admin.php' -exec cp {} www/ \\;",
-    "copy:dirs": "cp -r api icons images www/",
+    "copy:dirs": "cp -r api icons images www/ && cp -r pdfs www/ 2>/dev/null || true",
     "copy:admin": "cp admin.php tournament-assign.html www/ 2>/dev/null || true && cp -r js css www/",
     "build:user": "npm run clean && npm run copy:core && npm run copy:php && npm run copy:dirs",
     "build": "npm run build:user && npm run copy:admin",
@@ -29,10 +29,14 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@capacitor/android": "^7.4.2",
-    "@capacitor/cli": "^7.4.2",
-    "@capacitor/core": "^7.4.2",
-    "@capacitor/ios": "^7.4.2",
-    "@capacitor/status-bar": "^7.0.4"
+    "@capacitor/android": "^8.3.4",
+    "@capacitor/cli": "^8.3.4",
+    "@capacitor/core": "^8.3.4",
+    "@capacitor/ios": "^8.3.4",
+    "@capacitor/splash-screen": "^8.0.1",
+    "@capacitor/status-bar": "^8.0.2"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5"
   }
 }
