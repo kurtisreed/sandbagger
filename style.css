@@ -506,7 +506,7 @@ main {
   position: fixed;
   inset: 0;
   overflow-y: auto;
-  padding: 3rem 1.25rem 3rem;
+  padding: calc(env(safe-area-inset-top) + 3rem) 1.25rem 3rem;
   background: linear-gradient(160deg, #2e0d55 0%, #4F2185 55%, #3a1060 100%);
   display: flex;
   flex-direction: column;
