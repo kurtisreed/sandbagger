@@ -2133,9 +2133,11 @@ function loadWolfScorecardReadOnly() {
           });
         }
       });
-      golfers = Array.from(golferMap.values()).sort((a, b) => a.order - b.order);
+      golfers = adjustHandicapsForMatch(
+        Array.from(golferMap.values()).sort((a, b) => a.order - b.order)
+      );
 
-      // Build stroke maps
+      // Build stroke maps from adjusted handicaps
       strokeMaps = {};
       golfers.forEach(g => {
         strokeMaps[g.id] = buildStrokeMapForGolfer(g.handicap, holeInfo);
@@ -2388,9 +2390,9 @@ function loadRabbitScorecardReadOnly() {
           });
         }
       });
-      golfers = Array.from(golferMap.values());
+      golfers = adjustHandicapsForMatch(Array.from(golferMap.values()));
 
-      // Build stroke maps
+      // Build stroke maps from adjusted handicaps
       strokeMaps = {};
       golfers.forEach(g => {
         strokeMaps[g.id] = buildStrokeMapForGolfer(g.handicap, holeInfo);
@@ -3431,20 +3433,19 @@ function loadTodaysMatch() {
       const container = document.getElementById("score-entry-content");
       currentMatchId = data.match[0].match_id;
 
-      // Build golfer list
-        golfers = [...new Set(matchGolfers.map(row => ({
-          id: row.golfer_id,
-          name: row.first_name,
-          team: row.team_name,
-          handicap: calculatePlayingHandicap(row.handicap),
-        })))];
-
-
+      // Build golfer list with match-adjusted handicaps
+      const rawGolfers = [...new Set(matchGolfers.map(row => ({
+        id: row.golfer_id,
+        name: row.first_name,
+        team: row.team_name,
+        handicap: calculatePlayingHandicap(row.handicap),
+      })))];
+      golfers = adjustHandicapsForMatch(rawGolfers);
 
       strokeMaps = {};
-        matchGolfers.forEach(g => {
-          strokeMaps[g.golfer_id] = buildStrokeMapForGolfer(calculatePlayingHandicap(g.handicap), holeInfo);
-        });
+      golfers.forEach(g => {
+        strokeMaps[g.id] = buildStrokeMapForGolfer(g.handicap, holeInfo);
+      });
 
 
 
@@ -3710,13 +3711,13 @@ function loadGuysTripMatch() {
         }
       });
 
-      // Combine all golfers for display
-      golfers = [...partnership1, ...partnership2];
+      // Combine all golfers for display, then adjust handicaps relative to lowest
+      golfers = adjustHandicapsForMatch([...partnership1, ...partnership2]);
 
-      // Build stroke maps
+      // Build stroke maps from adjusted handicaps
       strokeMaps = {};
-      matchGolfers.forEach(g => {
-        strokeMaps[g.golfer_id] = buildStrokeMapForGolfer(calculatePlayingHandicap(g.handicap), holeInfo);
+      golfers.forEach(g => {
+        strokeMaps[g.id] = buildStrokeMapForGolfer(g.handicap, holeInfo);
       });
 
       // Create table
@@ -4835,10 +4836,12 @@ function calculateGuysTripMatchStatus(partnership1Golfers, partnership2Golfers, 
 
   const allGolfers = partnership1Golfers.concat(partnership2Golfers);
 
-  // Build stroke maps for all golfers
+  // Build stroke maps using match-adjusted handicaps (lowest = 0)
   const strokeMaps = {};
-  allGolfers.forEach(golfer => {
-    strokeMaps[golfer.golfer_id] = buildStrokeMapForGolfer(calculatePlayingHandicap(golfer.handicap), holesData);
+  const guysTripPlayingHcps = allGolfers.map(g => calculatePlayingHandicap(g.handicap));
+  const guysTripMinHcp = Math.min(...guysTripPlayingHcps);
+  allGolfers.forEach((golfer, i) => {
+    strokeMaps[golfer.golfer_id] = buildStrokeMapForGolfer(guysTripPlayingHcps[i] - guysTripMinHcp, holesData);
   });
 
   // Organize NET scores by partnership and hole
@@ -4923,9 +4926,11 @@ function calculateMatchStatus(primaryTeamGolfers, secondaryTeamGolfers, scores) 
 
   strokeMaps = {}; // golfer_id -> [0,1,...]
 
-  // Build stroke maps for all golfers
-  allGolfers.forEach(golfer => {
-    strokeMaps[golfer.golfer_id] = buildStrokeMapForGolfer(calculatePlayingHandicap(golfer.handicap), holeInfo);
+  // Build stroke maps using match-adjusted handicaps (lowest = 0)
+  const matchPlayingHcps = allGolfers.map(g => calculatePlayingHandicap(g.handicap));
+  const matchMinHcp = Math.min(...matchPlayingHcps);
+  allGolfers.forEach((golfer, i) => {
+    strokeMaps[golfer.golfer_id] = buildStrokeMapForGolfer(matchPlayingHcps[i] - matchMinHcp, holeInfo);
   });
 
 
@@ -5079,6 +5084,16 @@ function strokeDots(stroke) {
   if (stroke === 2) return '<span class="corner-dot"></span><span class="corner-dot second-dot"></span>';
   if (stroke === -1) return '<span class="corner-dot penalty-dot"></span>';
   return '';
+}
+
+// Adjust handicaps within a match so the lowest handicap player becomes 0
+// and all others are reduced by the same amount.
+// Pass in an array of golfer objects with a .handicap property (already playing handicap).
+// Returns a new array with adjusted .handicap values.
+function adjustHandicapsForMatch(golfers) {
+  if (!golfers || golfers.length === 0) return golfers;
+  const min = Math.min(...golfers.map(g => g.handicap));
+  return golfers.map(g => ({ ...g, handicap: g.handicap - min }));
 }
 
 //stroke maps for golfers
@@ -5952,12 +5967,16 @@ function loadMatchScorecard(match_id, container_id = "today-summary") {
         }
 
 
+      // Adjust handicaps relative to lowest in this match
+      const minHcpMatch = Math.min(...golfers.map(g => g.handicap));
+      golfers.forEach(g => { g.handicap = g.handicap - minHcpMatch; });
+
       strokeMaps = {};
       golfers.forEach(g => {
         strokeMaps[g.id] = buildStrokeMapForGolfer(g.handicap, holeInfo);
       });
 
-      
+
 
       const table = document.createElement("table");
       table.classList.add("score-table");
