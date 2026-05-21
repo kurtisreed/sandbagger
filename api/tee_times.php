@@ -9,6 +9,7 @@ header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Expires: 0");
 header("Pragma: no-cache");
 require_once 'db_connect.php';
+require_once 'auth_middleware.php';
 
 // 1. Ensure the request method is POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -44,6 +45,21 @@ if (!preg_match('/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/', $time)) {
     echo json_encode(['success' => false, 'error' => 'Invalid time format. Expected HH:MM.']);
     exit;
 }
+
+// Verify round belongs to this org
+$orgCheck = $conn->prepare("
+  SELECT r.round_id FROM rounds r
+  JOIN tournaments t ON t.tournament_id = r.tournament_id AND t.org_id = ?
+  WHERE r.round_id = ?
+");
+$orgCheck->bind_param('ii', $currentOrgId, $round_id);
+$orgCheck->execute();
+if ($orgCheck->get_result()->num_rows === 0) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'error' => 'Round not found or access denied']);
+    exit;
+}
+$orgCheck->close();
 
 // 4. Prepare and execute the database insertion
 $sql = "INSERT INTO tee_times (round_id, time) VALUES (?, ?)";

@@ -9,6 +9,7 @@ header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Expires: 0");
 header("Pragma: no-cache");
 require_once 'db_connect.php';
+require_once 'auth_middleware.php';
 
 // 1. Input Validation
 $round_id = isset($_GET['round_id']) ? intval($_GET['round_id']) : 0;
@@ -25,10 +26,15 @@ $response = [
     'matches'    => [],
 ];
 
-// 2. Get Round Info (and tournament_id for later)
+// 2. Get Round Info (and tournament_id for later) - org-scoped
 $tournament_id = null;
-$stmt = $conn->prepare("SELECT tournament_id, round_name, round_date FROM rounds WHERE round_id = ?");
-$stmt->bind_param('i', $round_id);
+$stmt = $conn->prepare("
+  SELECT r.tournament_id, r.round_name, r.round_date
+  FROM rounds r
+  JOIN tournaments t ON t.tournament_id = r.tournament_id AND t.org_id = ?
+  WHERE r.round_id = ?
+");
+$stmt->bind_param('ii', $currentOrgId, $round_id);
 $stmt->execute();
 $result = $stmt->get_result();
 if ($row = $result->fetch_assoc()) {

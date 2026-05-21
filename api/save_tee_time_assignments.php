@@ -9,6 +9,7 @@ header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Expires: 0");
 header("Pragma: no-cache");
 require_once 'db_connect.php';
+require_once 'auth_middleware.php';
 
 // 1. Ensure the request method is POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -41,6 +42,22 @@ if (empty($round_id) || $assignments === null) {
 $conn->begin_transaction();
 
 try {
+    // Verify round belongs to this org
+    $orgCheck = $conn->prepare("
+      SELECT r.round_id FROM rounds r
+      JOIN tournaments t ON t.tournament_id = r.tournament_id AND t.org_id = ?
+      WHERE r.round_id = ?
+    ");
+    $orgCheck->bind_param('ii', $currentOrgId, $round_id);
+    $orgCheck->execute();
+    if ($orgCheck->get_result()->num_rows === 0) {
+        $conn->rollback();
+        http_response_code(403);
+        echo json_encode(['success' => false, 'error' => 'Round not found or access denied']);
+        exit;
+    }
+    $orgCheck->close();
+
     // Step A: Reset all tee time assignments for this round to NULL.
     // This handles matches that were un-assigned (dragged back to the pool).
     $reset_sql = "UPDATE matches SET tee_time_id = NULL WHERE round_id = ?";

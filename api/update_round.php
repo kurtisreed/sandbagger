@@ -5,7 +5,7 @@ header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Expires: 0");
 header("Pragma: no-cache");
 require_once 'db_connect.php';
-
+require_once 'auth_middleware.php';
 
 // Add this to handle PUT requests
 if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
@@ -15,9 +15,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
     }
 
     $data = json_decode(file_get_contents('php://input'), true);
-    
-    $stmt = $conn->prepare("UPDATE rounds SET round_date = ?, round_name = ? WHERE round_id = ?");
-    $stmt->bind_param("ssi", $data['round_date'], $data['round_name'], $roundId);
+
+    // Verify round belongs to this org via tournament
+    $stmt = $conn->prepare("
+      UPDATE rounds r
+         JOIN tournaments t ON t.tournament_id = r.tournament_id AND t.org_id = ?
+         SET r.round_date = ?, r.round_name = ?
+       WHERE r.round_id = ?
+    ");
+    $stmt->bind_param("issi", $currentOrgId, $data['round_date'], $data['round_name'], $roundId);
     
     if ($stmt->execute()) {
         echo json_encode(['success' => true]);

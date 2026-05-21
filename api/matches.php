@@ -5,6 +5,7 @@ header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Expires: 0");
 header("Pragma: no-cache");
 require_once 'db_connect.php';
+require_once 'auth_middleware.php';
 
 $method   = $_SERVER['REQUEST_METHOD'];
 $id       = isset($_GET['match_id'])   ? intval($_GET['match_id'])   : null;
@@ -13,24 +14,28 @@ $round_id = isset($_GET['round_id'])   ? intval($_GET['round_id'])   : null;
 switch ($method) {
   case 'GET':
     if ($id) {
-      // fetch one match
+      // fetch one match (verify belongs to this org)
       $stmt = $conn->prepare("
-        SELECT match_id, round_id
-          FROM matches
-         WHERE match_id = ?
+        SELECT m.match_id, m.round_id
+          FROM matches m
+          JOIN rounds r ON r.round_id = m.round_id
+          JOIN tournaments t ON t.tournament_id = r.tournament_id AND t.org_id = ?
+         WHERE m.match_id = ?
       ");
-      $stmt->bind_param('i', $id);
+      $stmt->bind_param('ii', $currentOrgId, $id);
       $stmt->execute();
       echo json_encode($stmt->get_result()->fetch_assoc());
     } elseif ($round_id) {
-      // fetch matches for a given round with golfer details
+      // fetch matches for a given round with golfer details (verify org)
       $stmt = $conn->prepare("
-        SELECT match_id, match_name, round_id
-          FROM matches
-         WHERE round_id = ?
-         ORDER BY match_id
+        SELECT m.match_id, m.match_name, m.round_id
+          FROM matches m
+          JOIN rounds r ON r.round_id = m.round_id
+          JOIN tournaments t ON t.tournament_id = r.tournament_id AND t.org_id = ?
+         WHERE m.round_id = ?
+         ORDER BY m.match_id
       ");
-      $stmt->bind_param('i', $round_id);
+      $stmt->bind_param('ii', $currentOrgId, $round_id);
       $stmt->execute();
       $matches = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
@@ -61,13 +66,17 @@ switch ($method) {
 
       echo json_encode($matches);
     } else {
-      // fetch all matches
-      $result = $conn->query("
-        SELECT match_id, round_id
-          FROM matches
-         ORDER BY match_id
+      // fetch all matches for this org
+      $stmt = $conn->prepare("
+        SELECT m.match_id, m.round_id
+          FROM matches m
+          JOIN rounds r ON r.round_id = m.round_id
+          JOIN tournaments t ON t.tournament_id = r.tournament_id AND t.org_id = ?
+         ORDER BY m.match_id
       ");
-      echo json_encode($result->fetch_all(MYSQLI_ASSOC));
+      $stmt->bind_param('i', $currentOrgId);
+      $stmt->execute();
+      echo json_encode($stmt->get_result()->fetch_all(MYSQLI_ASSOC));
     }
     break;
 
@@ -78,11 +87,27 @@ switch ($method) {
           if (!$data) {
               throw new Exception('Invalid JSON data received');
           }
-  
+
           // Start transaction
           $conn->begin_transaction();
-  
+
           try {
+              // Verify the round belongs to this org
+              $checkStmt = $conn->prepare("
+                SELECT r.round_id FROM rounds r
+                JOIN tournaments t ON t.tournament_id = r.tournament_id AND t.org_id = ?
+                WHERE r.round_id = ?
+              ");
+              $checkStmt->bind_param('ii', $currentOrgId, $data['round_id']);
+              $checkStmt->execute();
+              if ($checkStmt->get_result()->num_rows === 0) {
+                  $conn->rollback();
+                  http_response_code(403);
+                  echo json_encode(['success' => false, 'error' => 'Round not found or access denied']);
+                  exit;
+              }
+              $checkStmt->close();
+
               // Insert the match into the matches table
               $stmt = $conn->prepare("
                   INSERT INTO matches (round_id, match_type)
@@ -165,21 +190,29 @@ switch ($method) {
       break;
 
   case 'PUT':
-    // update an existing match (e.g. move to a different round)
+    // update an existing match (must belong to this org)
     parse_str(file_get_contents('php://input'), $data);
     $stmt = $conn->prepare("
-      UPDATE matches
-         SET round_id = ?
-       WHERE match_id = ?
+      UPDATE matches m
+         JOIN rounds r ON r.round_id = m.round_id
+         JOIN tournaments t ON t.tournament_id = r.tournament_id AND t.org_id = ?
+         SET m.round_id = ?
+       WHERE m.match_id = ?
     ");
-    $stmt->bind_param('ii', $data['round_id'], $id);
+    $stmt->bind_param('iii', $currentOrgId, $data['round_id'], $id);
     $stmt->execute();
     echo json_encode(['affected_rows' => $stmt->affected_rows]);
     break;
 
   case 'DELETE':
-    $stmt = $conn->prepare("DELETE FROM matches WHERE match_id = ?");
-    $stmt->bind_param('i', $id);
+    // Must belong to this org
+    $stmt = $conn->prepare("
+      DELETE m FROM matches m
+        JOIN rounds r ON r.round_id = m.round_id
+        JOIN tournaments t ON t.tournament_id = r.tournament_id AND t.org_id = ?
+       WHERE m.match_id = ?
+    ");
+    $stmt->bind_param('ii', $currentOrgId, $id);
     $stmt->execute();
     echo json_encode(['deleted_rows' => $stmt->affected_rows]);
     break;

@@ -2,6 +2,7 @@
 require_once '../cors_headers.php';
 header('Content-Type: application/json; charset=utf-8');
 require_once 'db_connect.php';
+require_once 'auth_middleware.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 
@@ -25,6 +26,22 @@ try {
     $conn->begin_transaction();
 
     try {
+        // Verify round belongs to this org
+        $checkStmt = $conn->prepare("
+          SELECT r.round_id FROM rounds r
+          JOIN tournaments t ON t.tournament_id = r.tournament_id AND t.org_id = ?
+          WHERE r.round_id = ?
+        ");
+        $checkStmt->bind_param('ii', $currentOrgId, $roundId);
+        $checkStmt->execute();
+        if ($checkStmt->get_result()->num_rows === 0) {
+            $conn->rollback();
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Round not found or access denied']);
+            exit;
+        }
+        $checkStmt->close();
+
         // Get existing match IDs for this round
         $stmt = $conn->prepare("SELECT match_id FROM matches WHERE round_id = ?");
         $stmt->bind_param('i', $roundId);

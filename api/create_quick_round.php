@@ -5,6 +5,7 @@ header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Access-Control-Allow-Credentials: true");
 require_once '../db_connect.php';
+require_once __DIR__ . '/auth_middleware.php';
 
 // Set timezone to Mountain Time
 date_default_timezone_set('America/Denver');
@@ -32,15 +33,15 @@ try {
     // Set MySQL timezone to match PHP timezone
     $conn->query("SET time_zone = '-07:00'"); // Mountain Time (MST/MDT)
 
-    // 1. Create Tournament
+    // 1. Create Tournament (scoped to this org)
     $currentDate = date('Y-m-d');
     $currentDateTime = date('Y-m-d H:i');
     $tournamentName = "Quick Round - " . $currentDateTime;
     $stmt = $conn->prepare("
-        INSERT INTO tournaments (name, start_date, end_date, handicap_pct, format_id)
-        VALUES (?, ?, ?, ?, NULL)
+        INSERT INTO tournaments (name, start_date, end_date, handicap_pct, format_id, org_id)
+        VALUES (?, ?, ?, ?, NULL, ?)
     ");
-    $stmt->bind_param('sssd', $tournamentName, $currentDate, $currentDate, $data['handicap_pct']);
+    $stmt->bind_param('sssdi', $tournamentName, $currentDate, $currentDate, $data['handicap_pct'], $currentOrgId);
     $stmt->execute();
     $tournamentId = $stmt->insert_id;
 

@@ -6,6 +6,7 @@ header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Expires: 0");
 header("Pragma: no-cache");
 require_once 'db_connect.php';
+require_once 'auth_middleware.php';
 
 $method        = $_SERVER['REQUEST_METHOD'];
 $flight_id     = isset($_GET['flight_id'])     ? intval($_GET['flight_id'])     : null;
@@ -14,40 +15,54 @@ $tournament_id = isset($_GET['tournament_id']) ? intval($_GET['tournament_id']) 
 switch ($method) {
   case 'GET':
     if ($flight_id) {
-      // fetch one flight
+      // fetch one flight (org-scoped via tournament)
       $stmt = $conn->prepare("
-        SELECT flight_id, tournament_id, name, hcp_low, hcp_high
-          FROM flights
-         WHERE flight_id = ?
+        SELECT f.flight_id, f.tournament_id, f.name, f.hcp_low, f.hcp_high
+          FROM flights f
+          JOIN tournaments t ON t.tournament_id = f.tournament_id AND t.org_id = ?
+         WHERE f.flight_id = ?
       ");
-      $stmt->bind_param('i', $flight_id);
+      $stmt->bind_param('ii', $currentOrgId, $flight_id);
       $stmt->execute();
       echo json_encode($stmt->get_result()->fetch_assoc());
     } elseif ($tournament_id) {
-      // fetch flights for a tournament
+      // fetch flights for a tournament (org-scoped)
       $stmt = $conn->prepare("
-        SELECT flight_id, tournament_id, name, hcp_low, hcp_high
-          FROM flights
-         WHERE tournament_id = ?
-         ORDER BY hcp_low
+        SELECT f.flight_id, f.tournament_id, f.name, f.hcp_low, f.hcp_high
+          FROM flights f
+          JOIN tournaments t ON t.tournament_id = f.tournament_id AND t.org_id = ?
+         WHERE f.tournament_id = ?
+         ORDER BY f.hcp_low
       ");
-      $stmt->bind_param('i', $tournament_id);
+      $stmt->bind_param('ii', $currentOrgId, $tournament_id);
       $stmt->execute();
       echo json_encode($stmt->get_result()->fetch_all(MYSQLI_ASSOC));
     } else {
-      // fetch all flights
-      $result = $conn->query("
-        SELECT flight_id, tournament_id, name, hcp_low, hcp_high
-          FROM flights
-         ORDER BY tournament_id, hcp_low
+      // fetch all flights for this org
+      $stmt = $conn->prepare("
+        SELECT f.flight_id, f.tournament_id, f.name, f.hcp_low, f.hcp_high
+          FROM flights f
+          JOIN tournaments t ON t.tournament_id = f.tournament_id AND t.org_id = ?
+         ORDER BY f.tournament_id, f.hcp_low
       ");
-      echo json_encode($result->fetch_all(MYSQLI_ASSOC));
+      $stmt->bind_param('i', $currentOrgId);
+      $stmt->execute();
+      echo json_encode($stmt->get_result()->fetch_all(MYSQLI_ASSOC));
     }
     break;
 
   case 'POST':
-    // create a new flight
+    // create a new flight (org-scoped: verify tournament)
     $data = json_decode(file_get_contents('php://input'), true);
+    $checkStmt = $conn->prepare("SELECT tournament_id FROM tournaments WHERE tournament_id = ? AND org_id = ?");
+    $checkStmt->bind_param('ii', $data['tournament_id'], $currentOrgId);
+    $checkStmt->execute();
+    if ($checkStmt->get_result()->num_rows === 0) {
+      http_response_code(403);
+      echo json_encode(['error' => 'Tournament not found or access denied']);
+      exit;
+    }
+    $checkStmt->close();
     $stmt = $conn->prepare("
       INSERT INTO flights (tournament_id, name, hcp_low, hcp_high)
       VALUES (?, ?, ?, ?)
@@ -64,18 +79,20 @@ switch ($method) {
     break;
 
   case 'PUT':
-    // update an existing flight
+    // update an existing flight (org-scoped)
     parse_str(file_get_contents('php://input'), $data);
     $stmt = $conn->prepare("
-      UPDATE flights
-         SET tournament_id = ?,
-             name          = ?,
-             hcp_low       = ?,
-             hcp_high      = ?
-       WHERE flight_id     = ?
+      UPDATE flights f
+        JOIN tournaments t ON t.tournament_id = f.tournament_id AND t.org_id = ?
+         SET f.tournament_id = ?,
+             f.name          = ?,
+             f.hcp_low       = ?,
+             f.hcp_high      = ?
+       WHERE f.flight_id     = ?
     ");
     $stmt->bind_param(
-      'isddi',
+      'iisddi',
+      $currentOrgId,
       $data['tournament_id'],
       $data['name'],
       $data['hcp_low'],
@@ -87,9 +104,13 @@ switch ($method) {
     break;
 
   case 'DELETE':
-    // delete a flight
-    $stmt = $conn->prepare("DELETE FROM flights WHERE flight_id = ?");
-    $stmt->bind_param('i', $flight_id);
+    // delete a flight (org-scoped)
+    $stmt = $conn->prepare("
+      DELETE f FROM flights f
+        JOIN tournaments t ON t.tournament_id = f.tournament_id AND t.org_id = ?
+       WHERE f.flight_id = ?
+    ");
+    $stmt->bind_param('ii', $currentOrgId, $flight_id);
     $stmt->execute();
     echo json_encode(['deleted_rows' => $stmt->affected_rows]);
     break;

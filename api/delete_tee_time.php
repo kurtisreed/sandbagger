@@ -9,6 +9,7 @@ header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Expires: 0");
 header("Pragma: no-cache");
 require_once 'db_connect.php';
+require_once 'auth_middleware.php';
 
 // 1. Ensure the request method is DELETE
 if ($_SERVER['REQUEST_METHOD'] !== 'DELETE') {
@@ -30,8 +31,13 @@ if (empty($tee_time_id)) {
 // to 'tee_times', the database will automatically handle un-assigning any matches
 // that were in this tee time. This is very efficient.
 
-// 3. Prepare and execute the database deletion
-$sql = "DELETE FROM tee_times WHERE tee_time_id = ?";
+// 3. Prepare and execute the database deletion (org-scoped via round → tournament)
+$sql = "
+  DELETE tt FROM tee_times tt
+    JOIN rounds r ON r.round_id = tt.round_id
+    JOIN tournaments t ON t.tournament_id = r.tournament_id AND t.org_id = ?
+   WHERE tt.tee_time_id = ?
+";
 
 $stmt = $conn->prepare($sql);
 if ($stmt === false) {
@@ -40,7 +46,7 @@ if ($stmt === false) {
     exit;
 }
 
-$stmt->bind_param('i', $tee_time_id);
+$stmt->bind_param('ii', $currentOrgId, $tee_time_id);
 
 if ($stmt->execute()) {
     if ($stmt->affected_rows > 0) {

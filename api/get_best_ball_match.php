@@ -5,6 +5,7 @@ header("Access-Control-Allow-Methods: GET, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Access-Control-Allow-Credentials: true");
 require_once '../db_connect.php';
+require_once __DIR__ . '/auth_middleware.php';
 
 $match_id = isset($_GET['match_id']) ? intval($_GET['match_id']) : null;
 
@@ -14,14 +15,16 @@ if (!$match_id) {
   exit;
 }
 
-$conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) {
-  http_response_code(500);
-  echo json_encode(['error' => 'Database connection failed']);
-  exit;
+if (!isset($conn) || $conn->connect_error) {
+  $conn = new mysqli($servername, $username, $password, $dbname);
+  if ($conn->connect_error) {
+    http_response_code(500);
+    echo json_encode(['error' => 'Database connection failed']);
+    exit;
+  }
 }
 
-// Get match info with golfers
+// Get match info with golfers (org-scoped)
 $sql = "
 SELECT
   m.match_id,
@@ -46,7 +49,7 @@ SELECT
   COALESCE(tg.handicap_pct_at_assignment, t.handicap_pct) AS tournament_handicap_pct
 FROM matches m
 JOIN rounds r ON m.round_id = r.round_id
-JOIN tournaments t ON r.tournament_id = t.tournament_id
+JOIN tournaments t ON r.tournament_id = t.tournament_id AND t.org_id = ?
 JOIN courses c ON r.course_id = c.course_id
 JOIN course_tees ct ON r.tee_id = ct.tee_id
 JOIN match_golfers mg ON m.match_id = mg.match_id
@@ -57,7 +60,7 @@ ORDER BY tg.team_id, g.first_name
 ";
 
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $match_id);
+$stmt->bind_param("ii", $currentOrgId, $match_id);
 $stmt->execute();
 $result = $stmt->get_result();
 

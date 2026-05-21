@@ -5,6 +5,7 @@ header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Expires: 0");
 header("Pragma: no-cache");
 require_once 'db_connect.php';
+require_once 'auth_middleware.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 $id     = $_GET['tournament_id'] ?? null;
@@ -12,7 +13,7 @@ $id     = $_GET['tournament_id'] ?? null;
 switch ($method) {
   case 'GET':
       if ($id) {
-          // fetch one tournament
+          // fetch one tournament (scoped to org)
           $stmt = $conn->prepare("
               SELECT
                   t.*,
@@ -21,14 +22,15 @@ switch ($method) {
               LEFT JOIN formats f
                 ON f.format_id = t.format_id
               WHERE t.tournament_id = ?
+                AND t.org_id = ?
           ");
-          $stmt->bind_param('i', $id);
+          $stmt->bind_param('ii', $id, $currentOrgId);
           $stmt->execute();
           $res = $stmt->get_result()->fetch_assoc();
           echo json_encode($res);
       } else {
-          // fetch all
-          $sql = "
+          // fetch all for this org
+          $stmt = $conn->prepare("
               SELECT
                   t.*,
                   f.name                    AS format_name,
@@ -47,39 +49,42 @@ switch ($method) {
               ) g ON g.tournament_id = t.tournament_id
               LEFT JOIN formats f
                 ON f.format_id = t.format_id
-          ";
-          $result = $conn->query($sql);
-          echo json_encode($result->fetch_all(MYSQLI_ASSOC));
+              WHERE t.org_id = ?
+          ");
+          $stmt->bind_param('i', $currentOrgId);
+          $stmt->execute();
+          echo json_encode($stmt->get_result()->fetch_all(MYSQLI_ASSOC));
       }
       break;
 
   case 'POST':
-    // create new
+    // create new (scoped to this org)
     $data = json_decode(file_get_contents('php://input'), true);
     $stmt = $conn->prepare(
-      "INSERT INTO tournaments (name, start_date, end_date, handicap_pct, format_id) 
-       VALUES (?, ?, ?, ?, ?)"
+      "INSERT INTO tournaments (name, start_date, end_date, handicap_pct, format_id, org_id)
+       VALUES (?, ?, ?, ?, ?, ?)"
     );
     $stmt->bind_param(
-      'sssdi',
-      $data['name'], $data['start_date'], $data['end_date'], $data['handicap_pct'], $data['format_id']
+      'sssdii',
+      $data['name'], $data['start_date'], $data['end_date'], $data['handicap_pct'], $data['format_id'], $currentOrgId
     );
     $stmt->execute();
     echo json_encode(['inserted_id' => $stmt->insert_id]);
     break;
 
   case 'PUT':
-    // update existing
+    // update existing (must belong to this org)
     $data = json_decode(file_get_contents('php://input'), true);
     $stmt = $conn->prepare(
       "UPDATE tournaments
          SET name = ?, start_date = ?, end_date = ?, handicap_pct = ?
-       WHERE tournament_id = ?"
+       WHERE tournament_id = ?
+         AND org_id = ?"
     );
     $stmt->bind_param(
-      'sssdi',
+      'sssdii',
       $data['name'], $data['start_date'], $data['end_date'],
-      $data['handicap_pct'], $id
+      $data['handicap_pct'], $id, $currentOrgId
     );
     $stmt->execute();
     echo json_encode(['affected' => $stmt->affected_rows]);
@@ -91,6 +96,17 @@ case 'DELETE':
   try {
     // Start a transaction
     $conn->begin_transaction();
+
+    // Verify the tournament belongs to this org before deleting
+    $checkStmt = $conn->prepare("SELECT tournament_id FROM tournaments WHERE tournament_id = ? AND org_id = ?");
+    $checkStmt->bind_param('ii', $id, $currentOrgId);
+    $checkStmt->execute();
+    if ($checkStmt->get_result()->num_rows === 0) {
+      http_response_code(403);
+      echo json_encode(['error' => 'Tournament not found or access denied']);
+      exit;
+    }
+    $checkStmt->close();
 
     // Step 1: Get all round IDs for this tournament
     $stmt = $conn->prepare("SELECT round_id FROM rounds WHERE tournament_id = ?");

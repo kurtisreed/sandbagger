@@ -2,6 +2,8 @@
 require_once '../cors_headers.php';
 header('Content-Type: application/json');
 require_once 'db_connect.php';
+require_once 'auth_middleware.php';
+requireAdmin();
 
 $conn->query("CREATE TABLE IF NOT EXISTS app_settings (
   setting_key VARCHAR(100) PRIMARY KEY,

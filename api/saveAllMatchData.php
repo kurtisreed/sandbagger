@@ -5,12 +5,28 @@ header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Expires: 0");
 header("Pragma: no-cache");
 require_once 'db_connect.php';
+require_once 'auth_middleware.php';
 
 $roundId = isset($_GET['round_id']) ? (int)$_GET['round_id'] : 0;
 if ($roundId < 1) {
   echo json_encode(['success'=>false, 'error'=>'Missing or invalid round_id']);
   exit;
 }
+
+// Verify round belongs to this org
+$orgCheck = $conn->prepare("
+  SELECT r.round_id FROM rounds r
+  JOIN tournaments t ON t.tournament_id = r.tournament_id AND t.org_id = ?
+  WHERE r.round_id = ?
+");
+$orgCheck->bind_param('ii', $currentOrgId, $roundId);
+$orgCheck->execute();
+if ($orgCheck->get_result()->num_rows === 0) {
+  http_response_code(403);
+  echo json_encode(['success' => false, 'error' => 'Round not found or access denied']);
+  exit;
+}
+$orgCheck->close();
 
 // Decode incoming JSON
 $raw = file_get_contents('php://input');

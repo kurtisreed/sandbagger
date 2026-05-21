@@ -2,6 +2,7 @@
 require_once '../cors_headers.php';
 header('Content-Type: application/json');
 require_once 'db_connect.php';
+require_once 'auth_middleware.php';
 
 $course_id = isset($_GET['course_id']) ? intval($_GET['course_id']) : 0;
 if (!$course_id) {

@@ -5,6 +5,7 @@ header("Access-Control-Allow-Methods: GET, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Access-Control-Allow-Credentials: true");
 require_once '../db_connect.php';
+require_once __DIR__ . '/auth_middleware.php';
 
 $code = isset($_GET['code']) ? intval($_GET['code']) : null;
 
@@ -15,14 +16,15 @@ if (!$code || $code < 1000 || $code > 9999) {
 }
 
 try {
-    // Find match by code and include round_name to determine match type
+    // Find match by code and include round_name to determine match type (org-scoped)
     $stmt = $conn->prepare("
         SELECT m.match_id, m.round_id, r.tournament_id, r.round_name
         FROM matches m
         JOIN rounds r ON m.round_id = r.round_id
+        JOIN tournaments t ON t.tournament_id = r.tournament_id AND t.org_id = ?
         WHERE m.match_code = ?
     ");
-    $stmt->bind_param('i', $code);
+    $stmt->bind_param('ii', $currentOrgId, $code);
     $stmt->execute();
     $result = $stmt->get_result();
 

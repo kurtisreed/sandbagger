@@ -5,6 +5,7 @@ header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Expires: 0");
 header("Pragma: no-cache");
 require_once 'db_connect.php';
+require_once 'auth_middleware.php';
 
 $method        = $_SERVER['REQUEST_METHOD'];
 $tournament_id = isset($_GET['tournament_id']) ? intval($_GET['tournament_id']) : null;
@@ -13,9 +14,9 @@ $golfer_id     = isset($_GET['golfer_id'])     ? intval($_GET['golfer_id'])     
 switch ($method) {
   case 'GET':
     if ($tournament_id !== null) {
-      // list all golfers in a tournament (with names)
+      // list all golfers in a tournament (scoped to org)
       $stmt = $conn->prepare("
-          SELECT 
+          SELECT
             tg.tournament_id,
             tg.golfer_id,
             tg.team_id,
@@ -24,19 +25,23 @@ switch ($method) {
             g.handicap
           FROM tournament_golfers tg
           JOIN golfers g ON tg.golfer_id = g.golfer_id
+          JOIN tournaments t ON t.tournament_id = tg.tournament_id AND t.org_id = ?
           WHERE tg.tournament_id = ?
           ORDER BY g.last_name, g.first_name
       ");
-      $stmt->bind_param('i', $tournament_id);
+      $stmt->bind_param('ii', $currentOrgId, $tournament_id);
       $stmt->execute();
       echo json_encode($stmt->get_result()->fetch_all(MYSQLI_ASSOC));
     } else {
-      // list all assignments
-      $result = $conn->query("
-        SELECT tournament_id, golfer_id
-          FROM tournament_golfers
+      // list all assignments for this org
+      $stmt = $conn->prepare("
+        SELECT tg.tournament_id, tg.golfer_id
+          FROM tournament_golfers tg
+          JOIN tournaments t ON t.tournament_id = tg.tournament_id AND t.org_id = ?
       ");
-      echo json_encode($result->fetch_all(MYSQLI_ASSOC));
+      $stmt->bind_param('i', $currentOrgId);
+      $stmt->execute();
+      echo json_encode($stmt->get_result()->fetch_all(MYSQLI_ASSOC));
     }
     break;
 
@@ -53,11 +58,17 @@ switch ($method) {
       $conn->begin_transaction();
 
       try {
-        // Get tournament's handicap_pct for snapshot
-        $tournamentStmt = $conn->prepare("SELECT handicap_pct FROM tournaments WHERE tournament_id = ?");
-        $tournamentStmt->bind_param('i', $tournamentId);
+        // Get tournament's handicap_pct for snapshot (org-scoped)
+        $tournamentStmt = $conn->prepare("SELECT handicap_pct FROM tournaments WHERE tournament_id = ? AND org_id = ?");
+        $tournamentStmt->bind_param('ii', $tournamentId, $currentOrgId);
         $tournamentStmt->execute();
         $tournamentResult = $tournamentStmt->get_result()->fetch_assoc();
+        if (!$tournamentResult) {
+          $conn->rollback();
+          http_response_code(403);
+          echo json_encode(['error' => 'Tournament not found or access denied']);
+          exit;
+        }
         $handicapPct = $tournamentResult['handicap_pct'] ?? null;
         $tournamentStmt->close();
 
@@ -120,11 +131,16 @@ switch ($method) {
       $tournamentId = intval($data['tournament_id']);
       $golferId = intval($data['golfer_id']);
 
-      // Get tournament's handicap_pct for snapshot
-      $tournamentStmt = $conn->prepare("SELECT handicap_pct FROM tournaments WHERE tournament_id = ?");
-      $tournamentStmt->bind_param('i', $tournamentId);
+      // Get tournament's handicap_pct for snapshot (org-scoped)
+      $tournamentStmt = $conn->prepare("SELECT handicap_pct FROM tournaments WHERE tournament_id = ? AND org_id = ?");
+      $tournamentStmt->bind_param('ii', $tournamentId, $currentOrgId);
       $tournamentStmt->execute();
       $tournamentResult = $tournamentStmt->get_result()->fetch_assoc();
+      if (!$tournamentResult) {
+        http_response_code(403);
+        echo json_encode(['error' => 'Tournament not found or access denied']);
+        exit;
+      }
       $handicapPct = $tournamentResult['handicap_pct'] ?? null;
       $tournamentStmt->close();
 
@@ -141,30 +157,33 @@ switch ($method) {
     break;
 
   case 'DELETE':
-    // remove a golfer from a tournament
+    // remove a golfer from a tournament (org-scoped)
     $stmt = $conn->prepare("
-      DELETE FROM tournament_golfers
-       WHERE tournament_id = ?
-         AND golfer_id     = ?
+      DELETE tg FROM tournament_golfers tg
+        JOIN tournaments t ON t.tournament_id = tg.tournament_id AND t.org_id = ?
+       WHERE tg.tournament_id = ?
+         AND tg.golfer_id     = ?
     ");
-    $stmt->bind_param('ii', $tournament_id, $golfer_id);
+    $stmt->bind_param('iii', $currentOrgId, $tournament_id, $golfer_id);
     $stmt->execute();
     echo json_encode(['affected_rows' => $stmt->affected_rows]);
     break;
-    
+
   case 'PUT':
-      // Update team assignment
+      // Update team assignment (org-scoped)
       parse_str(file_get_contents('php://input'), $data);
       $stmt = $conn->prepare("
-        UPDATE tournament_golfers
-           SET team_id = ?
-         WHERE tournament_id = ?
-           AND golfer_id     = ?
+        UPDATE tournament_golfers tg
+          JOIN tournaments t ON t.tournament_id = tg.tournament_id AND t.org_id = ?
+           SET tg.team_id = ?
+         WHERE tg.tournament_id = ?
+           AND tg.golfer_id     = ?
       ");
       // allow empty = NULL team
       $teamParam = ($data['team_id'] === '') ? null : intval($data['team_id']);
       $stmt->bind_param(
-        'iii',
+        'iiii',
+        $currentOrgId,
         $teamParam,
         $tournament_id,
         $golfer_id

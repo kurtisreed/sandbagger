@@ -5,6 +5,7 @@ header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Expires: 0");
 header("Pragma: no-cache");
 require_once 'db_connect.php';
+require_once 'auth_middleware.php';
 
 $method      = $_SERVER['REQUEST_METHOD'];
 $course_id   = isset($_GET['course_id'])   ? intval($_GET['course_id'])   : null;

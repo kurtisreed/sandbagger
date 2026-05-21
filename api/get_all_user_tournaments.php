@@ -5,6 +5,7 @@ header("Access-Control-Allow-Methods: GET, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Access-Control-Allow-Credentials: true");
 require_once '../db_connect.php';
+require_once __DIR__ . '/auth_middleware.php';
 
 $golferId = isset($_GET['golfer_id']) ? intval($_GET['golfer_id']) : null;
 
@@ -14,14 +15,16 @@ if (!$golferId) {
   exit;
 }
 
-$conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) {
-  http_response_code(500);
-  echo json_encode(['error' => 'Database connection failed']);
-  exit;
+if (!isset($conn) || $conn->connect_error) {
+  $conn = new mysqli($servername, $username, $password, $dbname);
+  if ($conn->connect_error) {
+    http_response_code(500);
+    echo json_encode(['error' => 'Database connection failed']);
+    exit;
+  }
 }
 
-// Get ALL tournaments the golfer is enrolled in
+// Get ALL tournaments the golfer is enrolled in (scoped to org)
 // Includes Quick Rounds (Best Ball, Rabbit, Wolf) and regular tournaments
 $sql = "
 SELECT DISTINCT
@@ -35,7 +38,7 @@ SELECT DISTINCT
   r.round_date,
   c.course_name
 FROM tournament_golfers tg
-JOIN tournaments t ON tg.tournament_id = t.tournament_id
+JOIN tournaments t ON tg.tournament_id = t.tournament_id AND t.org_id = ?
 LEFT JOIN rounds r ON t.tournament_id = r.tournament_id
 LEFT JOIN courses c ON r.course_id = c.course_id
 WHERE tg.golfer_id = ?
@@ -43,7 +46,7 @@ ORDER BY t.start_date DESC, r.round_date ASC
 ";
 
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $golferId);
+$stmt->bind_param("ii", $currentOrgId, $golferId);
 $stmt->execute();
 $result = $stmt->get_result();
 

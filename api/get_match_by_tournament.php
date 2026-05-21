@@ -11,6 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 require_once '../db_connect.php';
+require_once __DIR__ . '/auth_middleware.php';
 
 $tournamentId = isset($_GET['tournament_id']) ? intval($_GET['tournament_id']) : null;
 
@@ -20,25 +21,28 @@ if (!$tournamentId) {
   exit;
 }
 
-$conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) {
-  http_response_code(500);
-  echo json_encode(['success' => false, 'error' => 'Database connection failed']);
-  exit;
+if (!isset($conn) || $conn->connect_error) {
+  $conn = new mysqli($servername, $username, $password, $dbname);
+  if ($conn->connect_error) {
+    http_response_code(500);
+    echo json_encode(['success' => false, 'error' => 'Database connection failed']);
+    exit;
+  }
 }
 
-// Get the match associated with this tournament
+// Get the match associated with this tournament (org-scoped)
 // Matches are linked to tournaments through rounds
 $sql = "
 SELECT m.match_id, m.match_code, m.round_id, m.finalized, r.round_name, r.tournament_id
 FROM matches m
 JOIN rounds r ON m.round_id = r.round_id
+JOIN tournaments t ON t.tournament_id = r.tournament_id AND t.org_id = ?
 WHERE r.tournament_id = ?
 LIMIT 1
 ";
 
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $tournamentId);
+$stmt->bind_param("ii", $currentOrgId, $tournamentId);
 $stmt->execute();
 $result = $stmt->get_result();
 

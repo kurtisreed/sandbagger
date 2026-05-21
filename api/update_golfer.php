@@ -11,6 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 require_once '../db_connect.php';
+require_once __DIR__ . '/auth_middleware.php';
 
 $data = json_decode(file_get_contents('php://input'), true);
 
@@ -26,16 +27,18 @@ if (!$golferId || !$firstName || !$lastName) {
   exit;
 }
 
-$conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) {
-  http_response_code(500);
-  echo json_encode(['success' => false, 'error' => 'Database connection failed']);
-  exit;
+if (!isset($conn) || $conn->connect_error) {
+  $conn = new mysqli($servername, $username, $password, $dbname);
+  if ($conn->connect_error) {
+    http_response_code(500);
+    echo json_encode(['success' => false, 'error' => 'Database connection failed']);
+    exit;
+  }
 }
 
 try {
-  $stmt = $conn->prepare("UPDATE golfers SET first_name = ?, last_name = ?, handicap = ?, email = ? WHERE golfer_id = ?");
-  $stmt->bind_param("ssdsi", $firstName, $lastName, $handicap, $email, $golferId);
+  $stmt = $conn->prepare("UPDATE golfers SET first_name = ?, last_name = ?, handicap = ?, email = ? WHERE golfer_id = ? AND org_id = ?");
+  $stmt->bind_param("ssdsii", $firstName, $lastName, $handicap, $email, $golferId, $currentOrgId);
 
   if ($stmt->execute()) {
     if ($stmt->affected_rows > 0 || $stmt->affected_rows === 0) {

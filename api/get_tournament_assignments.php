@@ -5,6 +5,7 @@ header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Expires: 0");
 header("Pragma: no-cache");
 require_once 'db_connect.php';
+require_once 'auth_middleware.php';
 
 // 1) Validate input
 $tournament_id = isset($_GET['tournament_id'])
@@ -17,14 +18,15 @@ if (!$tournament_id) {
   exit;
 }
 
-// 2) Fetch teams associated with the tournament
+// 2) Fetch teams associated with the tournament (org-scoped)
 $stmt = $conn->prepare("
   SELECT tt.team_id, t.name, t.color_hex
     FROM tournament_teams AS tt
     JOIN teams AS t ON tt.team_id = t.team_id
+    JOIN tournaments tn ON tn.tournament_id = tt.tournament_id AND tn.org_id = ?
    WHERE tt.tournament_id = ?
 ");
-$stmt->bind_param("i", $tournament_id);
+$stmt->bind_param("ii", $currentOrgId, $tournament_id);
 $stmt->execute();
 $res = $stmt->get_result();
 
@@ -39,16 +41,16 @@ while ($row = $res->fetch_assoc()) {
 }
 $stmt->close();
 
-// 3) Fetch all golfers with handicap snapshot if assigned
+// 3) Fetch golfers in this tournament with handicap snapshot (org-scoped)
 $stmt = $conn->prepare("
   SELECT g.golfer_id, g.first_name, g.last_name,
          COALESCE(tg.handicap_at_assignment, g.handicap) AS handicap,
          tg.team_id
     FROM golfers AS g
-    LEFT JOIN tournament_golfers AS tg
-      ON g.golfer_id = tg.golfer_id AND tg.tournament_id = ?
+    JOIN tournament_golfers AS tg ON g.golfer_id = tg.golfer_id AND tg.tournament_id = ?
+    JOIN tournaments tn ON tn.tournament_id = tg.tournament_id AND tn.org_id = ?
 ");
-$stmt->bind_param("i", $tournament_id);
+$stmt->bind_param("ii", $tournament_id, $currentOrgId);
 $stmt->execute();
 $res = $stmt->get_result();
 

@@ -5,6 +5,7 @@ header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Access-Control-Allow-Credentials: true");
 require_once '../db_connect.php';
+require_once __DIR__ . '/auth_middleware.php';
 
 $data = json_decode(file_get_contents('php://input'), true);
 
@@ -25,6 +26,22 @@ $wolf_golfer_id = intval($data['wolf_golfer_id']);
 $partner_choice = $data['partner_choice']; // Can be 'lone' or a golfer_id
 
 try {
+    // Verify match belongs to this org
+    $checkStmt = $conn->prepare("
+      SELECT m.match_id FROM matches m
+      JOIN rounds r ON r.round_id = m.round_id
+      JOIN tournaments t ON t.tournament_id = r.tournament_id AND t.org_id = ?
+      WHERE m.match_id = ?
+    ");
+    $checkStmt->bind_param('ii', $currentOrgId, $match_id);
+    $checkStmt->execute();
+    if ($checkStmt->get_result()->num_rows === 0) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'error' => 'Match not found or access denied']);
+        exit;
+    }
+    $checkStmt->close();
+
     // Determine partner_golfer_id
     $partner_golfer_id = null;
     if ($partner_choice !== 'lone' && $partner_choice !== '') {
