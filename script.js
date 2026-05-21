@@ -8233,6 +8233,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (changePinBtn) changePinBtn.style.display = isAdmin ? 'block' : 'none';
     const editGolfersBtn = document.getElementById('menu-edit-golfers');
     if (editGolfersBtn) editGolfersBtn.style.display = isAdmin ? 'block' : 'none';
+    const inviteBtn = document.getElementById('menu-invite');
+    if (inviteBtn) inviteBtn.style.display = isAdmin ? 'block' : 'none';
   });
 
   // Close menu when clicking outside
@@ -8396,17 +8398,112 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Check for invite code in URL (?join=CODE)
+  const urlParams = new URLSearchParams(window.location.search);
+  const joinCode  = urlParams.get('join');
+
   // On app load — check if session is already active
   fetch(`${API_BASE_URL}/api/me.php`, { credentials: 'include' })
     .then(r => r.json())
     .then(data => {
       if (data.authenticated) {
         proceedAfterAuth(data.golfer || null);
+      } else if (joinCode) {
+        // Validate the invite code and show the join form
+        fetch(`${API_BASE_URL}/api/join.php?code=${encodeURIComponent(joinCode)}`, { credentials: 'include' })
+          .then(r => r.json())
+          .then(inv => {
+            if (inv.valid) {
+              document.getElementById('join-org-label').textContent = `Join ${inv.org_name}`;
+              document.getElementById('login-form').style.display = 'none';
+              document.getElementById('join-form').style.display = '';
+              document.getElementById('pin-container').style.display = 'flex';
+            } else {
+              showLoginScreen();
+            }
+          })
+          .catch(() => showLoginScreen());
       } else {
         showLoginScreen();
       }
     })
     .catch(() => showLoginScreen());
+
+  // ── Join form (invite link) ─────────────────────────────────────────────────
+  document.getElementById('join-signin-link').addEventListener('click', (e) => {
+    e.preventDefault();
+    document.getElementById('join-form').style.display = 'none';
+    showLoginScreen();
+  });
+
+  document.getElementById('join-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name     = document.getElementById('join-name').value.trim();
+    const email    = document.getElementById('join-email').value.trim();
+    const password = document.getElementById('join-password').value.trim();
+    const handicap = parseFloat(document.getElementById('join-handicap').value) || 0;
+    const errorEl  = document.getElementById('join-error');
+    const btn      = document.getElementById('join-submit-btn');
+
+    errorEl.style.display = 'none';
+    btn.disabled = true;
+    btn.textContent = 'Joining…';
+
+    try {
+      const res  = await fetch(`${API_BASE_URL}/api/join.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: joinCode, name, email, password, handicap }),
+        credentials: 'include'
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        errorEl.textContent = data.error || 'Could not join group. Please try again.';
+        errorEl.style.display = 'block';
+      } else {
+        // Remove the ?join= param from URL cleanly
+        window.history.replaceState({}, '', window.location.pathname);
+        proceedAfterAuth(data.golfer);
+      }
+    } catch (err) {
+      errorEl.textContent = 'Connection error. Please try again.';
+      errorEl.style.display = 'block';
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Join Group';
+  });
+
+  // ── Invite modal (admin only) ───────────────────────────────────────────────
+  document.getElementById('menu-invite').addEventListener('click', async () => {
+    hamburgerDropdown.classList.remove('show');
+    const res  = await fetch(`${API_BASE_URL}/api/create_invite.php`, {
+      method: 'POST',
+      credentials: 'include'
+    });
+    const data = await res.json();
+    if (data.success) {
+      const link = `${window.location.origin}${window.location.pathname}?join=${data.code}`;
+      document.getElementById('invite-link-display').value = link;
+      document.getElementById('invite-modal').style.display = 'flex';
+    }
+  });
+
+  document.getElementById('copy-invite-btn').addEventListener('click', () => {
+    const input = document.getElementById('invite-link-display');
+    navigator.clipboard.writeText(input.value).then(() => {
+      document.getElementById('copy-invite-btn').textContent = 'Copied!';
+      setTimeout(() => { document.getElementById('copy-invite-btn').textContent = 'Copy Link'; }, 2000);
+    }).catch(() => {
+      input.select();
+      document.execCommand('copy');
+    });
+  });
+
+  document.getElementById('close-invite-modal-btn').addEventListener('click', () => {
+    document.getElementById('invite-modal').style.display = 'none';
+  });
 
   // Toggle between login and register
   document.getElementById('show-register-link').addEventListener('click', (e) => {

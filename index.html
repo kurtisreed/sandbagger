@@ -48,6 +48,7 @@
         <button id="menu-edit-user" type="button">Edit User</button>
         <button id="menu-edit-golfers" type="button" style="display:none;">Edit Golfers</button>
         <button id="menu-change-pin" type="button" style="display:none;">Change Group PIN</button>
+        <button id="menu-invite" type="button" style="display:none;">Invite Members</button>
         <button id="menu-logout" type="button">Logout</button>
       </div>
     </div>
@@ -101,6 +102,35 @@
     </div>
   </div>
 
+  <!-- JOIN FORM (shown when ?join=CODE is in the URL) -->
+  <form id="join-form" style="display:none;">
+    <h2>Sandbagger Scoring</h2>
+    <img class="form-logo" src="/images/cartoon.png" alt="Sandbagger Logo">
+    <div class="auth-card">
+      <p class="pin-prompt" id="join-org-label">Join the group</p>
+      <input type="text" id="join-name" placeholder="Your full name" autocomplete="name" required>
+      <input type="email" id="join-email" placeholder="Email address" autocomplete="email" required>
+      <input type="password" id="join-password" placeholder="Password (min 8 characters)" autocomplete="new-password" required>
+      <input type="number" id="join-handicap" placeholder="Handicap Index (e.g. 12.4)" step="0.1" min="-10" max="54">
+      <button type="submit" id="join-submit-btn">Join Group</button>
+      <p id="join-error" style="display:none; color:#ffcdd2; text-align:center; font-size:0.9rem; margin:0;"></p>
+      <p style="text-align:center; margin:0.75rem 0 0; color:rgba(255,255,255,0.7); font-size:0.9rem;">
+        Already have an account? <a href="#" id="join-signin-link" style="color:#FFD700; font-weight:bold;">Sign in</a>
+      </p>
+    </div>
+  </form>
+
+</div>
+
+<!-- Invite modal (admin only) -->
+<div id="invite-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:10000; align-items:center; justify-content:center;">
+  <div style="background:#fff; border-radius:12px; padding:1.5rem; max-width:360px; width:90%; margin:auto;">
+    <h3 style="margin:0 0 0.5rem;">Invite Members</h3>
+    <p style="margin:0 0 1rem; color:#555; font-size:0.9rem;">Share this link with anyone you want to join your group. They'll create their own account and be added automatically.</p>
+    <input type="text" id="invite-link-display" readonly style="width:100%; padding:0.6rem; border:1px solid #ccc; border-radius:6px; font-size:0.85rem; box-sizing:border-box; margin-bottom:0.75rem; background:#f5f5f5;">
+    <button id="copy-invite-btn" style="width:100%; padding:0.65rem; background:#4F2185; color:white; border:none; border-radius:6px; font-size:1rem; font-weight:bold; cursor:pointer; margin-bottom:0.5rem;">Copy Link</button>
+    <button id="close-invite-modal-btn" style="width:100%; padding:0.65rem; background:#ccc; color:#333; border:none; border-radius:6px; font-size:1rem; cursor:pointer;">Close</button>
+  </div>
 </div>
 
 <div id="auth-container" class="container" style="display: none;">
