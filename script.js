@@ -8389,12 +8389,26 @@ document.addEventListener('DOMContentLoaded', () => {
   function proceedAfterAuth(golfer) {
     document.getElementById('pin-container').style.display = 'none';
     if (golfer) {
-      // User is linked to a golfer — go straight to dashboard
+      // API returned a linked golfer — go straight to dashboard
       localStorage.setItem('sb_golfer', JSON.stringify(golfer));
       loadUserDashboard(golfer);
     } else {
-      // No linked golfer yet — show the golfer picker
-      document.getElementById('auth-container').style.display = 'flex';
+      // Fall back to localStorage (covers existing users not yet linked in DB)
+      const stored = localStorage.getItem('sb_golfer');
+      if (stored) {
+        const storedGolfer = JSON.parse(stored);
+        // Establish the DB link in the background so API works next time
+        fetch(`${API_BASE_URL}/api/link_golfer.php`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ golfer_id: storedGolfer.golfer_id }),
+          credentials: 'include'
+        }).catch(() => {});
+        loadUserDashboard(storedGolfer);
+      } else {
+        // No golfer known — show the picker
+        document.getElementById('auth-container').style.display = 'flex';
+      }
     }
   }
 
