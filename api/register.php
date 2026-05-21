@@ -14,15 +14,17 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $data = json_decode(file_get_contents('php://input'), true);
 
-$name      = trim($data['name']      ?? '');
-$email     = trim($data['email']     ?? '');
-$password  = trim($data['password']  ?? '');
+$firstName = trim($data['first_name'] ?? '');
+$lastName  = trim($data['last_name']  ?? '');
+$email     = trim($data['email']      ?? '');
+$password  = trim($data['password']   ?? '');
 $groupName = trim($data['group_name'] ?? '');
+$name      = trim("$firstName $lastName");
 
 // Basic validation
-if (!$name || !$email || !$password || !$groupName) {
+if (!$firstName || !$lastName || !$email || !$password || !$groupName) {
     http_response_code(400);
-    echo json_encode(['error' => 'Name, email, password, and group name are required']);
+    echo json_encode(['error' => 'First name, last name, email, password, and group name are required']);
     exit;
 }
 
@@ -100,14 +102,26 @@ try {
     $stmt->execute();
     $stmt->close();
 
+    // Create a golfer record for the admin (they're a player too)
+    $handicap = 0.0;
+    $stmt = $conn->prepare("
+        INSERT INTO golfers (first_name, last_name, handicap, org_id, user_id, active)
+        VALUES (?, ?, ?, ?, ?, 1)
+    ");
+    $stmt->bind_param('ssdii', $firstName, $lastName, $handicap, $orgId, $userId);
+    $stmt->execute();
+    $golferId = $conn->insert_id;
+    $stmt->close();
+
     $conn->commit();
 
     // Log the user in immediately
-    $_SESSION['user_id'] = $userId;
-    $_SESSION['org_id']  = $orgId;
-    $_SESSION['role']    = 'admin';
-    $_SESSION['name']    = $name;
-    $_SESSION['org_name'] = $groupName;
+    $_SESSION['user_id']   = $userId;
+    $_SESSION['org_id']    = $orgId;
+    $_SESSION['role']      = 'admin';
+    $_SESSION['name']      = $name;
+    $_SESSION['org_name']  = $groupName;
+    $_SESSION['golfer_id'] = $golferId;
 
     echo json_encode([
         'success'  => true,
@@ -115,7 +129,14 @@ try {
         'org_id'   => $orgId,
         'org_name' => $groupName,
         'role'     => 'admin',
-        'name'     => $name
+        'name'     => $name,
+        'golfer'   => [
+            'golfer_id'  => $golferId,
+            'first_name' => $firstName,
+            'last_name'  => $lastName,
+            'handicap'   => $handicap,
+            'role'       => null
+        ]
     ]);
 
 } catch (Exception $e) {

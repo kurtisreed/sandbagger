@@ -45,14 +45,16 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $data      = json_decode(file_get_contents('php://input'), true);
-$code      = strtoupper(trim($data['code']      ?? ''));
-$name      = trim($data['name']      ?? '');
-$email     = trim($data['email']     ?? '');
-$password  = trim($data['password']  ?? '');
+$code      = strtoupper(trim($data['code']       ?? ''));
+$firstName = trim($data['first_name'] ?? '');
+$lastName  = trim($data['last_name']  ?? '');
+$email     = trim($data['email']      ?? '');
+$password  = trim($data['password']   ?? '');
 $handicap  = isset($data['handicap']) ? floatval($data['handicap']) : 0.0;
+$name      = trim("$firstName $lastName");
 
 // Validation
-if (!$code || !$name || !$email || !$password) {
+if (!$code || !$firstName || !$lastName || !$email || !$password) {
     http_response_code(400);
     echo json_encode(['error' => 'All fields are required']);
     exit;
@@ -103,11 +105,6 @@ if ($stmt->num_rows > 0) {
 }
 $stmt->close();
 
-// Split name into first / last
-$nameParts = explode(' ', $name, 2);
-$firstName = $nameParts[0];
-$lastName  = $nameParts[1] ?? '';
-
 $conn->begin_transaction();
 
 try {
@@ -126,15 +123,39 @@ try {
     $stmt->execute();
     $stmt->close();
 
-    // Create golfer record linked to this user
+    // Check if admin pre-created a golfer with this exact name (case-insensitive, unlinked)
     $stmt = $conn->prepare("
-        INSERT INTO golfers (first_name, last_name, handicap, org_id, user_id, active)
-        VALUES (?, ?, ?, ?, ?, 1)
+        SELECT golfer_id, handicap FROM golfers
+        WHERE org_id = ? AND user_id IS NULL
+          AND LOWER(first_name) = LOWER(?) AND LOWER(last_name) = LOWER(?)
+        LIMIT 1
     ");
-    $stmt->bind_param('ssdii', $firstName, $lastName, $handicap, $orgId, $userId);
+    $stmt->bind_param('iss', $orgId, $firstName, $lastName);
     $stmt->execute();
-    $golferId = $conn->insert_id;
+    $result = $stmt->get_result();
+    $existing = $result->fetch_assoc();
     $stmt->close();
+
+    if ($existing) {
+        // Reconcile: link the pre-existing golfer to this new user
+        $golferId = (int) $existing['golfer_id'];
+        $stmt = $conn->prepare("UPDATE golfers SET user_id = ? WHERE golfer_id = ?");
+        $stmt->bind_param('ii', $userId, $golferId);
+        $stmt->execute();
+        $stmt->close();
+        // Use the pre-existing handicap (admin may have set it)
+        $handicap = (float) $existing['handicap'];
+    } else {
+        // No match — create a new golfer record for this user
+        $stmt = $conn->prepare("
+            INSERT INTO golfers (first_name, last_name, handicap, org_id, user_id, active)
+            VALUES (?, ?, ?, ?, ?, 1)
+        ");
+        $stmt->bind_param('ssdii', $firstName, $lastName, $handicap, $orgId, $userId);
+        $stmt->execute();
+        $golferId = $conn->insert_id;
+        $stmt->close();
+    }
 
     $conn->commit();
 

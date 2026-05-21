@@ -8452,7 +8452,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('join-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const name     = document.getElementById('join-name').value.trim();
+    const firstName = document.getElementById('join-first-name').value.trim();
+    const lastName  = document.getElementById('join-last-name').value.trim();
     const email    = document.getElementById('join-email').value.trim();
     const password = document.getElementById('join-password').value.trim();
     const handicap = parseFloat(document.getElementById('join-handicap').value) || 0;
@@ -8467,7 +8468,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const res  = await fetch(`${API_BASE_URL}/api/join.php`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: joinCode, name, email, password, handicap }),
+        body: JSON.stringify({ code: joinCode, first_name: firstName, last_name: lastName, email, password, handicap }),
         credentials: 'include'
       });
       const data = await res.json();
@@ -8596,7 +8597,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── Register form submission ────────────────────────────────────────────────
   document.getElementById('register-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const name      = document.getElementById('reg-name').value.trim();
+    const firstName = document.getElementById('reg-first-name').value.trim();
+    const lastName  = document.getElementById('reg-last-name').value.trim();
     const email     = document.getElementById('reg-email').value.trim();
     const password  = document.getElementById('reg-password').value.trim();
     const groupName = document.getElementById('reg-group-name').value.trim();
@@ -8611,7 +8613,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const res  = await fetch(`${API_BASE_URL}/api/register.php`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, group_name: groupName }),
+        body: JSON.stringify({ first_name: firstName, last_name: lastName, email, password, group_name: groupName }),
         credentials: 'include'
       });
       const data = await res.json();
@@ -8620,7 +8622,7 @@ document.addEventListener('DOMContentLoaded', () => {
         errorEl.textContent = data.error || 'Registration failed. Please try again.';
         errorEl.style.display = 'block';
       } else {
-        proceedAfterAuth();
+        proceedAfterAuth(data.golfer || null);
       }
     } catch (err) {
       errorEl.textContent = 'Connection error. Please try again.';
