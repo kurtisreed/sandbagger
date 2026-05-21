@@ -54,18 +54,53 @@
   </div>
 </div>
 
-<!-- PIN screen (shown on first launch / after logout) -->
+<!-- Login / Register screen -->
 <div id="pin-container" style="display: none;">
-  <form id="pin-form">
+
+  <!-- LOGIN FORM -->
+  <form id="login-form">
     <h2>Sandbagger Scoring</h2>
     <img class="form-logo" src="/images/cartoon.png" alt="Sandbagger Logo">
     <div class="auth-card">
-      <p class="pin-prompt">Enter your group PIN to continue</p>
-      <input type="password" id="pin-input" inputmode="numeric" maxlength="10" placeholder="Group PIN">
-      <button type="submit">Enter</button>
-      <p id="pin-error" style="display: none;">Incorrect PIN. Please try again.</p>
+      <p class="pin-prompt">Sign in to your group</p>
+      <input type="email" id="login-email" placeholder="Email address" autocomplete="email" required>
+      <input type="password" id="login-password" placeholder="Password" autocomplete="current-password" required>
+      <button type="submit" id="login-submit-btn">Sign In</button>
+      <p id="login-error" style="display:none; color:#ffcdd2; text-align:center; font-size:0.9rem; margin:0;"></p>
+      <p style="text-align:center; margin:0.75rem 0 0; color:rgba(255,255,255,0.7); font-size:0.9rem;">
+        New group? <a href="#" id="show-register-link" style="color:#FFD700; font-weight:bold;">Create one</a>
+      </p>
     </div>
   </form>
+
+  <!-- REGISTER FORM (hidden by default) -->
+  <form id="register-form" style="display:none;">
+    <h2>Sandbagger Scoring</h2>
+    <img class="form-logo" src="/images/cartoon.png" alt="Sandbagger Logo">
+    <div class="auth-card">
+      <p class="pin-prompt">Create your group</p>
+      <input type="text" id="reg-name" placeholder="Your name" autocomplete="name" required>
+      <input type="email" id="reg-email" placeholder="Email address" autocomplete="email" required>
+      <input type="password" id="reg-password" placeholder="Password (min 8 characters)" autocomplete="new-password" required>
+      <input type="text" id="reg-group-name" placeholder="Group name (e.g. Reed Golf Trip)" required>
+      <button type="submit" id="register-submit-btn">Create Group</button>
+      <p id="register-error" style="display:none; color:#ffcdd2; text-align:center; font-size:0.9rem; margin:0;"></p>
+      <p style="text-align:center; margin:0.75rem 0 0; color:rgba(255,255,255,0.7); font-size:0.9rem;">
+        Already have an account? <a href="#" id="show-login-link" style="color:#FFD700; font-weight:bold;">Sign in</a>
+      </p>
+    </div>
+  </form>
+
+  <!-- ORG PICKER (shown when user belongs to multiple groups) -->
+  <div id="org-picker" style="display:none;">
+    <h2>Sandbagger Scoring</h2>
+    <img class="form-logo" src="/images/cartoon.png" alt="Sandbagger Logo">
+    <div class="auth-card">
+      <p class="pin-prompt">Choose your group</p>
+      <div id="org-picker-list"></div>
+    </div>
+  </div>
+
 </div>
 
 <div id="auth-container" class="container" style="display: none;">

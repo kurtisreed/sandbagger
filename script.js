@@ -8360,80 +8360,176 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('auth-container').style.display = 'none';
     document.getElementById('auth-form').reset();
     newGolferForm.style.display = 'none';
-    // Return to PIN screen and clear persisted login
+    // Return to login screen and clear persisted login
     localStorage.removeItem('sb_golfer');
     localStorage.removeItem('sb_pin_verified');
-    document.getElementById('pin-input').value = '';
-    document.getElementById('pin-error').style.display = 'none';
+    fetch(`${API_BASE_URL}/api/logout.php`, { method: 'POST', credentials: 'include' }).catch(() => {});
+    document.getElementById('login-form').style.display = '';
+    document.getElementById('register-form').style.display = 'none';
+    document.getElementById('org-picker').style.display = 'none';
+    document.getElementById('login-email').value = '';
+    document.getElementById('login-password').value = '';
+    document.getElementById('login-error').style.display = 'none';
     document.getElementById('pin-container').style.display = 'flex';
     sessionStorage.clear();
     currentUser = null;
   });
 
-  // ── PIN screen & localStorage auto-login ───────────────────────────────────
+  // ── Login screen & session auto-login ─────────────────────────────────────
 
-  const pinForm = document.getElementById('pin-form');
-  const pinInput = document.getElementById('pin-input');
-  const pinError = document.getElementById('pin-error');
+  function showLoginScreen() {
+    document.getElementById('login-form').style.display = '';
+    document.getElementById('register-form').style.display = 'none';
+    document.getElementById('org-picker').style.display = 'none';
+    document.getElementById('pin-container').style.display = 'flex';
+  }
 
-  // Check for persisted login — skip PIN + golfer picker entirely
-  const storedGolfer = localStorage.getItem('sb_golfer');
-  const pinVerified  = localStorage.getItem('sb_pin_verified');
-
-  if (storedGolfer && pinVerified === 'true') {
-    const golfer = JSON.parse(storedGolfer);
-    if (!golfer.role) {
-      // Stale stored golfer missing role — re-fetch to get complete data
-      fetch(`${API_BASE_URL}/get_golfers.php`)
+  function proceedAfterAuth() {
+    document.getElementById('pin-container').style.display = 'none';
+    // Check for persisted golfer selection
+    const storedGolfer = localStorage.getItem('sb_golfer');
+    if (storedGolfer) {
+      const golfer = JSON.parse(storedGolfer);
+      fetch(`${API_BASE_URL}/get_golfers.php`, { credentials: 'include' })
         .then(r => r.json())
         .then(golfers => {
           const fresh = golfers.find(g => g.golfer_id === golfer.golfer_id);
           if (fresh) {
             loadUserDashboard(fresh);
           } else {
-            document.getElementById('pin-container').style.display = 'flex';
+            document.getElementById('auth-container').style.display = 'flex';
           }
         })
-        .catch(() => loadUserDashboard(golfer));
+        .catch(() => {
+          document.getElementById('auth-container').style.display = 'flex';
+        });
     } else {
-      loadUserDashboard(golfer);
+      document.getElementById('auth-container').style.display = 'flex';
     }
-  } else {
-    document.getElementById('pin-container').style.display = 'flex';
   }
 
-  // PIN form submission
-  pinForm.addEventListener('submit', async (e) => {
+  // On app load — check if session is already active
+  fetch(`${API_BASE_URL}/api/me.php`, { credentials: 'include' })
+    .then(r => r.json())
+    .then(data => {
+      if (data.authenticated) {
+        proceedAfterAuth();
+      } else {
+        showLoginScreen();
+      }
+    })
+    .catch(() => showLoginScreen());
+
+  // Toggle between login and register
+  document.getElementById('show-register-link').addEventListener('click', (e) => {
     e.preventDefault();
-    const pin = pinInput.value.trim();
-    if (!pin) return;
-    const submitBtn = pinForm.querySelector('button[type="submit"]');
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Checking…';
-    pinError.style.display = 'none';
+    document.getElementById('login-form').style.display = 'none';
+    document.getElementById('register-form').style.display = '';
+    document.getElementById('org-picker').style.display = 'none';
+  });
+
+  document.getElementById('show-login-link').addEventListener('click', (e) => {
+    e.preventDefault();
+    document.getElementById('login-form').style.display = '';
+    document.getElementById('register-form').style.display = 'none';
+    document.getElementById('org-picker').style.display = 'none';
+  });
+
+  // ── Login form submission ───────────────────────────────────────────────────
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email    = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value.trim();
+    const errorEl  = document.getElementById('login-error');
+    const btn      = document.getElementById('login-submit-btn');
+
+    errorEl.style.display = 'none';
+    btn.disabled = true;
+    btn.textContent = 'Signing in…';
+
     try {
-      const res  = await fetch(`${API_BASE_URL}/api/verify_pin.php`, {
+      const res  = await fetch(`${API_BASE_URL}/api/login.php`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin }),
-        credentials: 'include',
+        body: JSON.stringify({ email, password }),
+        credentials: 'include'
       });
       const data = await res.json();
-      if (data.success) {
-        document.getElementById('pin-container').style.display = 'none';
-        document.getElementById('auth-container').style.display = 'flex';
+
+      if (!res.ok || !data.success) {
+        errorEl.textContent = data.error || 'Invalid email or password';
+        errorEl.style.display = 'block';
+      } else if (data.needs_org_select) {
+        // Show org picker
+        document.getElementById('login-form').style.display = 'none';
+        document.getElementById('org-picker').style.display = '';
+        const list = document.getElementById('org-picker-list');
+        list.innerHTML = '';
+        data.orgs.forEach(org => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.textContent = org.org_name;
+          btn.style.cssText = 'width:100%; margin-bottom:0.5rem; padding:0.75rem; background:#4F2185; color:#fff; border:none; border-radius:6px; font-size:1rem; font-weight:bold; cursor:pointer;';
+          btn.addEventListener('click', async () => {
+            const r = await fetch(`${API_BASE_URL}/api/select_org.php`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ org_id: org.org_id }),
+              credentials: 'include'
+            });
+            const d = await r.json();
+            if (d.success) proceedAfterAuth();
+          });
+          list.appendChild(btn);
+        });
       } else {
-        pinError.style.display = 'block';
-        pinInput.value = '';
-        pinInput.focus();
+        proceedAfterAuth();
       }
     } catch (err) {
-      console.error('[Sandbagger] PIN verify error:', err, '| API_BASE_URL:', API_BASE_URL, '| URL attempted:', `${API_BASE_URL}/api/verify_pin.php`);
-      pinError.textContent = 'Connection error. Please try again.';
-      pinError.style.display = 'block';
+      errorEl.textContent = 'Connection error. Please try again.';
+      errorEl.style.display = 'block';
     }
-    submitBtn.disabled = false;
-    submitBtn.textContent = 'Enter';
+
+    btn.disabled = false;
+    btn.textContent = 'Sign In';
+  });
+
+  // ── Register form submission ────────────────────────────────────────────────
+  document.getElementById('register-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name      = document.getElementById('reg-name').value.trim();
+    const email     = document.getElementById('reg-email').value.trim();
+    const password  = document.getElementById('reg-password').value.trim();
+    const groupName = document.getElementById('reg-group-name').value.trim();
+    const errorEl   = document.getElementById('register-error');
+    const btn       = document.getElementById('register-submit-btn');
+
+    errorEl.style.display = 'none';
+    btn.disabled = true;
+    btn.textContent = 'Creating…';
+
+    try {
+      const res  = await fetch(`${API_BASE_URL}/api/register.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password, group_name: groupName }),
+        credentials: 'include'
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        errorEl.textContent = data.error || 'Registration failed. Please try again.';
+        errorEl.style.display = 'block';
+      } else {
+        proceedAfterAuth();
+      }
+    } catch (err) {
+      errorEl.textContent = 'Connection error. Please try again.';
+      errorEl.style.display = 'block';
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Create Group';
   });
 
   // ── Change PIN (admin only) ─────────────────────────────────────────────────
