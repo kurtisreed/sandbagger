@@ -12,11 +12,24 @@ if (empty($_SESSION['user_id'])) {
     exit;
 }
 
+require_once 'db_connect.php';
+require_once 'auth_helpers.php';
+
+$userId = (int) $_SESSION['user_id'];
+$orgId  = (int) $_SESSION['org_id'];
+
+// Re-fetch golfer link in case it was just established
+$golfer = getLinkedGolfer($conn, $userId, $orgId);
+if ($golfer) {
+    $_SESSION['golfer_id'] = (int) $golfer['golfer_id'];
+}
+
 echo json_encode([
     'authenticated' => true,
-    'user_id'       => (int) $_SESSION['user_id'],
+    'user_id'       => $userId,
     'name'          => $_SESSION['name']     ?? '',
-    'org_id'        => (int) $_SESSION['org_id'],
+    'org_id'        => $orgId,
     'org_name'      => $_SESSION['org_name'] ?? '',
-    'role'          => $_SESSION['role']     ?? 'scorer'
+    'role'          => $_SESSION['role']     ?? 'scorer',
+    'golfer'        => $golfer
 ]);

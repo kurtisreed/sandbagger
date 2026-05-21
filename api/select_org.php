@@ -7,6 +7,7 @@ header('Content-Type: application/json');
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 require_once 'db_connect.php';
+require_once 'auth_helpers.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -59,9 +60,15 @@ $_SESSION['org_id']   = $orgId;
 $_SESSION['role']     = $membership['role'];
 $_SESSION['org_name'] = $membership['org_name'];
 
+$golfer = getLinkedGolfer($conn, $userId, $orgId);
+if ($golfer) {
+    $_SESSION['golfer_id'] = (int) $golfer['golfer_id'];
+}
+
 echo json_encode([
     'success'  => true,
     'org_id'   => $orgId,
     'org_name' => $membership['org_name'],
-    'role'     => $membership['role']
+    'role'     => $membership['role'],
+    'golfer'   => $golfer
 ]);

@@ -5,6 +5,7 @@ header('Content-Type: application/json');
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 require_once 'db_connect.php';
+require_once 'auth_helpers.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -61,20 +62,28 @@ $userId = (int) $user['user_id'];
 
 if (count($orgs) === 1) {
     $org = $orgs[0];
+    $orgId = (int) $org['org_id'];
+
     $_SESSION['user_id']  = $userId;
-    $_SESSION['org_id']   = (int) $org['org_id'];
+    $_SESSION['org_id']   = $orgId;
     $_SESSION['role']     = $org['role'];
     $_SESSION['name']     = $user['name'];
     $_SESSION['org_name'] = $org['org_name'];
 
+    $golfer = getLinkedGolfer($conn, $userId, $orgId);
+    if ($golfer) {
+        $_SESSION['golfer_id'] = (int) $golfer['golfer_id'];
+    }
+
     echo json_encode([
-        'success'   => true,
-        'user_id'   => $userId,
-        'name'      => $user['name'],
-        'org_id'    => (int) $org['org_id'],
-        'org_name'  => $org['org_name'],
-        'role'      => $org['role'],
-        'needs_org_select' => false
+        'success'          => true,
+        'user_id'          => $userId,
+        'name'             => $user['name'],
+        'org_id'           => $orgId,
+        'org_name'         => $org['org_name'],
+        'role'             => $org['role'],
+        'needs_org_select' => false,
+        'golfer'           => $golfer
     ]);
 } else {
     // Multiple orgs — frontend needs to show an org picker

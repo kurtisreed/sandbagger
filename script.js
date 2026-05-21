@@ -8384,26 +8384,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('pin-container').style.display = 'flex';
   }
 
-  function proceedAfterAuth() {
+  function proceedAfterAuth(golfer) {
     document.getElementById('pin-container').style.display = 'none';
-    // Check for persisted golfer selection
-    const storedGolfer = localStorage.getItem('sb_golfer');
-    if (storedGolfer) {
-      const golfer = JSON.parse(storedGolfer);
-      fetch(`${API_BASE_URL}/get_golfers.php`, { credentials: 'include' })
-        .then(r => r.json())
-        .then(golfers => {
-          const fresh = golfers.find(g => g.golfer_id === golfer.golfer_id);
-          if (fresh) {
-            loadUserDashboard(fresh);
-          } else {
-            document.getElementById('auth-container').style.display = 'flex';
-          }
-        })
-        .catch(() => {
-          document.getElementById('auth-container').style.display = 'flex';
-        });
+    if (golfer) {
+      // User is linked to a golfer — go straight to dashboard
+      localStorage.setItem('sb_golfer', JSON.stringify(golfer));
+      loadUserDashboard(golfer);
     } else {
+      // No linked golfer yet — show the golfer picker
       document.getElementById('auth-container').style.display = 'flex';
     }
   }
@@ -8413,7 +8401,7 @@ document.addEventListener('DOMContentLoaded', () => {
     .then(r => r.json())
     .then(data => {
       if (data.authenticated) {
-        proceedAfterAuth();
+        proceedAfterAuth(data.golfer || null);
       } else {
         showLoginScreen();
       }
@@ -8478,12 +8466,12 @@ document.addEventListener('DOMContentLoaded', () => {
               credentials: 'include'
             });
             const d = await r.json();
-            if (d.success) proceedAfterAuth();
+            if (d.success) proceedAfterAuth(d.golfer || null);
           });
           list.appendChild(btn);
         });
       } else {
-        proceedAfterAuth();
+        proceedAfterAuth(data.golfer || null);
       }
     } catch (err) {
       errorEl.textContent = 'Connection error. Please try again.';
@@ -8683,6 +8671,13 @@ document.addEventListener('DOMContentLoaded', () => {
               handicap: parseFloat(handicap) || 0,
               email: email || ''
             };
+            // Link this new golfer to the user account permanently
+            fetch(`${API_BASE_URL}/api/link_golfer.php`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ golfer_id: data.golfer_id }),
+              credentials: 'include'
+            }).catch(() => {});
             loadUserDashboard(golfer);
           } else {
             authMessage.textContent = 'Error creating golfer: ' + (data.error || 'Unknown error');
@@ -8693,9 +8688,15 @@ document.addEventListener('DOMContentLoaded', () => {
           authMessage.textContent = 'Error creating golfer. Please try again.';
         });
     } else {
-      // Load existing golfer
+      // Load existing golfer and link to user account permanently
       const selectedOption = selectUser.options[selectUser.selectedIndex];
       const golfer = JSON.parse(selectedOption.dataset.golfer);
+      fetch(`${API_BASE_URL}/api/link_golfer.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ golfer_id: golfer.golfer_id }),
+        credentials: 'include'
+      }).catch(() => {});
       loadUserDashboard(golfer);
     }
   });
