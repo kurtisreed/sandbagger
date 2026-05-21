@@ -11,10 +11,26 @@ $method      = $_SERVER['REQUEST_METHOD'];
 $course_id   = isset($_GET['course_id'])   ? intval($_GET['course_id'])   : null;
 $hole_number = isset($_GET['hole_number']) ? intval($_GET['hole_number']) : null;
 
+// Helper: verify a course belongs to the current org
+function courseOwnedByOrg($conn, $course_id, $orgId) {
+    $stmt = $conn->prepare("SELECT course_id FROM courses WHERE course_id = ? AND org_id = ?");
+    $stmt->bind_param('ii', $course_id, $orgId);
+    $stmt->execute();
+    $stmt->store_result();
+    $found = $stmt->num_rows > 0;
+    $stmt->close();
+    return $found;
+}
+
 switch ($method) {
   case 'GET':
     if ($course_id !== null && $hole_number !== null) {
-      // fetch one hole
+      // fetch one hole — scope through course org check
+      if (!courseOwnedByOrg($conn, $course_id, $currentOrgId)) {
+        http_response_code(403);
+        echo json_encode(['error' => 'Course not found']);
+        exit;
+      }
       $stmt = $conn->prepare("
         SELECT course_id, hole_number, par, handicap_index
           FROM holes
@@ -24,7 +40,12 @@ switch ($method) {
       $stmt->execute();
       echo json_encode($stmt->get_result()->fetch_assoc());
     } elseif ($course_id !== null) {
-      // fetch all holes for a course
+      // fetch all holes for a course — scope through course org check
+      if (!courseOwnedByOrg($conn, $course_id, $currentOrgId)) {
+        http_response_code(403);
+        echo json_encode(['error' => 'Course not found']);
+        exit;
+      }
       $stmt = $conn->prepare("
         SELECT course_id, hole_number, par, handicap_index
           FROM holes
@@ -35,19 +56,28 @@ switch ($method) {
       $stmt->execute();
       echo json_encode($stmt->get_result()->fetch_all(MYSQLI_ASSOC));
     } else {
-      // fetch all holes
-      $result = $conn->query("
-        SELECT course_id, hole_number, par, handicap_index
-          FROM holes
-         ORDER BY course_id, hole_number
+      // fetch all holes across this org's courses
+      $stmt = $conn->prepare("
+        SELECT h.course_id, h.hole_number, h.par, h.handicap_index
+          FROM holes h
+          JOIN courses c ON c.course_id = h.course_id AND c.org_id = ?
+         ORDER BY h.course_id, h.hole_number
       ");
-      echo json_encode($result->fetch_all(MYSQLI_ASSOC));
+      $stmt->bind_param('i', $currentOrgId);
+      $stmt->execute();
+      echo json_encode($stmt->get_result()->fetch_all(MYSQLI_ASSOC));
     }
     break;
 
   case 'POST':
-    // create a new hole
+    // create a new hole — verify course belongs to org first
     $data = json_decode(file_get_contents('php://input'), true);
+    $cid  = intval($data['course_id'] ?? 0);
+    if (!courseOwnedByOrg($conn, $cid, $currentOrgId)) {
+      http_response_code(403);
+      echo json_encode(['error' => 'Course not found']);
+      exit;
+    }
     $stmt = $conn->prepare("
       INSERT INTO holes (course_id, hole_number, par, handicap_index)
       VALUES (?, ?, ?, ?)
@@ -64,13 +94,18 @@ switch ($method) {
     break;
 
   case 'PUT':
-    // update an existing hole
+    // update an existing hole — verify course belongs to org first
     parse_str(file_get_contents('php://input'), $data);
+    if (!courseOwnedByOrg($conn, $course_id, $currentOrgId)) {
+      http_response_code(403);
+      echo json_encode(['error' => 'Course not found']);
+      exit;
+    }
     $stmt = $conn->prepare("
       UPDATE holes
          SET par            = ?,
              handicap_index = ?
-       WHERE course_id     = ? 
+       WHERE course_id     = ?
          AND hole_number   = ?
     ");
     $stmt->bind_param(
@@ -85,7 +120,12 @@ switch ($method) {
     break;
 
   case 'DELETE':
-    // delete a hole
+    // delete a hole — verify course belongs to org first
+    if (!courseOwnedByOrg($conn, $course_id, $currentOrgId)) {
+      http_response_code(403);
+      echo json_encode(['error' => 'Course not found']);
+      exit;
+    }
     $stmt = $conn->prepare("
       DELETE FROM holes
        WHERE course_id   = ?

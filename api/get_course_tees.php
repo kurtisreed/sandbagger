@@ -10,6 +10,18 @@ if (!$course_id) {
     exit;
 }
 
+// Verify the course belongs to the current org
+$stmt = $conn->prepare("SELECT course_id FROM courses WHERE course_id = ? AND org_id = ?");
+$stmt->bind_param('ii', $course_id, $currentOrgId);
+$stmt->execute();
+$stmt->store_result();
+if ($stmt->num_rows === 0) {
+    http_response_code(403);
+    echo json_encode(['error' => 'Course not found']);
+    exit;
+}
+$stmt->close();
+
 // Get all tees for this course
 $stmt = $conn->prepare("SELECT * FROM course_tees WHERE course_id = ?");
 $stmt->bind_param('i', $course_id);

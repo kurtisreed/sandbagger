@@ -14,63 +14,40 @@ $id     = isset($_GET['course_id']) ? intval($_GET['course_id']) : null;
 switch ($method) {
   case 'GET':
     if ($id) {
-      // fetch one course (alias course_name → name)
+      // fetch one course — must belong to this org
       $stmt = $conn->prepare("
-        SELECT 
+        SELECT
           course_id,
           course_name AS name
         FROM courses
-        WHERE course_id = ?
+        WHERE course_id = ? AND org_id = ?
       ");
-      $stmt->bind_param('i', $id);
+      $stmt->bind_param('ii', $id, $currentOrgId);
       $stmt->execute();
       echo json_encode($stmt->get_result()->fetch_assoc());
     } else {
-      // fetch all courses
-      $result = $conn->query("
-        SELECT 
+      // fetch all courses for this org
+      $stmt = $conn->prepare("
+        SELECT
           course_id,
           course_name AS name
         FROM courses
+        WHERE org_id = ?
         ORDER BY course_name
       ");
-      echo json_encode($result->fetch_all(MYSQLI_ASSOC));
+      $stmt->bind_param('i', $currentOrgId);
+      $stmt->execute();
+      echo json_encode($stmt->get_result()->fetch_all(MYSQLI_ASSOC));
     }
     break;
 
   case 'POST':
-    // create new course
+    // create new course for this org
     $data = json_decode(file_get_contents('php://input'), true);
     $stmt = $conn->prepare("
-      INSERT INTO courses 
-        (course_name, par_total, tees, slope, rating, total_yardage)
-      VALUES (?,?,?,?,?,?)
-    ");
-    $stmt->bind_param(
-      'sisidi',
-      $data['name'],
-      $data['par_total'],
-      $data['tees'],
-      $data['slope'],
-      $data['rating'],
-      $data['total_yardage']
-    );
-    $stmt->execute();
-    echo json_encode(['inserted_id' => $stmt->insert_id]);
-    break;
-
-  case 'PUT':
-    // update existing course
-    parse_str(file_get_contents('php://input'), $data);
-    $stmt = $conn->prepare("
-      UPDATE courses
-         SET course_name   = ?,
-             par_total     = ?,
-             tees          = ?, 
-             slope         = ?,
-             rating        = ?,
-             total_yardage = ?
-       WHERE course_id    = ?
+      INSERT INTO courses
+        (course_name, par_total, tees, slope, rating, total_yardage, org_id)
+      VALUES (?,?,?,?,?,?,?)
     ");
     $stmt->bind_param(
       'sisidii',
@@ -80,19 +57,47 @@ switch ($method) {
       $data['slope'],
       $data['rating'],
       $data['total_yardage'],
-      $id
+      $currentOrgId
+    );
+    $stmt->execute();
+    echo json_encode(['inserted_id' => $stmt->insert_id]);
+    break;
+
+  case 'PUT':
+    // update existing course — must belong to this org
+    parse_str(file_get_contents('php://input'), $data);
+    $stmt = $conn->prepare("
+      UPDATE courses
+         SET course_name   = ?,
+             par_total     = ?,
+             tees          = ?,
+             slope         = ?,
+             rating        = ?,
+             total_yardage = ?
+       WHERE course_id = ? AND org_id = ?
+    ");
+    $stmt->bind_param(
+      'sisidiii',
+      $data['name'],
+      $data['par_total'],
+      $data['tees'],
+      $data['slope'],
+      $data['rating'],
+      $data['total_yardage'],
+      $id,
+      $currentOrgId
     );
     $stmt->execute();
     echo json_encode(['affected_rows' => $stmt->affected_rows]);
     break;
 
   case 'DELETE':
-    // delete a course
+    // delete a course — must belong to this org
     $stmt = $conn->prepare("
-      DELETE FROM courses 
-       WHERE course_id = ?
+      DELETE FROM courses
+       WHERE course_id = ? AND org_id = ?
     ");
-    $stmt->bind_param('i', $id);
+    $stmt->bind_param('ii', $id, $currentOrgId);
     $stmt->execute();
     echo json_encode(['deleted_rows' => $stmt->affected_rows]);
     break;
