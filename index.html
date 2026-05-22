@@ -69,17 +69,31 @@
       <button type="submit" id="login-submit-btn">Sign In</button>
       <p id="login-error" style="display:none; color:#ffcdd2; text-align:center; font-size:0.9rem; margin:0;"></p>
       <p style="text-align:center; margin:0.75rem 0 0; color:rgba(255,255,255,0.7); font-size:0.9rem;">
-        New group? <a href="#" id="show-register-link" style="color:#FFD700; font-weight:bold;">Create one</a>
+        New here? <a href="#" id="show-signup-link" style="color:#FFD700; font-weight:bold;">Sign up</a>
       </p>
     </div>
   </form>
+
+  <!-- SIGNUP CHOOSER -->
+  <div id="signup-chooser" style="display:none;">
+    <h2>Sandbagger Scoring</h2>
+    <img class="form-logo" src="/images/cartoon.png" alt="Sandbagger Logo">
+    <div class="auth-card">
+      <p class="pin-prompt">Get started</p>
+      <button id="chooser-create-btn" type="button" style="width:100%; padding:0.85rem; margin-bottom:0.75rem; background:#4F2185; color:white; border:none; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">🏌️ Start a new group</button>
+      <button id="chooser-join-btn" type="button" style="width:100%; padding:0.85rem; background:rgba(255,255,255,0.15); color:white; border:2px solid rgba(255,255,255,0.4); border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">🔗 Join an existing group</button>
+      <p style="text-align:center; margin:0.75rem 0 0; color:rgba(255,255,255,0.7); font-size:0.9rem;">
+        Already have an account? <a href="#" id="chooser-signin-link" style="color:#FFD700; font-weight:bold;">Sign in</a>
+      </p>
+    </div>
+  </div>
 
   <!-- REGISTER FORM (hidden by default) -->
   <form id="register-form" style="display:none;">
     <h2>Sandbagger Scoring</h2>
     <img class="form-logo" src="/images/cartoon.png" alt="Sandbagger Logo">
     <div class="auth-card">
-      <p class="pin-prompt">Create your group</p>
+      <p class="pin-prompt">Start a new group</p>
       <input type="text" id="reg-first-name" placeholder="First name" autocomplete="given-name" required>
       <input type="text" id="reg-last-name" placeholder="Last name" autocomplete="family-name" required>
       <input type="email" id="reg-email" placeholder="Email address" autocomplete="email" required>
@@ -88,7 +102,9 @@
       <button type="submit" id="register-submit-btn">Create Group</button>
       <p id="register-error" style="display:none; color:#ffcdd2; text-align:center; font-size:0.9rem; margin:0;"></p>
       <p style="text-align:center; margin:0.75rem 0 0; color:rgba(255,255,255,0.7); font-size:0.9rem;">
-        Already have an account? <a href="#" id="show-login-link" style="color:#FFD700; font-weight:bold;">Sign in</a>
+        <a href="#" id="register-back-link" style="color:rgba(255,255,255,0.6);">← Back</a>
+        &nbsp;·&nbsp;
+        <a href="#" id="show-login-link" style="color:#FFD700; font-weight:bold;">Sign in</a>
       </p>
     </div>
   </form>
@@ -103,12 +119,14 @@
     </div>
   </div>
 
-  <!-- JOIN FORM (shown when ?join=CODE is in the URL) -->
+  <!-- JOIN FORM -->
   <form id="join-form" style="display:none;">
     <h2>Sandbagger Scoring</h2>
     <img class="form-logo" src="/images/cartoon.png" alt="Sandbagger Logo">
     <div class="auth-card">
-      <p class="pin-prompt" id="join-org-label">Join the group</p>
+      <p class="pin-prompt" id="join-org-label">Join a group</p>
+      <input type="text" id="join-code-input" placeholder="Invite code (e.g. ABC12345)" maxlength="8" autocomplete="off" style="text-transform:uppercase; letter-spacing:0.12em; text-align:center;">
+      <p id="join-code-status" style="display:none; text-align:center; font-size:0.85rem; margin:-0.25rem 0 0.25rem;"></p>
       <input type="text" id="join-first-name" placeholder="First name" autocomplete="given-name" required>
       <input type="text" id="join-last-name" placeholder="Last name" autocomplete="family-name" required>
       <input type="email" id="join-email" placeholder="Email address" autocomplete="email" required>
@@ -117,6 +135,8 @@
       <button type="submit" id="join-submit-btn">Join Group</button>
       <p id="join-error" style="display:none; color:#ffcdd2; text-align:center; font-size:0.9rem; margin:0;"></p>
       <p style="text-align:center; margin:0.75rem 0 0; color:rgba(255,255,255,0.7); font-size:0.9rem;">
+        <a href="#" id="join-back-link" style="color:rgba(255,255,255,0.6);">← Back</a>
+        &nbsp;·&nbsp;
         Already have an account? <a href="#" id="join-signin-link" style="color:#FFD700; font-weight:bold;">Sign in</a>
       </p>
     </div>

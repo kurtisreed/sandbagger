@@ -8367,7 +8367,9 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.removeItem('sb_pin_verified');
     fetch(`${API_BASE_URL}/api/logout.php`, { method: 'POST', credentials: 'include' }).catch(() => {});
     document.getElementById('login-form').style.display = '';
+    document.getElementById('signup-chooser').style.display = 'none';
     document.getElementById('register-form').style.display = 'none';
+    document.getElementById('join-form').style.display = 'none';
     document.getElementById('org-picker').style.display = 'none';
     document.getElementById('login-email').value = '';
     document.getElementById('login-password').value = '';
@@ -8381,9 +8383,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function showLoginScreen() {
     document.getElementById('login-form').style.display = '';
+    document.getElementById('signup-chooser').style.display = 'none';
     document.getElementById('register-form').style.display = 'none';
+    document.getElementById('join-form').style.display = 'none';
     document.getElementById('org-picker').style.display = 'none';
     document.getElementById('pin-container').style.display = 'flex';
+  }
+
+  function showSignupChooser() {
+    document.getElementById('login-form').style.display = 'none';
+    document.getElementById('signup-chooser').style.display = '';
+    document.getElementById('register-form').style.display = 'none';
+    document.getElementById('join-form').style.display = 'none';
+    document.getElementById('org-picker').style.display = 'none';
+    document.getElementById('pin-container').style.display = 'flex';
+  }
+
+  function showJoinForm(prefilledCode) {
+    document.getElementById('login-form').style.display = 'none';
+    document.getElementById('signup-chooser').style.display = 'none';
+    document.getElementById('register-form').style.display = 'none';
+    document.getElementById('join-form').style.display = '';
+    document.getElementById('org-picker').style.display = 'none';
+    document.getElementById('pin-container').style.display = 'flex';
+    const codeInput = document.getElementById('join-code-input');
+    if (prefilledCode) {
+      codeInput.value = prefilledCode.toUpperCase();
+      codeInput.readOnly = true;
+    } else {
+      codeInput.value = '';
+      codeInput.readOnly = false;
+      document.getElementById('join-org-label').textContent = 'Join a group';
+      document.getElementById('join-code-status').style.display = 'none';
+    }
   }
 
   function proceedAfterAuth(golfer) {
@@ -8414,7 +8446,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Check for invite code in URL (?join=CODE)
   const urlParams = new URLSearchParams(window.location.search);
-  const joinCode  = urlParams.get('join');
+  let joinCode    = urlParams.get('join');
 
   // On app load — check if session is already active
   fetch(`${API_BASE_URL}/api/me.php`, { credentials: 'include' })
@@ -8423,15 +8455,16 @@ document.addEventListener('DOMContentLoaded', () => {
       if (data.authenticated) {
         proceedAfterAuth(data.golfer || null);
       } else if (joinCode) {
-        // Validate the invite code and show the join form
+        // Validate the URL invite code and show the join form with it pre-filled
         fetch(`${API_BASE_URL}/api/join.php?code=${encodeURIComponent(joinCode)}`, { credentials: 'include' })
           .then(r => r.json())
           .then(inv => {
             if (inv.valid) {
+              showJoinForm(joinCode);
               document.getElementById('join-org-label').textContent = `Join ${inv.org_name}`;
-              document.getElementById('login-form').style.display = 'none';
-              document.getElementById('join-form').style.display = '';
-              document.getElementById('pin-container').style.display = 'flex';
+              document.getElementById('join-code-status').textContent = `✓ ${inv.org_name}`;
+              document.getElementById('join-code-status').style.color = '#c8e6c9';
+              document.getElementById('join-code-status').style.display = '';
             } else {
               showLoginScreen();
             }
@@ -8443,11 +8476,52 @@ document.addEventListener('DOMContentLoaded', () => {
     })
     .catch(() => showLoginScreen());
 
-  // ── Join form (invite link) ─────────────────────────────────────────────────
+  // ── Join code input: auto-verify when 8 chars entered ─────────────────────
+  document.getElementById('join-code-input').addEventListener('input', async (e) => {
+    const code      = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    e.target.value  = code;
+    const statusEl  = document.getElementById('join-code-status');
+    const labelEl   = document.getElementById('join-org-label');
+
+    if (code.length === 8) {
+      statusEl.textContent = 'Checking…';
+      statusEl.style.color = 'rgba(255,255,255,0.6)';
+      statusEl.style.display = '';
+      try {
+        const res  = await fetch(`${API_BASE_URL}/api/join.php?code=${encodeURIComponent(code)}`, { credentials: 'include' });
+        const data = await res.json();
+        if (data.valid) {
+          joinCode = code;
+          labelEl.textContent      = `Join ${data.org_name}`;
+          statusEl.textContent     = `✓ ${data.org_name}`;
+          statusEl.style.color     = '#c8e6c9';
+        } else {
+          joinCode = null;
+          labelEl.textContent      = 'Join a group';
+          statusEl.textContent     = 'Invalid or expired code';
+          statusEl.style.color     = '#ffcdd2';
+        }
+      } catch {
+        joinCode = null;
+        statusEl.textContent = 'Could not verify code';
+        statusEl.style.color = '#ffcdd2';
+      }
+    } else {
+      joinCode = null;
+      statusEl.style.display = 'none';
+      labelEl.textContent    = 'Join a group';
+    }
+  });
+
+  // ── Join form ───────────────────────────────────────────────────────────────
   document.getElementById('join-signin-link').addEventListener('click', (e) => {
     e.preventDefault();
-    document.getElementById('join-form').style.display = 'none';
     showLoginScreen();
+  });
+
+  document.getElementById('join-back-link').addEventListener('click', (e) => {
+    e.preventDefault();
+    showSignupChooser();
   });
 
   document.getElementById('join-form').addEventListener('submit', async (e) => {
@@ -8459,6 +8533,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const handicap = parseFloat(document.getElementById('join-handicap').value) || 0;
     const errorEl  = document.getElementById('join-error');
     const btn      = document.getElementById('join-submit-btn');
+    const codeToUse = joinCode || document.getElementById('join-code-input').value.trim().toUpperCase();
+
+    if (!codeToUse) {
+      errorEl.textContent = 'Please enter a valid invite code.';
+      errorEl.style.display = 'block';
+      return;
+    }
 
     errorEl.style.display = 'none';
     btn.disabled = true;
@@ -8468,7 +8549,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const res  = await fetch(`${API_BASE_URL}/api/join.php`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: joinCode, first_name: firstName, last_name: lastName, email, password, handicap }),
+        body: JSON.stringify({ code: codeToUse, first_name: firstName, last_name: lastName, email, password, handicap }),
         credentials: 'include'
       });
       const data = await res.json();
@@ -8520,19 +8601,34 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('invite-modal').style.display = 'none';
   });
 
-  // Toggle between login and register
-  document.getElementById('show-register-link').addEventListener('click', (e) => {
+  // ── Signup flow navigation ──────────────────────────────────────────────────
+  document.getElementById('show-signup-link').addEventListener('click', (e) => {
     e.preventDefault();
-    document.getElementById('login-form').style.display = 'none';
+    showSignupChooser();
+  });
+
+  document.getElementById('chooser-signin-link').addEventListener('click', (e) => {
+    e.preventDefault();
+    showLoginScreen();
+  });
+
+  document.getElementById('chooser-create-btn').addEventListener('click', () => {
+    document.getElementById('signup-chooser').style.display = 'none';
     document.getElementById('register-form').style.display = '';
-    document.getElementById('org-picker').style.display = 'none';
+  });
+
+  document.getElementById('chooser-join-btn').addEventListener('click', () => {
+    showJoinForm(null);
+  });
+
+  document.getElementById('register-back-link').addEventListener('click', (e) => {
+    e.preventDefault();
+    showSignupChooser();
   });
 
   document.getElementById('show-login-link').addEventListener('click', (e) => {
     e.preventDefault();
-    document.getElementById('login-form').style.display = '';
-    document.getElementById('register-form').style.display = 'none';
-    document.getElementById('org-picker').style.display = 'none';
+    showLoginScreen();
   });
 
   // ── Login form submission ───────────────────────────────────────────────────
