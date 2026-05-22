@@ -8383,11 +8383,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function showLoginScreen() {
     document.getElementById('login-form').style.display = '';
+    document.getElementById('forgot-form').style.display = 'none';
+    document.getElementById('reset-form').style.display = 'none';
     document.getElementById('signup-chooser').style.display = 'none';
     document.getElementById('register-form').style.display = 'none';
     document.getElementById('join-form').style.display = 'none';
     document.getElementById('org-picker').style.display = 'none';
     document.getElementById('pin-container').style.display = 'flex';
+  }
+
+  function showForgotForm() {
+    document.getElementById('login-form').style.display = 'none';
+    document.getElementById('forgot-form').style.display = '';
+    document.getElementById('reset-form').style.display = 'none';
+    document.getElementById('signup-chooser').style.display = 'none';
+    document.getElementById('register-form').style.display = 'none';
+    document.getElementById('join-form').style.display = 'none';
+    document.getElementById('org-picker').style.display = 'none';
+    document.getElementById('pin-container').style.display = 'flex';
+    document.getElementById('forgot-email').value = '';
+    document.getElementById('forgot-success').style.display = 'none';
+    document.getElementById('forgot-error').style.display = 'none';
   }
 
   function showSignupChooser() {
@@ -8444,14 +8460,40 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Check for invite code in URL (?join=CODE)
-  const urlParams = new URLSearchParams(window.location.search);
-  let joinCode    = urlParams.get('join');
+  // Check URL params
+  const urlParams  = new URLSearchParams(window.location.search);
+  let joinCode     = urlParams.get('join');
+  const resetToken = urlParams.get('reset');
 
   // On app load — check if session is already active
   fetch(`${API_BASE_URL}/api/me.php`, { credentials: 'include' })
     .then(r => r.json())
     .then(data => {
+      if (resetToken) {
+        // Password reset link — validate token and show reset form regardless of session
+        fetch(`${API_BASE_URL}/api/reset_password.php?token=${encodeURIComponent(resetToken)}`, { credentials: 'include' })
+          .then(r => r.json())
+          .then(info => {
+            if (info.valid) {
+              const firstName = info.name ? info.name.split(' ')[0] : '';
+              document.getElementById('reset-greeting').textContent = firstName
+                ? `Hi ${firstName}, set a new password`
+                : 'Set a new password';
+              document.getElementById('login-form').style.display = 'none';
+              document.getElementById('reset-form').style.display = '';
+              document.getElementById('pin-container').style.display = 'flex';
+            } else {
+              // Invalid/expired token — show login with an error hint
+              showLoginScreen();
+              const err = document.getElementById('login-error');
+              err.textContent = 'That reset link has expired. Please request a new one.';
+              err.style.display = 'block';
+            }
+          })
+          .catch(() => showLoginScreen());
+        return; // Don't fall through to normal session check
+      }
+
       if (data.authenticated) {
         proceedAfterAuth(data.golfer || null);
       } else if (joinCode) {
@@ -8599,6 +8641,110 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('close-invite-modal-btn').addEventListener('click', () => {
     document.getElementById('invite-modal').style.display = 'none';
+  });
+
+  // ── Forgot password ─────────────────────────────────────────────────────────
+  document.getElementById('show-forgot-link').addEventListener('click', (e) => {
+    e.preventDefault();
+    showForgotForm();
+  });
+
+  document.getElementById('forgot-back-link').addEventListener('click', (e) => {
+    e.preventDefault();
+    showLoginScreen();
+  });
+
+  document.getElementById('forgot-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email     = document.getElementById('forgot-email').value.trim();
+    const successEl = document.getElementById('forgot-success');
+    const errorEl   = document.getElementById('forgot-error');
+    const btn       = document.getElementById('forgot-submit-btn');
+
+    successEl.style.display = 'none';
+    errorEl.style.display   = 'none';
+    btn.disabled    = true;
+    btn.textContent = 'Sending…';
+
+    try {
+      const res  = await fetch(`${API_BASE_URL}/api/forgot_password.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (data.success) {
+        successEl.textContent = 'If that email is registered, a reset link is on its way. Check your inbox.';
+        successEl.style.display = 'block';
+        btn.textContent = 'Sent';
+      } else {
+        errorEl.textContent = data.error || 'Something went wrong. Please try again.';
+        errorEl.style.display = 'block';
+        btn.disabled    = false;
+        btn.textContent = 'Send Reset Link';
+      }
+    } catch {
+      errorEl.textContent = 'Connection error. Please try again.';
+      errorEl.style.display = 'block';
+      btn.disabled    = false;
+      btn.textContent = 'Send Reset Link';
+    }
+  });
+
+  // ── Reset password form ──────────────────────────────────────────────────────
+  document.getElementById('reset-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const password  = document.getElementById('reset-password').value.trim();
+    const confirm   = document.getElementById('reset-password-confirm').value.trim();
+    const errorEl   = document.getElementById('reset-error');
+    const btn       = document.getElementById('reset-submit-btn');
+
+    errorEl.style.display = 'none';
+
+    if (password !== confirm) {
+      errorEl.textContent = 'Passwords do not match.';
+      errorEl.style.display = 'block';
+      return;
+    }
+    if (password.length < 8) {
+      errorEl.textContent = 'Password must be at least 8 characters.';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    btn.disabled    = true;
+    btn.textContent = 'Setting password…';
+
+    try {
+      const res  = await fetch(`${API_BASE_URL}/api/reset_password.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: resetToken, password }),
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (data.success) {
+        // Clean the token from URL, then go to login
+        window.history.replaceState({}, '', window.location.pathname);
+        showLoginScreen();
+        const err = document.getElementById('login-error');
+        // Reuse login-error div as a success message (green)
+        err.style.color   = '#c8e6c9';
+        err.textContent   = 'Password updated! Sign in with your new password.';
+        err.style.display = 'block';
+      } else {
+        errorEl.textContent = data.error || 'Password reset failed. Please try again.';
+        errorEl.style.display = 'block';
+        btn.disabled    = false;
+        btn.textContent = 'Set Password';
+      }
+    } catch {
+      errorEl.textContent = 'Connection error. Please try again.';
+      errorEl.style.display = 'block';
+      btn.disabled    = false;
+      btn.textContent = 'Set Password';
+    }
   });
 
   // ── Signup flow navigation ──────────────────────────────────────────────────

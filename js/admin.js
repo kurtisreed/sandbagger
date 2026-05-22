@@ -37,7 +37,7 @@ function initAdmin() {
         case 'tournaments': loadTournaments(); break;
         case 'golfers':    loadGolfers();    break;
         case 'courses':    loadCourses();    break;
-        // future: case 'rounds': loadRounds(); break;
+        case 'members':    loadMembers();    break;
       }
     });
   });
@@ -2139,3 +2139,64 @@ document.getElementById('tee-times-list').addEventListener('click', (e) => {
 
 
 
+
+// ─── Members ──────────────────────────────────────────────────────────────────
+function loadMembers() {
+  fetch(BASE + '/api/org_members.php', { credentials: 'include' })
+    .then(r => r.json())
+    .then(members => {
+      const tbody = document.querySelector('#members-table tbody');
+      tbody.innerHTML = '';
+      members.forEach(m => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${m.name}</td>
+          <td>${m.email}</td>
+          <td><span style="text-transform:capitalize; font-weight:${m.role === 'admin' ? 'bold' : 'normal'};">${m.role}</span></td>
+          <td>
+            <button onclick="generateResetLink(${m.user_id}, '${m.name.replace(/'/g, "\\'")}')"
+                    style="padding:0.3rem 0.7rem; background:#4F2185; color:white; border:none; border-radius:4px; cursor:pointer; font-size:0.85rem;">
+              Reset Password
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    })
+    .catch(() => alert('Could not load members.'));
+}
+
+function generateResetLink(userId, name) {
+  fetch(BASE + '/api/admin_reset_password.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: userId }),
+    credentials: 'include'
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        document.getElementById('reset-link-desc').textContent =
+          `Share this link with ${name}. It expires in ${data.expires_in}.`;
+        document.getElementById('reset-link-value').value = data.reset_link;
+        document.getElementById('reset-link-modal').style.display = 'flex';
+      } else {
+        alert('Error: ' + (data.error || 'Could not generate reset link.'));
+      }
+    })
+    .catch(() => alert('Network error. Please try again.'));
+}
+
+document.getElementById('copy-reset-link-btn').addEventListener('click', () => {
+  const input = document.getElementById('reset-link-value');
+  navigator.clipboard.writeText(input.value).then(() => {
+    document.getElementById('copy-reset-link-btn').textContent = 'Copied!';
+    setTimeout(() => {
+      document.getElementById('copy-reset-link-btn').textContent = 'Copy Link';
+    }, 2000);
+  }).catch(() => { input.select(); document.execCommand('copy'); });
+});
+
+document.getElementById('close-reset-link-btn').addEventListener('click', () => {
+  document.getElementById('reset-link-modal').style.display = 'none';
+});

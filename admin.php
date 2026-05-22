@@ -26,7 +26,7 @@ if (empty($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'admin') {
       <button data-section="tournaments" class="nav-btn active">Tournaments</button>
       <button data-section="golfers"    class="nav-btn">Golfers</button>
       <button data-section="courses"    class="nav-btn">Courses</button>
-      <!-- add more as you build -->
+      <button data-section="members"    class="nav-btn">Members</button>
     </nav>
 
   </header>
@@ -604,6 +604,33 @@ if (empty($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'admin') {
 
 
 
+
+    <!-- Members Section -->
+    <section id="section-members" class="admin-section" hidden>
+      <h2 style="margin:0 0 1rem;">Group Members</h2>
+      <table class="admin-table" id="members-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- Reset link modal -->
+    <div id="reset-link-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:9999; align-items:center; justify-content:center;">
+      <div style="background:#fff; border-radius:12px; padding:1.5rem; max-width:420px; width:90%; margin:auto;">
+        <h3 style="margin:0 0 0.5rem;">Password Reset Link</h3>
+        <p id="reset-link-desc" style="margin:0 0 0.75rem; color:#555; font-size:0.9rem;"></p>
+        <input type="text" id="reset-link-value" readonly style="width:100%; padding:0.6rem; border:1px solid #ccc; border-radius:6px; font-size:0.8rem; box-sizing:border-box; margin-bottom:0.75rem; background:#f5f5f5; word-break:break-all;">
+        <button id="copy-reset-link-btn" style="width:100%; padding:0.65rem; background:#4F2185; color:white; border:none; border-radius:6px; font-size:1rem; font-weight:bold; cursor:pointer; margin-bottom:0.5rem;">Copy Link</button>
+        <button id="close-reset-link-btn" style="width:100%; padding:0.65rem; background:#ccc; color:#333; border:none; border-radius:6px; font-size:1rem; cursor:pointer;">Close</button>
+      </div>
+    </div>
 
   </main>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
