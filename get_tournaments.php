@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/legacy_auth_guard.php';
+
 header('Content-Type: application/json');
 // DB credentials
 require_once 'db_connect.php';

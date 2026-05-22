@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/legacy_auth_guard.php';
+
 session_start();
 $golfer_id = $_SESSION['golfer_id'] ?? null;
 

@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/legacy_auth_guard.php';
+
 ini_set('display_errors', '0'); // Suppress error output that would break JSON
 header('Content-Type: application/json');
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");

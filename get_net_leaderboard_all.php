@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/legacy_auth_guard.php';
+
 session_start();
 require_once 'db_connect.php';
 ini_set('display_errors', '0'); // Suppress error output that would break JSON

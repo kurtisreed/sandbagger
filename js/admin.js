@@ -5,6 +5,21 @@ let pendingTourneyId = null;
 let pendingRoundCount = null;
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Verify admin session before rendering anything — belt-and-suspenders
+  // behind the PHP guard in admin.php
+  fetch('/api/me.php', { credentials: 'include' })
+    .then(r => r.json())
+    .then(data => {
+      if (!data.authenticated || data.role !== 'admin') {
+        window.location.href = '/';
+      } else {
+        initAdmin();
+      }
+    })
+    .catch(() => { window.location.href = '/'; });
+});
+
+function initAdmin() {
   // Section navigation
   document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -46,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault(); createCourse();
     courseModal.classList.add('hidden');
   });
-});
+}
 
 // ─── Tournaments ─────────────────────────────────────────────────────────────
 function loadTournaments() {

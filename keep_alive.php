@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/legacy_auth_guard.php';
+
 // We use the same session lifetime settings for consistency
 ini_set('session.gc_maxlifetime', 28800); 
 ini_set('session.cookie_lifetime', 28800);
