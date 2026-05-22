@@ -8383,7 +8383,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function showLoginScreen() {
     document.getElementById('login-form').style.display = '';
-    document.getElementById('forgot-form').style.display = 'none';
     document.getElementById('reset-form').style.display = 'none';
     document.getElementById('signup-chooser').style.display = 'none';
     document.getElementById('register-form').style.display = 'none';
@@ -8392,19 +8391,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('pin-container').style.display = 'flex';
   }
 
-  function showForgotForm() {
-    document.getElementById('login-form').style.display = 'none';
-    document.getElementById('forgot-form').style.display = '';
-    document.getElementById('reset-form').style.display = 'none';
-    document.getElementById('signup-chooser').style.display = 'none';
-    document.getElementById('register-form').style.display = 'none';
-    document.getElementById('join-form').style.display = 'none';
-    document.getElementById('org-picker').style.display = 'none';
-    document.getElementById('pin-container').style.display = 'flex';
-    document.getElementById('forgot-email').value = '';
-    document.getElementById('forgot-success').style.display = 'none';
-    document.getElementById('forgot-error').style.display = 'none';
-  }
 
   function showSignupChooser() {
     document.getElementById('login-form').style.display = 'none';
@@ -8643,56 +8629,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('invite-modal').style.display = 'none';
   });
 
-  // ── Forgot password ─────────────────────────────────────────────────────────
-  document.getElementById('show-forgot-link').addEventListener('click', (e) => {
-    e.preventDefault();
-    showForgotForm();
-  });
-
-  document.getElementById('forgot-back-link').addEventListener('click', (e) => {
-    e.preventDefault();
-    showLoginScreen();
-  });
-
-  document.getElementById('forgot-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email     = document.getElementById('forgot-email').value.trim();
-    const successEl = document.getElementById('forgot-success');
-    const errorEl   = document.getElementById('forgot-error');
-    const btn       = document.getElementById('forgot-submit-btn');
-
-    successEl.style.display = 'none';
-    errorEl.style.display   = 'none';
-    btn.disabled    = true;
-    btn.textContent = 'Sending…';
-
-    try {
-      const res  = await fetch(`${API_BASE_URL}/api/forgot_password.php`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-        credentials: 'include'
-      });
-      const data = await res.json();
-      if (data.success) {
-        successEl.textContent = 'If that email is registered, a reset link is on its way. Check your inbox.';
-        successEl.style.display = 'block';
-        btn.textContent = 'Sent';
-      } else {
-        errorEl.textContent = data.error || 'Something went wrong. Please try again.';
-        errorEl.style.display = 'block';
-        btn.disabled    = false;
-        btn.textContent = 'Send Reset Link';
-      }
-    } catch {
-      errorEl.textContent = 'Connection error. Please try again.';
-      errorEl.style.display = 'block';
-      btn.disabled    = false;
-      btn.textContent = 'Send Reset Link';
-    }
-  });
-
-  // ── Reset password form ──────────────────────────────────────────────────────
+  // ── Reset password form (admin-generated link: ?reset=TOKEN) ────────────────
   document.getElementById('reset-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const password  = document.getElementById('reset-password').value.trim();

@@ -69,31 +69,12 @@
       <button type="submit" id="login-submit-btn">Sign In</button>
       <p id="login-error" style="display:none; color:#ffcdd2; text-align:center; font-size:0.9rem; margin:0;"></p>
       <p style="text-align:center; margin:0.75rem 0 0; color:rgba(255,255,255,0.7); font-size:0.9rem;">
-        <a href="#" id="show-forgot-link" style="color:rgba(255,255,255,0.55); font-size:0.85rem;">Forgot password?</a>
-        &nbsp;·&nbsp;
         New here? <a href="#" id="show-signup-link" style="color:#FFD700; font-weight:bold;">Sign up</a>
       </p>
     </div>
   </form>
 
-  <!-- FORGOT PASSWORD FORM -->
-  <form id="forgot-form" style="display:none;">
-    <h2>Sandbagger Scoring</h2>
-    <img class="form-logo" src="/images/cartoon.png" alt="Sandbagger Logo">
-    <div class="auth-card">
-      <p class="pin-prompt">Reset your password</p>
-      <p style="text-align:center; color:rgba(255,255,255,0.75); font-size:0.9rem; margin:0 0 0.5rem;">Enter your email and we'll send you a reset link.</p>
-      <input type="email" id="forgot-email" placeholder="Email address" autocomplete="email" required>
-      <button type="submit" id="forgot-submit-btn">Send Reset Link</button>
-      <p id="forgot-success" style="display:none; color:#c8e6c9; text-align:center; font-size:0.9rem; margin:0;"></p>
-      <p id="forgot-error" style="display:none; color:#ffcdd2; text-align:center; font-size:0.9rem; margin:0;"></p>
-      <p style="text-align:center; margin:0.75rem 0 0; color:rgba(255,255,255,0.7); font-size:0.9rem;">
-        <a href="#" id="forgot-back-link" style="color:rgba(255,255,255,0.6);">← Back to sign in</a>
-      </p>
-    </div>
-  </form>
-
-  <!-- RESET PASSWORD FORM (shown when ?reset=TOKEN in URL) -->
+  <!-- RESET PASSWORD FORM (shown when admin sends a ?reset=TOKEN link) -->
   <form id="reset-form" style="display:none;">
     <h2>Sandbagger Scoring</h2>
     <img class="form-logo" src="/images/cartoon.png" alt="Sandbagger Logo">
