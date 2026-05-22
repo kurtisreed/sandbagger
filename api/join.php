@@ -137,14 +137,13 @@ try {
     $stmt->close();
 
     if ($existing) {
-        // Reconcile: link the pre-existing golfer to this new user
+        // Reconcile: link the pre-existing golfer to this new user,
+        // and update the handicap to whatever the user entered (their value wins)
         $golferId = (int) $existing['golfer_id'];
-        $stmt = $conn->prepare("UPDATE golfers SET user_id = ? WHERE golfer_id = ?");
-        $stmt->bind_param('ii', $userId, $golferId);
+        $stmt = $conn->prepare("UPDATE golfers SET user_id = ?, handicap = ? WHERE golfer_id = ?");
+        $stmt->bind_param('idi', $userId, $handicap, $golferId);
         $stmt->execute();
         $stmt->close();
-        // Use the pre-existing handicap (admin may have set it)
-        $handicap = (float) $existing['handicap'];
     } else {
         // No match — create a new golfer record for this user
         $stmt = $conn->prepare("
