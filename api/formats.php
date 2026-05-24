@@ -6,6 +6,7 @@ header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Expires: 0");
 header("Pragma: no-cache");
 require_once 'db_connect.php';
+require_once 'auth_middleware.php';
 
 $method    = $_SERVER['REQUEST_METHOD'];
 $format_id = isset($_GET['format_id']) ? intval($_GET['format_id']) : null;
@@ -34,6 +35,7 @@ switch ($method) {
     break;
 
   case 'POST':
+    requireAdmin();
     // create a new format
     $data = json_decode(file_get_contents('php://input'), true);
     $stmt = $conn->prepare("
@@ -50,6 +52,7 @@ switch ($method) {
     break;
 
   case 'PUT':
+    requireAdmin();
     // update an existing format
     parse_str(file_get_contents('php://input'), $data);
     $stmt = $conn->prepare("
@@ -69,6 +72,7 @@ switch ($method) {
     break;
 
   case 'DELETE':
+    requireAdmin();
     // delete a format
     $stmt = $conn->prepare("DELETE FROM formats WHERE format_id = ?");
     $stmt->bind_param('i', $format_id);

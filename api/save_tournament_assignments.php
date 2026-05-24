@@ -7,6 +7,8 @@ header("Pragma: no-cache");
 require_once 'db_connect.php';
 require_once 'auth_middleware.php';
 
+requireAdmin();
+
 // Get POST data
 $json = file_get_contents('php://input');
 $data = json_decode($json, true);

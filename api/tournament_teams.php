@@ -46,6 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
 // POST - Create new team (org-scoped)
 else if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    requireAdmin();
     $data = json_decode(file_get_contents('php://input'), true);
 
     if (!isset($data['tournament_id']) || !isset($data['name']) || !isset($data['color'])) {
@@ -86,6 +87,7 @@ else if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // PUT - Update existing team (org-scoped via tournament_teams)
 else if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
+    requireAdmin();
     if (!isset($_GET['team_id'])) {
         die(json_encode(['error' => 'Missing team_id']));
     }
@@ -118,6 +120,7 @@ else if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
 
 // DELETE - Remove team from tournament (org-scoped)
 else if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
+    requireAdmin();
     if (!isset($_GET['tournament_id']) || !isset($_GET['team_id'])) {
         die(json_encode(['error' => 'Missing tournament_id or team_id']));
     }

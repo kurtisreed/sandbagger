@@ -9705,7 +9705,7 @@ document.addEventListener('DOMContentLoaded', () => {
 //logout button
 document.getElementById('logout-button').addEventListener('click', () => {
   stopSessionHeartbeat();
-  fetch(`${API_BASE_URL}/logout.php`, {
+  fetch(`${API_BASE_URL}/api/logout.php`, {
     method: 'POST',
     credentials: 'include'
   }).then(() => {

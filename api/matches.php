@@ -81,6 +81,7 @@ switch ($method) {
     break;
 
     case 'POST':
+      requireAdmin();
       try {
           // Create a new match
           $data = json_decode(file_get_contents('php://input'), true);
@@ -190,6 +191,7 @@ switch ($method) {
       break;
 
   case 'PUT':
+    requireAdmin();
     // update an existing match (must belong to this org)
     parse_str(file_get_contents('php://input'), $data);
     $stmt = $conn->prepare("
@@ -205,6 +207,7 @@ switch ($method) {
     break;
 
   case 'DELETE':
+    requireAdmin();
     // Must belong to this org
     $stmt = $conn->prepare("
       DELETE m FROM matches m

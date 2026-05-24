@@ -42,6 +42,7 @@ switch ($method) {
     break;
 
   case 'POST':
+    requireAdmin();
     // create new course for this org
     $data = json_decode(file_get_contents('php://input'), true);
     $stmt = $conn->prepare("
@@ -64,6 +65,7 @@ switch ($method) {
     break;
 
   case 'PUT':
+    requireAdmin();
     // update existing course — must belong to this org
     parse_str(file_get_contents('php://input'), $data);
     $stmt = $conn->prepare("
@@ -92,6 +94,7 @@ switch ($method) {
     break;
 
   case 'DELETE':
+    requireAdmin();
     // delete a course — must belong to this org
     $stmt = $conn->prepare("
       DELETE FROM courses

@@ -58,6 +58,7 @@ switch ($method) {
       break;
 
   case 'POST':
+    requireAdmin();
     // create new (scoped to this org)
     $data = json_decode(file_get_contents('php://input'), true);
     $stmt = $conn->prepare(
@@ -73,6 +74,7 @@ switch ($method) {
     break;
 
   case 'PUT':
+    requireAdmin();
     // update existing (must belong to this org)
     $data = json_decode(file_get_contents('php://input'), true);
     $stmt = $conn->prepare(
@@ -91,6 +93,7 @@ switch ($method) {
     break;
 
 case 'DELETE':
+    requireAdmin();
     error_log("Deleting tournament_id = " . var_export($id, true));
 
   try {

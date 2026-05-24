@@ -46,6 +46,7 @@ switch ($method) {
     break;
 
   case 'POST':
+    requireAdmin();
     $data = json_decode(file_get_contents('php://input'), true);
 
     // Check if bulk save (array of golfer_ids) or single golfer
@@ -157,6 +158,7 @@ switch ($method) {
     break;
 
   case 'DELETE':
+    requireAdmin();
     // remove a golfer from a tournament (org-scoped)
     $stmt = $conn->prepare("
       DELETE tg FROM tournament_golfers tg

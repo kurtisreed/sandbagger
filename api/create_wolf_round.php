@@ -66,7 +66,7 @@ try {
     $matchCode = 0;
     $codeExists = true;
     while ($codeExists) {
-        $matchCode = rand(1000, 9999);
+        $matchCode = random_int(1000, 9999);
 
         $stmt = $conn->prepare("SELECT match_id FROM matches WHERE match_code = ?");
         $stmt->bind_param('i', $matchCode);

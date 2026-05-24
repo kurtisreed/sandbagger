@@ -75,6 +75,8 @@ if (count($orgs) === 1) {
         $_SESSION['golfer_id'] = (int) $golfer['golfer_id'];
     }
 
+    session_regenerate_id(true);
+
     echo json_encode([
         'success'          => true,
         'user_id'          => $userId,
@@ -90,6 +92,8 @@ if (count($orgs) === 1) {
     // Store user_id temporarily so org selection can complete the login
     $_SESSION['pending_user_id'] = $userId;
     $_SESSION['pending_name']    = $user['name'];
+
+    session_regenerate_id(true);
 
     echo json_encode([
         'success'          => true,

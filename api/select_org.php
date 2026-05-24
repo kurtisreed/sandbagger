@@ -65,6 +65,8 @@ if ($golfer) {
     $_SESSION['golfer_id'] = (int) $golfer['golfer_id'];
 }
 
+session_regenerate_id(true);
+
 echo json_encode([
     'success'  => true,
     'org_id'   => $orgId,

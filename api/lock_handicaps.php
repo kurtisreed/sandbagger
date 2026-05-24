@@ -31,6 +31,7 @@ if ($method === 'GET') {
   echo json_encode($rows);
 
 } elseif ($method === 'POST') {
+  requireAdmin();
   $data = json_decode(file_get_contents('php://input'), true);
   $tournament_id = intval($data['tournament_id'] ?? 0);
   $golfers = $data['golfers'] ?? [];

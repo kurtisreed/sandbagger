@@ -62,6 +62,7 @@ switch ($method) {
     break;
 
     case 'POST':
+      requireAdmin();
       $data = json_decode(file_get_contents('php://input'), true);
 
       if (!isset($data['match_id']) || !isset($data['golfer_id'])) {
@@ -145,6 +146,7 @@ switch ($method) {
       break;
 
   case 'DELETE':
+    requireAdmin();
     // remove from match (org-scoped)
     $stmt = $conn->prepare("
       DELETE mg FROM match_golfers mg

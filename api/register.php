@@ -123,6 +123,8 @@ try {
     $_SESSION['org_name']  = $groupName;
     $_SESSION['golfer_id'] = $golferId;
 
+    session_regenerate_id(true);
+
     echo json_encode([
         'success'  => true,
         'user_id'  => $userId,

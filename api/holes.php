@@ -70,6 +70,7 @@ switch ($method) {
     break;
 
   case 'POST':
+    requireAdmin();
     // create a new hole — verify course belongs to org first
     $data = json_decode(file_get_contents('php://input'), true);
     $cid  = intval($data['course_id'] ?? 0);
@@ -94,6 +95,7 @@ switch ($method) {
     break;
 
   case 'PUT':
+    requireAdmin();
     // update an existing hole — verify course belongs to org first
     parse_str(file_get_contents('php://input'), $data);
     if (!courseOwnedByOrg($conn, $course_id, $currentOrgId)) {
@@ -120,6 +122,7 @@ switch ($method) {
     break;
 
   case 'DELETE':
+    requireAdmin();
     // delete a hole — verify course belongs to org first
     if (!courseOwnedByOrg($conn, $course_id, $currentOrgId)) {
       http_response_code(403);

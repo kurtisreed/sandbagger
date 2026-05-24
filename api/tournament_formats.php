@@ -52,6 +52,7 @@ switch ($method) {
     break;
 
   case 'POST':
+    requireAdmin();
     // Assign a format to a tournament (org-scoped)
     $data = json_decode(file_get_contents('php://input'), true);
     $checkStmt = $conn->prepare("SELECT tournament_id FROM tournaments WHERE tournament_id = ? AND org_id = ?");
@@ -77,6 +78,7 @@ switch ($method) {
     break;
 
   case 'DELETE':
+    requireAdmin();
     // Remove a format from a tournament (org-scoped)
     $stmt = $conn->prepare("
       DELETE tf FROM tournament_formats tf

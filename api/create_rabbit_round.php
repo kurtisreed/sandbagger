@@ -66,7 +66,7 @@ try {
     $matchCode = 0;
     $codeExists = true;
     while ($codeExists) {
-        $matchCode = rand(1000, 9999); // Generate 4-digit number
+        $matchCode = random_int(1000, 9999); // Generate 4-digit number
 
         // Check if code already exists
         $stmt = $conn->prepare("SELECT match_id FROM matches WHERE match_code = ?");

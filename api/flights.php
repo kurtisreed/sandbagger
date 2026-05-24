@@ -52,6 +52,7 @@ switch ($method) {
     break;
 
   case 'POST':
+    requireAdmin();
     // create a new flight (org-scoped: verify tournament)
     $data = json_decode(file_get_contents('php://input'), true);
     $checkStmt = $conn->prepare("SELECT tournament_id FROM tournaments WHERE tournament_id = ? AND org_id = ?");
@@ -79,6 +80,7 @@ switch ($method) {
     break;
 
   case 'PUT':
+    requireAdmin();
     // update an existing flight (org-scoped)
     parse_str(file_get_contents('php://input'), $data);
     $stmt = $conn->prepare("
@@ -104,6 +106,7 @@ switch ($method) {
     break;
 
   case 'DELETE':
+    requireAdmin();
     // delete a flight (org-scoped)
     $stmt = $conn->prepare("
       DELETE f FROM flights f

@@ -38,6 +38,34 @@ if (json_last_error() !== JSON_ERROR_NONE || !isset($data['assignments'])) {
 $assignments = $data['assignments'];
 $matchNames = isset($data['matchNames']) ? $data['matchNames'] : [];
 
+// Collect all golfer IDs from request and verify they all belong to this org
+$allGolferIds = [];
+foreach ($assignments as $teams) {
+    if (!empty($teams['teamA']) && is_array($teams['teamA'])) {
+        foreach ($teams['teamA'] as $gid) { $allGolferIds[] = (int)$gid; }
+    }
+    if (!empty($teams['teamB']) && is_array($teams['teamB'])) {
+        foreach ($teams['teamB'] as $gid) { $allGolferIds[] = (int)$gid; }
+    }
+}
+$allGolferIds = array_values(array_unique(array_filter($allGolferIds)));
+if (!empty($allGolferIds)) {
+    $placeholders = implode(',', array_fill(0, count($allGolferIds), '?'));
+    $types = str_repeat('i', count($allGolferIds));
+    $orgParams = array_merge($allGolferIds, [$currentOrgId]);
+    $types .= 'i';
+    $gStmt = $conn->prepare("SELECT COUNT(*) as cnt FROM golfers WHERE golfer_id IN ($placeholders) AND org_id = ?");
+    $gStmt->bind_param($types, ...$orgParams);
+    $gStmt->execute();
+    $gRow = $gStmt->get_result()->fetch_assoc();
+    $gStmt->close();
+    if ((int)$gRow['cnt'] !== count($allGolferIds)) {
+        http_response_code(403);
+        echo json_encode(['error' => 'One or more golfers do not belong to your group']);
+        exit;
+    }
+}
+
 // 0) Grab all existing match_ids for this round
 $existingIds = [];
 $stmtFetch = $conn->prepare("SELECT match_id FROM matches WHERE round_id = ?");

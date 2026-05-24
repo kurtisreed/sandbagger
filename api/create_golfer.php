@@ -12,6 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require_once '../db_connect.php';
 require_once __DIR__ . '/auth_middleware.php';
+requireAdmin();
 
 $data = json_decode(file_get_contents('php://input'), true);
 

@@ -3,6 +3,7 @@ require_once '../cors_headers.php';
 header('Content-Type: application/json');
 require_once '../db_connect.php';
 require_once __DIR__ . '/auth_middleware.php';
+requireAdmin();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
   http_response_code(405);

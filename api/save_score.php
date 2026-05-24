@@ -1,6 +1,6 @@
 <?php
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
+// ini_set('display_errors', 1);  // Removed: never expose errors in production
+// error_reporting(E_ALL);
 header('Content-Type: application/json');
 require_once '../cors_headers.php';
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
@@ -40,6 +40,18 @@ if (!$checkRes->fetch_assoc()) {
     echo json_encode(['success' => false, 'message' => 'Match not found or access denied']);
     exit;
 }
+
+// Verify golfer belongs to this org
+$golfCheck = $conn->prepare("SELECT golfer_id FROM golfers WHERE golfer_id = ? AND org_id = ?");
+$golfCheck->bind_param("ii", $golfer_id, $currentOrgId);
+$golfCheck->execute();
+$golfCheck->store_result();
+if ($golfCheck->num_rows === 0) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'Golfer not found in your group']);
+    exit;
+}
+$golfCheck->close();
 
 // Save or update score
 $stmt = $conn->prepare("

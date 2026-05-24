@@ -18,6 +18,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'DELETE') {
     exit;
 }
 
+requireAdmin();
+
 // 2. Get and validate the tee_time_id from the query string
 $tee_time_id = isset($_GET['tee_time_id']) ? intval($_GET['tee_time_id']) : 0;
 

@@ -51,6 +51,7 @@ switch ($method) {
     break;
 
   case 'POST':
+    requireAdmin();
     // create a new round (verify tournament belongs to this org)
     $data = json_decode(file_get_contents('php://input'), true);
     $checkStmt = $conn->prepare("SELECT tournament_id FROM tournaments WHERE tournament_id = ? AND org_id = ?");
@@ -79,6 +80,7 @@ switch ($method) {
     break;
 
   case 'PUT':
+    requireAdmin();
     // update an existing round (verify it belongs to this org)
     $data = json_decode(file_get_contents('php://input'), true);
     $stmt = $conn->prepare("
@@ -106,6 +108,7 @@ switch ($method) {
     break;
 
   case 'DELETE':
+    requireAdmin();
     // Use transaction to ensure all related records are deleted
     $conn->begin_transaction();
 

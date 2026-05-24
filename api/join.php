@@ -166,6 +166,11 @@ try {
     $_SESSION['org_name']  = $invite['org_name'];
     $_SESSION['golfer_id'] = $golferId;
 
+    session_regenerate_id(true);
+
+    // Note: Single-use invite enforcement requires a DB migration to add
+    // used_at/used_by columns to org_invites. See Fix 7 notes.
+
     echo json_encode([
         'success'  => true,
         'org_name' => $invite['org_name'],
