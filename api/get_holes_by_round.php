@@ -1,9 +1,6 @@
 <?php
-require_once __DIR__ . '/legacy_auth_guard.php';
-
-session_start();
-// DB credentials
-require db_connect.php;
+require_once 'db_connect.php';
+require_once 'auth_middleware.php';
 
 $round_id = $_GET['round_id'] ?? null;
 
@@ -12,23 +9,19 @@ if (!$round_id) {
   exit;
 }
 
-$conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) {
-    http_response_code(500);
-    echo "DB connection failed";
-    exit;
-}
-
+// Scope: round must belong to a tournament in the current org
 $sql = "
 SELECT h.hole_number, h.par, h.handicap_index
 FROM holes h
 JOIN matches m ON m.course_id = h.course_id
-WHERE m.round_id = ?
+JOIN rounds r ON m.round_id = r.round_id
+JOIN tournaments t ON r.tournament_id = t.tournament_id
+WHERE m.round_id = ? AND t.org_id = ?
 ORDER BY h.hole_number
 ";
 
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $round_id);
+$stmt->bind_param("ii", $round_id, $currentOrgId);
 $stmt->execute();
 $result = $stmt->get_result();
 

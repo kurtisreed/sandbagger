@@ -1,11 +1,11 @@
 <?php
-require_once __DIR__ . '/legacy_auth_guard.php';
-
-session_start();
+require_once '../cors_headers.php';
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Expires: 0");
 header("Pragma: no-cache");
+
 require_once 'db_connect.php';
+require_once 'auth_middleware.php';
 
 $match_id = $_GET['match_id'] ?? null;
 if (!$match_id) {
@@ -13,25 +13,19 @@ if (!$match_id) {
     exit;
 }
 
-$conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) {
-    http_response_code(500);
-    echo json_encode(['error' => 'DB connection failed']);
-    exit;
-}
-
-// 1. Get all golfers and teams in this match
+// 1. Get all golfers and teams in this match (scoped by org via tournament)
 $sql = "
     SELECT mg.golfer_id, tg.team_id, g.handicap
     FROM match_golfers mg
     JOIN golfers g ON mg.golfer_id = g.golfer_id
     JOIN matches m ON mg.match_id = m.match_id
     JOIN rounds r ON m.round_id = r.round_id
+    JOIN tournaments t ON r.tournament_id = t.tournament_id
     JOIN tournament_golfers tg ON g.golfer_id = tg.golfer_id AND tg.tournament_id = r.tournament_id
-    WHERE mg.match_id = ?
+    WHERE mg.match_id = ? AND t.org_id = ?
 ";
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $match_id);
+$stmt->bind_param("ii", $match_id, $currentOrgId);
 $stmt->execute();
 $res = $stmt->get_result();
 

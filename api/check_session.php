@@ -1,25 +1,21 @@
 <?php
-require_once __DIR__ . '/legacy_auth_guard.php';
-
-session_start();
 header('Content-Type: application/json');
-require_once 'cors_headers.php';
+require_once '../cors_headers.php';
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Access-Control-Allow-Credentials: true");
 
+require_once 'auth_middleware.php';
+
 if (isset($_SESSION['authenticated']) && $_SESSION['authenticated'] === true) {
-    // DB credentials
     require_once 'db_connect.php';
 
     $golfer_id = $_SESSION['golfer_id'] ?? null;
     $name = null;
-    $team = null;
 
     if ($golfer_id) {
-        $conn = new mysqli($servername, $username, $password, $dbname);
-        $stmt = $conn->prepare("SELECT first_name, last_name FROM golfers WHERE golfer_id = ?");
-        $stmt->bind_param("i", $golfer_id);
+        $stmt = $conn->prepare("SELECT first_name, last_name FROM golfers WHERE golfer_id = ? AND org_id = ?");
+        $stmt->bind_param("ii", $golfer_id, $currentOrgId);
         $stmt->execute();
         $result = $stmt->get_result();
         if ($row = $result->fetch_assoc()) {

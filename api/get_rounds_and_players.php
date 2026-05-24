@@ -1,13 +1,11 @@
 <?php
-require_once __DIR__ . '/legacy_auth_guard.php';
-
-session_start();
-require_once 'cors_headers.php';
+require_once '../cors_headers.php';
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Access-Control-Allow-Credentials: true");
-// DB credentials
+
 require_once 'db_connect.php';
+require_once 'auth_middleware.php';
 
 $tournament_id = $_GET['tournament_id'] ?? null;
 
@@ -16,22 +14,16 @@ if (!$tournament_id) {
   exit;
 }
 
-$conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) {
-  http_response_code(500);
-  echo json_encode(['error' => 'Database connection failed']);
-  exit;
-}
-
-// 1) Fetch rounds
+// 1) Fetch rounds (scoped by org)
 $sqlRounds = "
-  SELECT round_id, round_name, round_date
-  FROM rounds
-  WHERE tournament_id = ?
-  ORDER BY round_date
+  SELECT r.round_id, r.round_name, r.round_date
+  FROM rounds r
+  JOIN tournaments t ON r.tournament_id = t.tournament_id
+  WHERE r.tournament_id = ? AND t.org_id = ?
+  ORDER BY r.round_date
 ";
 $stmt = $conn->prepare($sqlRounds);
-$stmt->bind_param("i", $tournament_id);
+$stmt->bind_param("ii", $tournament_id, $currentOrgId);
 $stmt->execute();
 $res = $stmt->get_result();
 
@@ -41,18 +33,19 @@ while ($row = $res->fetch_assoc()) {
 }
 $stmt->close();
 
-// 2) Fetch players in this tournament
+// 2) Fetch players in this tournament (scoped by org via tournament)
 $sqlPlayers = "
-  SELECT 
-    g.golfer_id, 
+  SELECT
+    g.golfer_id,
     CONCAT(g.first_name, ' ', g.last_name) AS name
   FROM tournament_golfers tg
   JOIN golfers g ON tg.golfer_id = g.golfer_id
-  WHERE tg.tournament_id = ?
+  JOIN tournaments t ON tg.tournament_id = t.tournament_id
+  WHERE tg.tournament_id = ? AND t.org_id = ?
   ORDER BY g.last_name, g.first_name
 ";
 $stmt = $conn->prepare($sqlPlayers);
-$stmt->bind_param("i", $tournament_id);
+$stmt->bind_param("ii", $tournament_id, $currentOrgId);
 $stmt->execute();
 $res = $stmt->get_result();
 

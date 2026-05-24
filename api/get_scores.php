@@ -1,25 +1,33 @@
 <?php
-require_once __DIR__ . '/legacy_auth_guard.php';
-
-session_start();
 header('Content-Type: application/json');
-require_once 'cors_headers.php';
+require_once '../cors_headers.php';
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Access-Control-Allow-Credentials: true");
 
-// DB credentials
 require_once 'db_connect.php';
-$conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) {
-    http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'DB error']);
-    exit;
-}
+require_once 'auth_middleware.php';
 
 $match_id = $_GET['match_id'] ?? null;
 if (!$match_id) {
     echo json_encode(['success' => false, 'message' => 'Missing match_id']);
+    exit;
+}
+
+// Scope: verify match belongs to this org
+$checkStmt = $conn->prepare("
+    SELECT m.match_id
+    FROM matches m
+    JOIN rounds r ON m.round_id = r.round_id
+    JOIN tournaments t ON r.tournament_id = t.tournament_id
+    WHERE m.match_id = ? AND t.org_id = ?
+");
+$checkStmt->bind_param("ii", $match_id, $currentOrgId);
+$checkStmt->execute();
+$checkRes = $checkStmt->get_result();
+if (!$checkRes->fetch_assoc()) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'Match not found or access denied']);
     exit;
 }
 

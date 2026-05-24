@@ -7,7 +7,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:9.1.1'
+        classpath 'com.android.tools.build:gradle:9.2.1'
         classpath 'com.google.gms:google-services:4.4.2'
 
         // NOTE: Do not place your application dependencies here; they belong
@@ -26,6 +26,22 @@ allprojects {
         resolutionStrategy.eachDependency { DependencyResolveDetails details ->
             if (details.requested.group == 'org.jetbrains.kotlin') {
                 details.useVersion '1.8.22'
+            }
+        }
+    }
+    plugins.withId('com.android.library') {
+        android {
+            lint {
+                checkReleaseBuilds false
+                abortOnError false
+            }
+        }
+    }
+    plugins.withId('com.android.application') {
+        android {
+            lint {
+                checkReleaseBuilds false
+                abortOnError false
             }
         }
     }

@@ -1,13 +1,12 @@
 <?php
-require_once __DIR__ . '/legacy_auth_guard.php';
-
-session_start();
 require_once 'db_connect.php';
 header('Content-Type: application/json');
-require_once 'cors_headers.php';
+require_once '../cors_headers.php';
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Access-Control-Allow-Credentials: true");
+
+require_once 'auth_middleware.php';
 
 // Accept GET parameter with fallback to session
 $tournament_id = $_GET['tournament_id'] ?? $_SESSION['tournament_id'] ?? null;
@@ -16,17 +15,27 @@ if (!$tournament_id) {
     exit;
 }
 
+// Verify tournament belongs to this org
+$orgCheck = $conn->prepare("SELECT tournament_id FROM tournaments WHERE tournament_id = ? AND org_id = ?");
+$orgCheck->bind_param("ii", $tournament_id, $currentOrgId);
+$orgCheck->execute();
+if (!$orgCheck->get_result()->fetch_assoc()) {
+    http_response_code(403);
+    echo json_encode(['error' => 'Tournament not found or access denied']);
+    exit;
+}
+
 $sql = "
-SELECT 
-    t.team_id, 
-    t.name AS team_name, 
-    t.color_hex, 
+SELECT
+    t.team_id,
+    t.name AS team_name,
+    t.color_hex,
     COALESCE(SUM(mr.points), 0) AS total_points
 FROM teams t
 LEFT JOIN match_results mr ON t.team_id = mr.team_id
 WHERE t.team_id IN (
-    SELECT DISTINCT tg.team_id 
-    FROM tournament_golfers tg 
+    SELECT DISTINCT tg.team_id
+    FROM tournament_golfers tg
     WHERE tg.tournament_id = ?
 )
 GROUP BY t.team_id, t.name, t.color_hex

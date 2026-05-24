@@ -1,12 +1,12 @@
 <?php
-require_once __DIR__ . '/legacy_auth_guard.php';
-
 header('Content-Type: application/json');
-require_once 'cors_headers.php';
+require_once '../cors_headers.php';
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Access-Control-Allow-Credentials: true");
+
 require_once 'db_connect.php';
+require_once 'auth_middleware.php';
 
 $tournament_id = isset($_GET['tournament_id']) ? intval($_GET['tournament_id']) : 0;
 if (!$tournament_id) {
@@ -15,10 +15,16 @@ if (!$tournament_id) {
     exit;
 }
 
-// 1. Get all rounds for this tournament
+// 1. Get all rounds for this tournament (scoped by org)
 $rounds = [];
-$stmt = $conn->prepare("SELECT round_id, round_name, round_date FROM rounds WHERE tournament_id = ? ORDER BY round_date ASC");
-$stmt->bind_param('i', $tournament_id);
+$stmt = $conn->prepare("
+    SELECT r.round_id, r.round_name, r.round_date
+    FROM rounds r
+    JOIN tournaments t ON r.tournament_id = t.tournament_id
+    WHERE r.tournament_id = ? AND t.org_id = ?
+    ORDER BY r.round_date ASC
+");
+$stmt->bind_param('ii', $tournament_id, $currentOrgId);
 $stmt->execute();
 $res = $stmt->get_result();
 while ($row = $res->fetch_assoc()) {
@@ -64,7 +70,6 @@ foreach ($rounds as &$round) {
 
         // 4. For each match, get golfers (with team color)
         foreach ($matches as &$match) {
-            // Get golfers (with team color and player_order for Guys Trip)
             $sql = "
                 SELECT
                     g.first_name AS name,

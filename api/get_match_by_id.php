@@ -1,14 +1,12 @@
 <?php
-require_once __DIR__ . '/legacy_auth_guard.php';
-
-session_start();
 require_once 'db_connect.php';
-
 header('Content-Type: application/json');
-require_once 'cors_headers.php';
+require_once '../cors_headers.php';
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Access-Control-Allow-Credentials: true");
+
+require_once 'auth_middleware.php';
 
 $match_id = $_GET['match_id'] ?? null;
 // Accept GET parameter with fallback to session
@@ -23,15 +21,7 @@ if (!$match_id) {
   exit;
 }
 
-// Connect
-$conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) {
-  http_response_code(500);
-  echo json_encode(['error' => 'Database connection failed']);
-  exit;
-}
-
-// Step 1: Get golfer and match details
+// Step 1: Get golfer and match details (scoped by org)
 $sql = "
 SELECT
   mg.match_id,
@@ -49,11 +39,12 @@ SELECT
 FROM match_golfers mg
 JOIN matches m ON mg.match_id = m.match_id
 JOIN rounds r ON m.round_id = r.round_id
+JOIN tournaments tour ON r.tournament_id = tour.tournament_id
 JOIN courses c ON r.course_id = c.course_id
 JOIN golfers g ON mg.golfer_id = g.golfer_id
 JOIN tournament_golfers tg ON g.golfer_id = tg.golfer_id AND tg.tournament_id = ?
 LEFT JOIN teams t ON tg.team_id = t.team_id
-WHERE mg.match_id = ?
+WHERE mg.match_id = ? AND tour.org_id = ?
 ORDER BY
   COALESCE(t.name, ''),
   mg.player_order,
@@ -61,7 +52,7 @@ ORDER BY
 ";
 
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("ii", $tournament_id, $match_id);
+$stmt->bind_param("iii", $tournament_id, $match_id, $currentOrgId);
 $stmt->execute();
 $result = $stmt->get_result();
 
@@ -70,7 +61,7 @@ $course_id = null;
 
 while ($row = $result->fetch_assoc()) {
   $matchData[] = $row;
-  $course_id = $row['course_id']; // use last one (they're all the same)
+  $course_id = $row['course_id'];
 }
 
 // Step 2: Get holes for the course
@@ -90,4 +81,3 @@ echo json_encode([
   'holes' => $holes
 ]);
 ?>
-    

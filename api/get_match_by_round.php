@@ -1,14 +1,12 @@
 <?php
-require_once __DIR__ . '/legacy_auth_guard.php';
-
-session_start();
 header('Content-Type: application/json');
-require_once 'cors_headers.php';
+require_once '../cors_headers.php';
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Access-Control-Allow-Credentials: true");
-// DB credentials
+
 require_once 'db_connect.php';
+require_once 'auth_middleware.php';
 
 // Accept GET parameters with fallback to session
 $golfer_id = $_GET['golfer_id'] ?? $_SESSION['golfer_id'] ?? null;
@@ -17,13 +15,6 @@ $tournament_id = $_GET['tournament_id'] ?? $_SESSION['tournament_id'] ?? null;
 
 if (!$golfer_id || !$round_id || !$tournament_id) {
   echo json_encode(['error' => 'Missing golfer, round, or tournament ID']);
-  exit;
-}
-
-$conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) {
-  http_response_code(500);
-  echo json_encode(['error' => 'Database connection failed']);
   exit;
 }
 
@@ -51,14 +42,15 @@ SELECT
 FROM match_golfers mg
 JOIN matches m ON mg.match_id = m.match_id
 JOIN rounds r ON m.round_id = r.round_id
+JOIN tournaments tour ON r.tournament_id = tour.tournament_id
 JOIN courses c ON r.course_id = c.course_id
 JOIN course_tees ct ON r.tee_id = ct.tee_id
 JOIN match_golfers mg2 ON mg.match_id = mg2.match_id
 JOIN golfers g ON mg2.golfer_id = g.golfer_id
 JOIN tournament_golfers tg ON g.golfer_id = tg.golfer_id AND tg.tournament_id = ?
 LEFT JOIN teams t ON tg.team_id = t.team_id
-WHERE mg.golfer_id = ? AND m.round_id = ?
-ORDER BY 
+WHERE mg.golfer_id = ? AND m.round_id = ? AND tour.org_id = ?
+ORDER BY
   CASE
     WHEN g.golfer_id = ? THEN 0
     WHEN tg.team_id = (SELECT tg2.team_id FROM tournament_golfers tg2 WHERE tg2.golfer_id = ? AND tg2.tournament_id = ?) THEN 1
@@ -68,10 +60,9 @@ ORDER BY
 ";
 
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("iiiiii", $tournament_id, $golfer_id, $round_id, $golfer_id, $golfer_id, $tournament_id);
+$stmt->bind_param("iiiiiii", $tournament_id, $golfer_id, $round_id, $currentOrgId, $golfer_id, $golfer_id, $tournament_id);
 $stmt->execute();
 $result = $stmt->get_result();
-
 
 if ($result->num_rows === 0) {
   echo json_encode(['error' => 'No matches found for this golfer']);
@@ -83,7 +74,6 @@ while ($row = $result->fetch_assoc()) {
   $matchData[] = $row;
 }
 
-// ✅ Get course_id after fetching matchData
 $course_id = $matchData[0]['course_id'] ?? null;
 $holes = [];
 

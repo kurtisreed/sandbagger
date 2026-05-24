@@ -56,7 +56,7 @@ function initOfflineBanner() {
 async function saveScore(payload, onSuccess) {
   if (navigator.onLine) {
     try {
-      const res = await fetch(`${API_BASE_URL}/save_score.php`, {
+      const res = await fetch(`${API_BASE_URL}/api/save_score.php`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -233,10 +233,10 @@ function loadBestBallSetup(preserveSelections = false) {
   setupContainer.style.display = 'block';
 
   // Fetch both golfers and courses in parallel
-  console.log('Fetching golfers from:', `${API_BASE_URL}/get_golfers.php`);
+  console.log('Fetching golfers from:', `${API_BASE_URL}/api/get_golfers.php`);
   console.log('Fetching courses from:', `${API_BASE_URL}/api/courses.php`);
   Promise.all([
-    fetch(`${API_BASE_URL}/get_golfers.php`)
+    fetch(`${API_BASE_URL}/api/get_golfers.php`)
       .then(res => {
         console.log('Golfers response status:', res.status, res.statusText);
         if (!res.ok) throw new Error(`Golfers HTTP ${res.status}: ${res.statusText}`);
@@ -600,7 +600,7 @@ function saveNewPlayer() {
     formData.append('golfer_id', golferId);
   }
 
-  const endpoint = isEditing ? '/update_golfer.php' : '/add_golfer.php';
+  const endpoint = isEditing ? '/api/update_golfer.php' : '/api/add_golfer.php';
 
   fetch(`${API_BASE_URL}${endpoint}`, {
     method: 'POST',
@@ -659,10 +659,10 @@ function loadRabbitSetup(preserveSelections = false) {
   setupContainer.style.display = 'block';
 
   // Fetch both golfers and courses in parallel
-  console.log('Fetching golfers from:', `${API_BASE_URL}/get_golfers.php`);
+  console.log('Fetching golfers from:', `${API_BASE_URL}/api/get_golfers.php`);
   console.log('Fetching courses from:', `${API_BASE_URL}/api/courses.php`);
   Promise.all([
-    fetch(`${API_BASE_URL}/get_golfers.php`)
+    fetch(`${API_BASE_URL}/api/get_golfers.php`)
       .then(res => {
         console.log('Golfers response status:', res.status, res.statusText);
         if (!res.ok) throw new Error(`Golfers HTTP ${res.status}: ${res.statusText}`);
@@ -944,10 +944,10 @@ function loadWolfSetup(preserveSelections = false) {
   setupContainer.style.display = 'block';
 
   // Fetch both golfers and courses in parallel
-  console.log('Fetching golfers from:', `${API_BASE_URL}/get_golfers.php`);
+  console.log('Fetching golfers from:', `${API_BASE_URL}/api/get_golfers.php`);
   console.log('Fetching courses from:', `${API_BASE_URL}/api/courses.php`);
   Promise.all([
-    fetch(`${API_BASE_URL}/get_golfers.php`)
+    fetch(`${API_BASE_URL}/api/get_golfers.php`)
       .then(res => {
         console.log('Golfers response status:', res.status, res.statusText);
         if (!res.ok) throw new Error(`Golfers HTTP ${res.status}: ${res.statusText}`);
@@ -1483,7 +1483,7 @@ function loadWolfScoring() {
       container.appendChild(explanation);
 
       // Load existing scores and partner selections
-      fetch(`${API_BASE_URL}/get_scores.php?match_id=${matchId}`, {
+      fetch(`${API_BASE_URL}/api/get_scores.php?match_id=${matchId}`, {
         credentials: 'include'
       })
       .then(res => res.json())
@@ -1997,7 +1997,7 @@ function loadRabbitScoring() {
       container.appendChild(handicapExplanation);
 
       // Load existing scores
-      fetch(`${API_BASE_URL}/get_scores.php?match_id=${matchId}`, {
+      fetch(`${API_BASE_URL}/api/get_scores.php?match_id=${matchId}`, {
         credentials: 'include'
       })
       .then(res => res.json())
@@ -2155,7 +2155,7 @@ function loadWolfScorecardReadOnly() {
       table.appendChild(header);
 
       // Load scores first
-      fetch(`${API_BASE_URL}/get_scores.php?match_id=${matchId}`, {
+      fetch(`${API_BASE_URL}/api/get_scores.php?match_id=${matchId}`, {
         credentials: 'include'
       })
       .then(res => res.json())
@@ -2410,7 +2410,7 @@ function loadRabbitScorecardReadOnly() {
       table.appendChild(header);
 
       // Load scores first
-      fetch(`${API_BASE_URL}/get_scores.php?match_id=${matchId}`, {
+      fetch(`${API_BASE_URL}/api/get_scores.php?match_id=${matchId}`, {
         credentials: 'include'
       })
       .then(res => res.json())
@@ -2893,7 +2893,7 @@ function loadBestBallScoring() {
         // Add click handler for finalize button
         finalizeButton.onclick = function() {
           const points = calculateMatchPoints();
-          fetch(`${API_BASE_URL}/finalize_match_result.php`, {
+          fetch(`${API_BASE_URL}/api/finalize_match_result.php`, {
             method: 'POST',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
@@ -2925,7 +2925,7 @@ function loadBestBallScoring() {
       container.appendChild(handicapExplanation);
 
       // Load existing scores
-      fetch(`${API_BASE_URL}/get_scores.php?match_id=${matchId}`, {
+      fetch(`${API_BASE_URL}/api/get_scores.php?match_id=${matchId}`, {
         credentials: 'include'
       })
       .then(res => res.json())
@@ -3173,7 +3173,7 @@ function loadBestBallScorecardReadOnly() {
       container.appendChild(handicapExplanation);
 
       // Fetch scores
-      fetch(`${API_BASE_URL}/get_scores.php?match_id=${matchId}`, { credentials: 'include' })
+      fetch(`${API_BASE_URL}/api/get_scores.php?match_id=${matchId}`, { credentials: 'include' })
         .then(res => res.json())
         .then(scores => {
           scores.forEach(score => {
@@ -3217,7 +3217,7 @@ function startSessionHeartbeat() {
   // This is well within the default 24-minute PHP timeout.
   sessionHeartbeatInterval = setInterval(() => {
     console.log("Sending session heartbeat...");
-    fetch(`${API_BASE_URL}/keep_alive.php`, { credentials: 'include' })
+    fetch(`${API_BASE_URL}/api/keep_alive.php`, { credentials: 'include' })
       .then(res => {
         if (!res.ok) {
           // If we get a 401 error from our PHP script, the session is dead.
@@ -3248,7 +3248,7 @@ function stopSessionHeartbeat() {
 
 
 //checks session state
-fetch(`${API_BASE_URL}/check_session.php`, {
+fetch(`${API_BASE_URL}/api/check_session.php`, {
   credentials: 'include'
 })
   .then(res => res.json())
@@ -3321,7 +3321,7 @@ fetch(`${API_BASE_URL}/check_session.php`, {
 
       showTournamentBar(data);
     
-    fetch(`${API_BASE_URL}/get_match_by_round.php`, { credentials: 'include' })
+    fetch(`${API_BASE_URL}/api/get_match_by_round.php`, { credentials: 'include' })
         .then(res => res.json())
         .then(data => {
           holeInfo = data.holes;
@@ -3396,7 +3396,7 @@ function loadTodaysMatch() {
     return;
   }
 
-  const url = `${API_BASE_URL}/get_match_by_round.php?round_id=${roundId}&tournament_id=${tournamentId}&golfer_id=${golferId}`;
+  const url = `${API_BASE_URL}/api/get_match_by_round.php?round_id=${roundId}&tournament_id=${tournamentId}&golfer_id=${golferId}`;
 
   fetch(url, { credentials: 'include' })
     .then(res => res.json())
@@ -3552,7 +3552,7 @@ function loadTodaysMatch() {
         const points = calculateMatchPoints(); // You need to implement this based on your match logic
         console.log("Calculated points:", points);
         // Send to backend
-        fetch(`${API_BASE_URL}/finalize_match_result.php`, {
+        fetch(`${API_BASE_URL}/api/finalize_match_result.php`, {
           method: 'POST',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
@@ -3573,7 +3573,7 @@ function loadTodaysMatch() {
         });
       };
       
-      fetch(`${API_BASE_URL}/get_scores.php?match_id=${data.match[0].match_id}`, {
+      fetch(`${API_BASE_URL}/api/get_scores.php?match_id=${data.match[0].match_id}`, {
           credentials: 'include'
         })
         .then(res => res.json())
@@ -3651,7 +3651,7 @@ function loadGuysTripMatch() {
     return;
   }
 
-  const url = `${API_BASE_URL}/get_match_by_round.php?round_id=${roundId}&tournament_id=${tournamentId}&golfer_id=${golferId}`;
+  const url = `${API_BASE_URL}/api/get_match_by_round.php?round_id=${roundId}&tournament_id=${tournamentId}&golfer_id=${golferId}`;
 
   fetch(url, { credentials: 'include' })
     .then(res => res.json())
@@ -3832,7 +3832,7 @@ function loadGuysTripMatch() {
 
       finalizeButton.onclick = function() {
         const points = calculateMatchPoints();
-        fetch(`${API_BASE_URL}/finalize_match_result.php`, {
+        fetch(`${API_BASE_URL}/api/finalize_match_result.php`, {
           method: 'POST',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
@@ -3854,7 +3854,7 @@ function loadGuysTripMatch() {
       };
 
       // Load existing scores
-      fetch(`${API_BASE_URL}/get_scores.php?match_id=${currentMatchId}`, {
+      fetch(`${API_BASE_URL}/api/get_scores.php?match_id=${currentMatchId}`, {
         credentials: 'include'
       })
       .then(res => res.json())
@@ -4376,7 +4376,7 @@ function loadTodaySummary() {
     return;
   }
 
-  fetch(`${API_BASE_URL}/get_round_matches.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' })
+  fetch(`${API_BASE_URL}/api/get_round_matches.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' })
     .then(res => res.json())
     .then(matches => {
       const container = document.getElementById("today-summary");
@@ -4434,7 +4434,7 @@ function loadTodaySummary() {
             container.appendChild(skinsContainer);
             
             // Fetch and render skins - the API now returns both skins data and skins_total
-            fetch(`${API_BASE_URL}/get_individual_skins.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' })
+            fetch(`${API_BASE_URL}/api/get_individual_skins.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' })
               .then(res => res.json())
               .then(data => {
                 // Handle both new format (object with skins and skins_total) and old format (array)
@@ -4481,7 +4481,7 @@ function loadTodaySummary() {
                 skinsContainer.innerHTML += "<p>Error loading skins.</p>";
               });
               
-        fetch(`${API_BASE_URL}/get_gross_leaderboard.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' })
+        fetch(`${API_BASE_URL}/api/get_gross_leaderboard.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' })
         .then(res => res.json())
         .then(golfers => {
           if (!Array.isArray(golfers) || golfers.length === 0) return;
@@ -4534,7 +4534,7 @@ function loadTodaySummary() {
         .catch(err => console.error("Leaderboard error:", err));
     
     // Net leaderboard
-        fetch(`${API_BASE_URL}/get_net_leaderboard.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' })
+        fetch(`${API_BASE_URL}/api/get_net_leaderboard.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' })
           .then(res => res.json())
           .then(players => {
             if (!Array.isArray(players) || players.length === 0) return;
@@ -4613,7 +4613,7 @@ function loadGuysTripSummary() {
   // Fetch holes data if not already available
   const holesPromise = holeInfo && holeInfo.length > 0
     ? Promise.resolve(holeInfo)
-    : fetch(`${API_BASE_URL}/get_match_by_round.php?round_id=${roundId}&tournament_id=${tournamentId}&golfer_id=${golferId}`, { credentials: 'include' })
+    : fetch(`${API_BASE_URL}/api/get_match_by_round.php?round_id=${roundId}&tournament_id=${tournamentId}&golfer_id=${golferId}`, { credentials: 'include' })
         .then(res => res.json())
         .then(data => {
           if (data.holes) {
@@ -4625,7 +4625,7 @@ function loadGuysTripSummary() {
         .catch(() => []);
 
   Promise.all([
-    fetch(`${API_BASE_URL}/get_round_matches.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
+    fetch(`${API_BASE_URL}/api/get_round_matches.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
     holesPromise
   ])
     .then(([matches, holes]) => {
@@ -4691,7 +4691,7 @@ function loadGuysTripSummary() {
       container.appendChild(skinsContainer);
 
       // Fetch and render skins
-      fetch(`${API_BASE_URL}/get_individual_skins.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' })
+      fetch(`${API_BASE_URL}/api/get_individual_skins.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' })
         .then(res => res.json())
         .then(data => {
           // Handle both new format (object with skins and skins_total) and old format (array)
@@ -4731,7 +4731,7 @@ function loadGuysTripSummary() {
         });
 
       // Individual Gross Leaderboard
-      fetch(`${API_BASE_URL}/get_gross_leaderboard.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' })
+      fetch(`${API_BASE_URL}/api/get_gross_leaderboard.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' })
         .then(res => res.json())
         .then(golfers => {
           if (!Array.isArray(golfers) || golfers.length === 0) return;
@@ -4775,7 +4775,7 @@ function loadGuysTripSummary() {
         .catch(err => console.error("Gross leaderboard error:", err));
 
       // Individual Net Leaderboard
-      fetch(`${API_BASE_URL}/get_net_leaderboard.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' })
+      fetch(`${API_BASE_URL}/api/get_net_leaderboard.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' })
         .then(res => res.json())
         .then(golfers => {
           if (!Array.isArray(golfers) || golfers.length === 0) return;
@@ -5732,14 +5732,14 @@ async function loadTournamentPage(container) {
     try {
         // 2. Start ALL data fetches at the same time.
         const promises = [
-            fetch(`${API_BASE_URL}/get_tournament_scoreboard.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
-            fetch(`${API_BASE_URL}/get_gross_leaderboard_all.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
-            fetch(`${API_BASE_URL}/get_net_leaderboard_all.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
-            fetch(`${API_BASE_URL}/get_tournament_rounds.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
+            fetch(`${API_BASE_URL}/api/get_tournament_scoreboard.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
+            fetch(`${API_BASE_URL}/api/get_gross_leaderboard_all.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
+            fetch(`${API_BASE_URL}/api/get_net_leaderboard_all.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
+            fetch(`${API_BASE_URL}/api/get_tournament_rounds.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
             // The handicap table needs two fetches, so we wrap them in their own Promise.all
             Promise.all([
-                fetch(`${API_BASE_URL}/get_tournament_courses.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
-                fetch(`${API_BASE_URL}/get_tournament_golfers.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json())
+                fetch(`${API_BASE_URL}/api/get_tournament_courses.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
+                fetch(`${API_BASE_URL}/api/get_tournament_golfers.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json())
             ])
         ];
 
@@ -5822,12 +5822,12 @@ async function loadGuysTripTournamentPage(container) {
     try {
         // Fetch all data (no scoreboard for Guys Trip)
         const promises = [
-            fetch(`${API_BASE_URL}/get_gross_leaderboard_all.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
-            fetch(`${API_BASE_URL}/get_net_leaderboard_all.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
-            fetch(`${API_BASE_URL}/get_tournament_rounds.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
+            fetch(`${API_BASE_URL}/api/get_gross_leaderboard_all.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
+            fetch(`${API_BASE_URL}/api/get_net_leaderboard_all.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
+            fetch(`${API_BASE_URL}/api/get_tournament_rounds.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
             Promise.all([
-                fetch(`${API_BASE_URL}/get_tournament_courses.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
-                fetch(`${API_BASE_URL}/get_tournament_golfers.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json())
+                fetch(`${API_BASE_URL}/api/get_tournament_courses.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
+                fetch(`${API_BASE_URL}/api/get_tournament_golfers.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json())
             ])
         ];
 
@@ -5889,7 +5889,7 @@ function loadMatchScorecard(match_id, container_id = "today-summary") {
   const formatId = parseInt(sessionStorage.getItem('selected_format_id'));
   const isGuysTripFormat = formatId === 4;
 
-  fetch(`${API_BASE_URL}/get_match_by_id.php?match_id=${match_id}&tournament_id=${tournamentId}`, { credentials: 'include' })
+  fetch(`${API_BASE_URL}/api/get_match_by_id.php?match_id=${match_id}&tournament_id=${tournamentId}`, { credentials: 'include' })
     .then(res => res.json())
     .then(data => {
 
@@ -6080,7 +6080,7 @@ function loadMatchScorecard(match_id, container_id = "today-summary") {
       container.appendChild(table);
     
       // Fetch scores
-      fetch(`${API_BASE_URL}/get_scores.php?match_id=${match_id}`, { credentials: 'include' })
+      fetch(`${API_BASE_URL}/api/get_scores.php?match_id=${match_id}`, { credentials: 'include' })
         .then(res => res.json())
         .then(scores => {
           scores.forEach(score => {
@@ -6263,7 +6263,7 @@ function calculateBestBallStatusReadOnly(golfers, strokeMaps) {
 
 //refresh scores function
 function refreshScores() {
-  fetch(`${API_BASE_URL}/get_scores.php?match_id=${currentMatchId}`, {
+  fetch(`${API_BASE_URL}/api/get_scores.php?match_id=${currentMatchId}`, {
     credentials: 'include'
   })
   .then(res => res.json())
@@ -7785,7 +7785,7 @@ function loadFullTournamentView(tournamentId) {
 }
 
 function loadDefaultMatchTab(roundId, tournamentId, golferId) {
-  const url = `${API_BASE_URL}/get_match_by_round.php?round_id=${roundId}&tournament_id=${tournamentId}&golfer_id=${golferId}`;
+  const url = `${API_BASE_URL}/api/get_match_by_round.php?round_id=${roundId}&tournament_id=${tournamentId}&golfer_id=${golferId}`;
   fetch(url, { credentials: 'include' })
     .then(res => res.json())
     .then(data => {
@@ -8265,7 +8265,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (!tournamentId) return;
 
-      fetch(`${API_BASE_URL}/get_tournament_rounds.php?tournament_id=${tournamentId}`, { credentials: 'include' })
+      fetch(`${API_BASE_URL}/api/get_tournament_rounds.php?tournament_id=${tournamentId}`, { credentials: 'include' })
         .then(res => res.json())
         .then(rounds => {
           if (!Array.isArray(rounds) || rounds.length === 0) {
@@ -8879,7 +8879,7 @@ document.addEventListener('DOMContentLoaded', () => {
   sessionStorage.removeItem('wolf_tournament_id');
 
   // Load golfers into dropdown
-  fetch(`${API_BASE_URL}/get_golfers.php`)
+  fetch(`${API_BASE_URL}/api/get_golfers.php`)
     .then(response => response.json())
     .then(golfers => {
       golfers.forEach(golfer => {

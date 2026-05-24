@@ -15,7 +15,20 @@
       "Bash(echo '')",
       "Bash(echo '# UTF-8 locale \\(required for CocoaPods\\)')",
       "Bash(echo 'export LANG=en_US.UTF-8')",
-      "Bash(echo 'export LC_ALL=en_US.UTF-8')"
+      "Bash(echo 'export LC_ALL=en_US.UTF-8')",
+      "Bash(php -l golfers.php tournaments.php rounds.php matches.php hole_scores.php match_golfers.php match_results.php tournament_golfers.php tournament_teams.php tournament_settings.php tournament_formats.php flights.php golfers_flights.php)",
+      "Bash(/Applications/XAMPP/xamppfiles/bin/php -v)",
+      "Bash(/Applications/XAMPP/xamppfiles/bin/php -l golfers.php tournaments.php rounds.php matches.php hole_scores.php match_golfers.php match_results.php tournament_golfers.php tournament_teams.php tournament_settings.php tournament_formats.php flights.php golfers_flights.php get_match_data.php get_match_data_flat.php save_guys_trip_matches.php saveAllMatchData.php save_tee_time_assignments.php save_tournament_assignments.php lock_handicaps.php create_quick_round.php create_rabbit_round.php create_wolf_round.php tee_times.php delete_tee_time.php holes.php app_settings.php courses.php get_course_tees.php)",
+      "Bash(/Applications/XAMPP/xamppfiles/bin/php -l get_best_ball_match.php get_rabbit_match.php get_wolf_match.php get_match_by_code.php get_match_by_tournament.php get_quick_round_history.php get_tee_time_assignments.php get_tournament_assignments.php get_user_tournaments.php get_all_user_tournaments.php create_golfer.php delete_golfer.php update_golfer.php update_round.php save_wolf_partner.php)",
+      "Bash(/Applications/XAMPP/xamppfiles/bin/php -l /Applications/XAMPP/xamppfiles/htdocs/sandbagger/api/tournament_golfers.php)",
+      "Bash(mysql -u root -e \"DESCRIBE sandbagger.courses; SELECT org_id, name FROM sandbagger.organizations;\")",
+      "Bash(php -l /Applications/XAMPP/xamppfiles/htdocs/sandbagger/api/courses.php)",
+      "Bash(php -l /Applications/XAMPP/xamppfiles/htdocs/sandbagger/api/holes.php)",
+      "Bash(php -l /Applications/XAMPP/xamppfiles/htdocs/sandbagger/api/get_course_tees.php)",
+      "Bash(/Applications/XAMPP/xamppfiles/bin/php -l /Applications/XAMPP/xamppfiles/htdocs/sandbagger/api/courses.php)",
+      "Bash(/Applications/XAMPP/xamppfiles/bin/php -l /Applications/XAMPP/xamppfiles/htdocs/sandbagger/api/holes.php)",
+      "Bash(/Applications/XAMPP/xamppfiles/bin/php -l /Applications/XAMPP/xamppfiles/htdocs/sandbagger/api/get_course_tees.php)",
+      "Bash(xargs -I{} basename {})"
     ]
   }
 }
