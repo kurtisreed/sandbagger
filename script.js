@@ -6520,7 +6520,6 @@ function loadUserDashboard(golfer) {
 
   // Persist login across sessions
   localStorage.setItem('sb_golfer', JSON.stringify(golfer));
-  localStorage.setItem('sb_pin_verified', 'true');
 
   document.getElementById('pin-container').style.display = 'none';
   document.getElementById('auth-container').style.display = 'none';
@@ -6529,10 +6528,6 @@ function loadUserDashboard(golfer) {
   const userHeaderBar = document.getElementById('user-header-bar');
   userHeaderBar.style.display = 'block';
   document.getElementById('user-header-name').textContent = `${golfer.first_name} ${golfer.last_name}`;
-
-  // Show Change PIN option for admins
-  const changePinBtn = document.getElementById('menu-change-pin');
-  if (changePinBtn) changePinBtn.style.display = golfer.role === 'administrator' ? 'block' : 'none';
 
   loadUserTournaments(golfer.golfer_id);
 }
@@ -8229,8 +8224,6 @@ document.addEventListener('DOMContentLoaded', () => {
     e.stopPropagation();
     hamburgerDropdown.classList.toggle('show');
     const isAdmin = currentUser && currentUser.role === 'administrator';
-    const changePinBtn = document.getElementById('menu-change-pin');
-    if (changePinBtn) changePinBtn.style.display = isAdmin ? 'block' : 'none';
     const editGolfersBtn = document.getElementById('menu-edit-golfers');
     if (editGolfersBtn) editGolfersBtn.style.display = isAdmin ? 'block' : 'none';
     const inviteBtn = document.getElementById('menu-invite');
@@ -8364,7 +8357,6 @@ document.addEventListener('DOMContentLoaded', () => {
     newGolferForm.style.display = 'none';
     // Return to login screen and clear persisted login
     localStorage.removeItem('sb_golfer');
-    localStorage.removeItem('sb_pin_verified');
     fetch(`${API_BASE_URL}/api/logout.php`, { method: 'POST', credentials: 'include' }).catch(() => {});
     document.getElementById('login-form').style.display = '';
     document.getElementById('signup-chooser').style.display = 'none';
@@ -8812,63 +8804,6 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.textContent = 'Create Group';
   });
 
-  // ── Change PIN (admin only) ─────────────────────────────────────────────────
-
-  const changePinModal  = document.getElementById('change-pin-modal');
-  const newPinInput     = document.getElementById('new-pin-input');
-  const newPinConfirm   = document.getElementById('new-pin-confirm');
-  const changePinError  = document.getElementById('change-pin-error');
-
-  document.getElementById('menu-change-pin').addEventListener('click', () => {
-    hamburgerDropdown.classList.remove('show');
-    newPinInput.value = '';
-    newPinConfirm.value = '';
-    changePinError.style.display = 'none';
-    changePinModal.style.display = 'flex';
-    newPinInput.focus();
-  });
-
-  document.getElementById('cancel-pin-btn').addEventListener('click', () => {
-    changePinModal.style.display = 'none';
-  });
-
-  document.getElementById('save-pin-btn').addEventListener('click', async () => {
-    const val     = newPinInput.value.trim();
-    const confirm = newPinConfirm.value.trim();
-    changePinError.style.display = 'none';
-    if (!val) {
-      changePinError.textContent = 'Please enter a PIN.';
-      changePinError.style.display = 'block';
-      return;
-    }
-    if (val !== confirm) {
-      changePinError.textContent = 'PINs do not match.';
-      changePinError.style.display = 'block';
-      return;
-    }
-    const saveBtn = document.getElementById('save-pin-btn');
-    saveBtn.disabled = true;
-    try {
-      const res  = await fetch(`${API_BASE_URL}/api/app_settings.php`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key: 'group_pin', value: val }),
-        credentials: 'include',
-      });
-      const data = await res.json();
-      if (data.success) {
-        changePinModal.style.display = 'none';
-      } else {
-        changePinError.textContent = 'Error saving PIN.';
-        changePinError.style.display = 'block';
-      }
-    } catch {
-      changePinError.textContent = 'Connection error. Please try again.';
-      changePinError.style.display = 'block';
-    }
-    saveBtn.disabled = false;
-  });
-
   // ── Clear any Quick Round session data on page load - Quick Rounds don't persist across refreshes
   sessionStorage.removeItem('best_ball_match_id');
   sessionStorage.removeItem('rabbit_match_id');
@@ -9140,9 +9075,7 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(res => res.json())
         .then(data => {
           if (data.success) {
-            // Clear session and return to PIN screen
             localStorage.removeItem('sb_golfer');
-            localStorage.removeItem('sb_pin_verified');
             currentUser = null;
             document.getElementById('edit-user-container').style.display = 'none';
             document.getElementById('user-header-bar').style.display = 'none';
