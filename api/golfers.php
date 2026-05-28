@@ -40,6 +40,7 @@ switch ($method) {
     break;
 
   case 'POST':
+    requireAdmin();
     // Create a new golfer scoped to this org
     $data = json_decode(file_get_contents('php://input'), true);
     $stmt = $conn->prepare("
@@ -58,6 +59,7 @@ switch ($method) {
     break;
 
   case 'PUT':
+    requireAdmin();
     // Update an existing golfer (must belong to this org)
     $data = json_decode(file_get_contents('php://input'), true);
     $stmt = $conn->prepare("
@@ -79,6 +81,7 @@ switch ($method) {
     break;
 
   case 'DELETE':
+    requireAdmin();
     // Delete a golfer (must belong to this org)
     $stmt = $conn->prepare("
       DELETE FROM golfers

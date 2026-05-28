@@ -172,6 +172,7 @@ switch ($method) {
     break;
 
   case 'PUT':
+      requireAdmin();
       // Update team assignment (org-scoped)
       parse_str(file_get_contents('php://input'), $data);
       $stmt = $conn->prepare("

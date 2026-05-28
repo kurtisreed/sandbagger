@@ -106,6 +106,7 @@ switch ($method) {
       break;
 
     case 'PUT':
+      requireAdmin();
       // Update golfers for a match (org-scoped)
       $data = json_decode(file_get_contents('php://input'), true);
 
