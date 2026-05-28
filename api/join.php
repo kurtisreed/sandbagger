@@ -22,7 +22,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         JOIN organizations o ON o.org_id = i.org_id
         WHERE i.code = ?
           AND (i.expires_at IS NULL OR i.expires_at > NOW())
-          AND i.used_at IS NULL
     ");
     $stmt->bind_param('s', $code);
     $stmt->execute();
@@ -74,14 +73,13 @@ if (strlen($password) < 8) {
     exit;
 }
 
-// Validate invite code (must be unused and not expired)
+// Validate invite code (must not be expired)
 $stmt = $conn->prepare("
     SELECT i.invite_id, i.org_id, o.name AS org_name
     FROM org_invites i
     JOIN organizations o ON o.org_id = i.org_id
     WHERE i.code = ?
       AND (i.expires_at IS NULL OR i.expires_at > NOW())
-      AND i.used_at IS NULL
 ");
 $stmt->bind_param('s', $code);
 $stmt->execute();
@@ -159,13 +157,6 @@ try {
         $golferId = $conn->insert_id;
         $stmt->close();
     }
-
-    // Mark invite code as used (single-use enforcement)
-    $inviteId = (int) $invite['invite_id'];
-    $stmt = $conn->prepare("UPDATE org_invites SET used_at = NOW(), used_by = ? WHERE invite_id = ?");
-    $stmt->bind_param('ii', $userId, $inviteId);
-    $stmt->execute();
-    $stmt->close();
 
     $conn->commit();
 

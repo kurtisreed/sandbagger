@@ -15,23 +15,29 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' && $_SERVER['REQUEST_METHOD'] !== 'GET
     exit;
 }
 
-// Return existing active unused invite if one exists
-$stmt = $conn->prepare("
-    SELECT code FROM org_invites
-    WHERE org_id = ?
-      AND (expires_at IS NULL OR expires_at > NOW())
-      AND used_at IS NULL
-    ORDER BY created_at DESC LIMIT 1
-");
-$stmt->bind_param('i', $currentOrgId);
-$stmt->execute();
-$result = $stmt->get_result();
-$existing = $result->fetch_assoc();
-$stmt->close();
+$regenerate = !empty($_GET['regenerate']) || !empty($_POST['regenerate']);
 
-if ($existing) {
-    echo json_encode(['success' => true, 'code' => $existing['code']]);
-    exit;
+// Return existing active invite unless admin is forcing a regeneration
+if (!$regenerate) {
+    $stmt = $conn->prepare("
+        SELECT code, expires_at FROM org_invites
+        WHERE org_id = ?
+          AND (expires_at IS NULL OR expires_at > NOW())
+        ORDER BY created_at DESC LIMIT 1
+    ");
+    $stmt->bind_param('i', $currentOrgId);
+    $stmt->execute();
+    $existing = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    if ($existing) {
+        echo json_encode([
+            'success'     => true,
+            'code'        => $existing['code'],
+            'expires_at'  => $existing['expires_at']
+        ]);
+        exit;
+    }
 }
 
 // Generate a new unique 8-character code
@@ -48,11 +54,19 @@ function generateCode($conn) {
     return $code;
 }
 
-$code = generateCode($conn);
+$code      = generateCode($conn);
+$expiresAt = date('Y-m-d H:i:s', strtotime('+7 days'));
 
-$stmt = $conn->prepare("INSERT INTO org_invites (org_id, code, created_by) VALUES (?, ?, ?)");
-$stmt->bind_param('isi', $currentOrgId, $code, $currentUserId);
+$stmt = $conn->prepare("
+    INSERT INTO org_invites (org_id, code, created_by, expires_at)
+    VALUES (?, ?, ?, ?)
+");
+$stmt->bind_param('isis', $currentOrgId, $code, $currentUserId, $expiresAt);
 $stmt->execute();
 $stmt->close();
 
-echo json_encode(['success' => true, 'code' => $code]);
+echo json_encode([
+    'success'    => true,
+    'code'       => $code,
+    'expires_at' => $expiresAt
+]);
