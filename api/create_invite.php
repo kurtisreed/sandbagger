@@ -15,10 +15,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' && $_SERVER['REQUEST_METHOD'] !== 'GET
     exit;
 }
 
-// Return existing active invite if one exists
+// Return existing active unused invite if one exists
 $stmt = $conn->prepare("
     SELECT code FROM org_invites
-    WHERE org_id = ? AND (expires_at IS NULL OR expires_at > NOW())
+    WHERE org_id = ?
+      AND (expires_at IS NULL OR expires_at > NOW())
+      AND used_at IS NULL
     ORDER BY created_at DESC LIMIT 1
 ");
 $stmt->bind_param('i', $currentOrgId);

@@ -20,7 +20,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         SELECT i.org_id, o.name AS org_name
         FROM org_invites i
         JOIN organizations o ON o.org_id = i.org_id
-        WHERE i.code = ? AND (i.expires_at IS NULL OR i.expires_at > NOW())
+        WHERE i.code = ?
+          AND (i.expires_at IS NULL OR i.expires_at > NOW())
+          AND i.used_at IS NULL
     ");
     $stmt->bind_param('s', $code);
     $stmt->execute();
@@ -72,12 +74,14 @@ if (strlen($password) < 8) {
     exit;
 }
 
-// Validate invite code
+// Validate invite code (must be unused and not expired)
 $stmt = $conn->prepare("
     SELECT i.invite_id, i.org_id, o.name AS org_name
     FROM org_invites i
     JOIN organizations o ON o.org_id = i.org_id
-    WHERE i.code = ? AND (i.expires_at IS NULL OR i.expires_at > NOW())
+    WHERE i.code = ?
+      AND (i.expires_at IS NULL OR i.expires_at > NOW())
+      AND i.used_at IS NULL
 ");
 $stmt->bind_param('s', $code);
 $stmt->execute();
@@ -156,6 +160,13 @@ try {
         $stmt->close();
     }
 
+    // Mark invite code as used (single-use enforcement)
+    $inviteId = (int) $invite['invite_id'];
+    $stmt = $conn->prepare("UPDATE org_invites SET used_at = NOW(), used_by = ? WHERE invite_id = ?");
+    $stmt->bind_param('ii', $userId, $inviteId);
+    $stmt->execute();
+    $stmt->close();
+
     $conn->commit();
 
     // Log user in immediately
@@ -167,9 +178,6 @@ try {
     $_SESSION['golfer_id'] = $golferId;
 
     session_regenerate_id(true);
-
-    // Note: Single-use invite enforcement requires a DB migration to add
-    // used_at/used_by columns to org_invites. See Fix 7 notes.
 
     echo json_encode([
         'success'  => true,
