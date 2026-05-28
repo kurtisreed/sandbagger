@@ -5,7 +5,7 @@ require_once '../cors_headers.php';
 // Expects a POST request with a JSON body: { "round_id": X, "assignments": [...] }
 
 header('Content-Type: application/json');
-header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: no-store, no-cache, private, must-revalidate, max-age=0");
 header("Expires: 0");
 header("Pragma: no-cache");
 require_once 'db_connect.php';

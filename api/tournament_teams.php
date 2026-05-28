@@ -2,7 +2,7 @@
 require_once '../cors_headers.php';
 // public/api/tournament_teams.php
 header('Content-Type: application/json; charset=utf-8');
-header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: no-store, no-cache, private, must-revalidate, max-age=0");
 header("Expires: 0");
 header("Pragma: no-cache");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");

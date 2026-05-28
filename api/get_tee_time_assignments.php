@@ -5,7 +5,7 @@ require_once '../cors_headers.php';
 // and a list of its matches, with each match containing its assigned golfers (name and team color).
 
 header('Content-Type: application/json');
-header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: no-store, no-cache, private, must-revalidate, max-age=0");
 header("Expires: 0");
 header("Pragma: no-cache");
 require_once 'db_connect.php';
