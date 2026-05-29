@@ -6568,8 +6568,8 @@ function loadUserTournaments(golferId) {
             <div style="position: relative; margin-bottom: 0.25rem;">
               <h4 style="margin: 0; padding-right: ${isAdminCard ? '4rem' : '0'};">${tournament.tournament_name}</h4>
               ${isAdminCard ? `
-                <button class="manage-tournament-btn" data-tournament-id="${tournament.tournament_id}" style="position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); padding: 0.25rem 0.75rem; background: #ffc107; color: #333; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: bold;">
-                  Manage
+                <button class="edit-tournament-btn" data-tournament-id="${tournament.tournament_id}" style="position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); padding: 0.25rem 0.75rem; background: #ffc107; color: #333; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: bold;">
+                  Edit
                 </button>
               ` : ''}
             </div>
@@ -6680,13 +6680,13 @@ function loadUserTournaments(golferId) {
         });
       });
 
-      // Add click handlers for "Manage Tournament" buttons
-      document.querySelectorAll('.manage-tournament-btn').forEach(btn => {
+      // Add click handlers for "Edit Tournament" buttons
+      document.querySelectorAll('.edit-tournament-btn').forEach(btn => {
         btn.addEventListener('click', function(e) {
           e.stopPropagation();
           const tournamentId = this.dataset.tournamentId;
           const tournament = data.tournaments.find(t => String(t.tournament_id) === String(tournamentId));
-          if (tournament) showManageTournamentScreen(tournament);
+          if (tournament) showEditTournamentForm(tournament);
         });
       });
 
@@ -6705,157 +6705,6 @@ function loadUserTournaments(golferId) {
       console.error('Error loading tournaments:', err);
       tournamentsList.innerHTML = '<p style="color: red;">Error loading tournaments</p>';
     });
-}
-
-// ── Manage Tournament screen ──────────────────────────────────────────────────
-let _managedTournament = null; // remember which tournament we're managing
-
-async function showManageTournamentScreen(tournament) {
-  _managedTournament = tournament;
-  document.getElementById('user-dashboard').style.display = 'none';
-  document.getElementById('edit-tournament-container').style.display = 'none';
-  const container = document.getElementById('manage-tournament-container');
-  container.style.display = 'block';
-
-  const content = document.getElementById('manage-tournament-content');
-  content.innerHTML = '<p style="color:#666; text-align:center;">Loading…</p>';
-
-  // Fetch everything we need in parallel
-  const [teams, tournamentGolfers, formats] = await Promise.all([
-    fetch(`${API_BASE_URL}/api/tournament_teams.php?tournament_id=${tournament.tournament_id}`, { credentials: 'include' }).then(r => r.json()).catch(() => []),
-    fetch(`${API_BASE_URL}/api/tournament_golfers.php?tournament_id=${tournament.tournament_id}`, { credentials: 'include' }).then(r => r.json()).catch(() => []),
-    fetch(`${API_BASE_URL}/api/formats.php`, { credentials: 'include' }).then(r => r.json()).catch(() => []),
-  ]);
-
-  const formatName = (formats.find(f => String(f.format_id) === String(tournament.format_id)) || {}).name || '—';
-  const isRyderCup = parseInt(tournament.format_id) === 3;
-
-  // Format dates nicely
-  const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
-  const startFmt = fmtDate(tournament.start_date);
-  const endFmt   = fmtDate(tournament.end_date);
-  const dateStr  = tournament.start_date === tournament.end_date ? startFmt : `${startFmt} – ${endFmt}`;
-
-  // Teams section (Ryder Cup only)
-  let teamsHtml = '';
-  if (isRyderCup && teams.length >= 2) {
-    teamsHtml = `
-      <div style="margin-bottom:0.75rem;">
-        <span style="font-size:0.8rem; font-weight:600; color:#888; text-transform:uppercase; letter-spacing:0.05em;">Teams</span>
-        <p style="margin:0.25rem 0 0; font-size:1rem; font-weight:bold;">
-          <span style="color:${teams[0].color_hex || '#333'}">${teams[0].name}</span>
-          <span style="color:#999;"> vs </span>
-          <span style="color:${teams[1].color_hex || '#333'}">${teams[1].name}</span>
-        </p>
-      </div>`;
-  }
-
-  // Golfers section
-  const golferNames = tournamentGolfers.map(g => `${g.first_name} ${g.last_name}`).join(', ');
-  const golferCount = tournamentGolfers.length;
-  const golferHtml = golferCount > 0
-    ? `<p style="margin:0.25rem 0 0; font-size:0.9rem; color:#444; line-height:1.5;">${golferNames}</p>`
-    : `<p style="margin:0.25rem 0 0; font-size:0.9rem; color:#aaa;">No golfers assigned yet</p>`;
-
-  content.innerHTML = `
-    <!-- Summary card -->
-    <div style="background:#fff; border:1px solid #e0e0e0; border-radius:12px; padding:1.25rem; margin-bottom:1rem; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-      <h3 style="margin:0 0 1rem; font-size:1.2rem; color:#1a1a1a;">${tournament.tournament_name}</h3>
-
-      <div style="margin-bottom:0.75rem;">
-        <span style="font-size:0.8rem; font-weight:600; color:#888; text-transform:uppercase; letter-spacing:0.05em;">Date</span>
-        <p style="margin:0.25rem 0 0; font-size:0.95rem; color:#333;">${dateStr}</p>
-      </div>
-
-      <div style="margin-bottom:0.75rem;">
-        <span style="font-size:0.8rem; font-weight:600; color:#888; text-transform:uppercase; letter-spacing:0.05em;">Format</span>
-        <p style="margin:0.25rem 0 0; font-size:0.95rem; color:#333;">${formatName}</p>
-      </div>
-
-      ${teamsHtml}
-
-      <div style="margin-bottom:1.25rem;">
-        <span style="font-size:0.8rem; font-weight:600; color:#888; text-transform:uppercase; letter-spacing:0.05em;">Golfers (${golferCount})</span>
-        ${golferHtml}
-      </div>
-
-      <button id="go-to-edit-tournament-btn" style="width:100%; padding:0.65rem; background:#ffc107; color:#333; border:none; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Edit Tournament</button>
-    </div>
-
-    <!-- Invite members card -->
-    <div style="background:#fff; border:1px solid #e0e0e0; border-radius:12px; padding:1.25rem; margin-bottom:1rem; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-      <h3 style="margin:0 0 0.5rem; font-size:1.1rem; color:#1a1a1a;">Invite Members</h3>
-      <p style="margin:0 0 1rem; font-size:0.9rem; color:#666;">Share this link with anyone you want to join your group. It works for multiple people and expires in 7 days.</p>
-      <div id="invite-link-loading" style="color:#aaa; font-size:0.9rem; text-align:center;">Generating link…</div>
-      <div id="invite-link-block" style="display:none;">
-        <input type="text" id="manage-invite-link-display" readonly
-          style="width:100%; padding:0.6rem; border:1px solid #ccc; border-radius:6px; font-size:0.8rem; box-sizing:border-box; margin-bottom:0.75rem; background:#f5f5f5; word-break:break-all;">
-        <p id="manage-invite-expiry" style="margin:0 0 0.75rem; font-size:0.8rem; color:#888; text-align:center;"></p>
-        <button id="manage-copy-invite-btn" style="width:100%; padding:0.65rem; background:#4F2185; color:white; border:none; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer; margin-bottom:0.5rem;">Copy Invite Link</button>
-        <button id="manage-regenerate-invite-btn" style="width:100%; padding:0.65rem; background:#fff; color:#4F2185; border:1px solid #4F2185; border-radius:8px; font-size:0.9rem; cursor:pointer;">Generate New Code</button>
-      </div>
-    </div>
-  `;
-
-  // Load invite link
-  _loadManageInviteLink();
-
-  // Edit tournament button
-  document.getElementById('go-to-edit-tournament-btn').addEventListener('click', () => {
-    document.getElementById('manage-tournament-container').style.display = 'none';
-    showEditTournamentForm(tournament);
-  });
-
-  // Copy invite link
-  document.getElementById('manage-copy-invite-btn').addEventListener('click', () => {
-    const input = document.getElementById('manage-invite-link-display');
-    navigator.clipboard.writeText(input.value).then(() => {
-      const btn = document.getElementById('manage-copy-invite-btn');
-      btn.textContent = 'Copied!';
-      setTimeout(() => { btn.textContent = 'Copy Invite Link'; }, 2000);
-    }).catch(() => {
-      input.select();
-      document.execCommand('copy');
-    });
-  });
-
-  // Regenerate invite code
-  document.getElementById('manage-regenerate-invite-btn').addEventListener('click', async () => {
-    const btn = document.getElementById('manage-regenerate-invite-btn');
-    btn.disabled = true;
-    btn.textContent = 'Generating…';
-    await _loadManageInviteLink(true);
-    btn.disabled = false;
-    btn.textContent = 'Generate New Code';
-  });
-}
-
-async function _loadManageInviteLink(regenerate = false) {
-  const loadingEl = document.getElementById('invite-link-loading');
-  const blockEl   = document.getElementById('invite-link-block');
-  const linkInput = document.getElementById('manage-invite-link-display');
-  const expiryEl  = document.getElementById('manage-invite-expiry');
-  if (loadingEl) loadingEl.style.display = 'block';
-  if (blockEl)   blockEl.style.display = 'none';
-
-  const url = `${API_BASE_URL}/api/create_invite.php${regenerate ? '?regenerate=1' : ''}`;
-  try {
-    const res  = await fetch(url, { method: 'POST', credentials: 'include' });
-    const data = await res.json();
-    if (data.success) {
-      const link = `${window.location.origin}${window.location.pathname}?join=${data.code}`;
-      if (linkInput) linkInput.value = link;
-      if (expiryEl && data.expires_at) {
-        const expDate = new Date(data.expires_at);
-        const days    = Math.ceil((expDate - Date.now()) / 86400000);
-        expiryEl.textContent = `Expires in ${days} day${days !== 1 ? 's' : ''}`;
-      }
-      if (loadingEl) loadingEl.style.display = 'none';
-      if (blockEl)   blockEl.style.display = 'block';
-    }
-  } catch (e) {
-    if (loadingEl) loadingEl.textContent = 'Failed to load invite link.';
-  }
 }
 
 async function showEditTournamentForm(tournament) {
@@ -8377,6 +8226,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const isAdmin = currentUser && currentUser.role === 'administrator';
     const editGolfersBtn = document.getElementById('menu-edit-golfers');
     if (editGolfersBtn) editGolfersBtn.style.display = isAdmin ? 'block' : 'none';
+    const inviteBtn = document.getElementById('menu-invite');
+    if (inviteBtn) inviteBtn.style.display = isAdmin ? 'block' : 'none';
   });
 
   // Close menu when clicking outside
@@ -8738,6 +8589,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
     btn.disabled = false;
     btn.textContent = 'Join Group';
+  });
+
+  // ── Invite modal (admin only) ───────────────────────────────────────────────
+  document.getElementById('menu-invite').addEventListener('click', async () => {
+    hamburgerDropdown.classList.remove('show');
+    const res  = await fetch(`${API_BASE_URL}/api/create_invite.php`, {
+      method: 'POST',
+      credentials: 'include'
+    });
+    const data = await res.json();
+    if (data.success) {
+      const link = `${window.location.origin}${window.location.pathname}?join=${data.code}`;
+      document.getElementById('invite-link-display').value = link;
+      document.getElementById('invite-modal').style.display = 'flex';
+    }
+  });
+
+  document.getElementById('copy-invite-btn').addEventListener('click', () => {
+    const input = document.getElementById('invite-link-display');
+    navigator.clipboard.writeText(input.value).then(() => {
+      document.getElementById('copy-invite-btn').textContent = 'Copied!';
+      setTimeout(() => { document.getElementById('copy-invite-btn').textContent = 'Copy Link'; }, 2000);
+    }).catch(() => {
+      input.select();
+      document.execCommand('copy');
+    });
+  });
+
+  document.getElementById('close-invite-modal-btn').addEventListener('click', () => {
+    document.getElementById('invite-modal').style.display = 'none';
   });
 
   // ── Reset password form (admin-generated link: ?reset=TOKEN) ────────────────
@@ -9425,20 +9306,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (backFromEditTournamentBtn) {
     backFromEditTournamentBtn.addEventListener('click', () => {
       document.getElementById('edit-tournament-container').style.display = 'none';
-      // Return to Manage screen if we came from there, otherwise dashboard
-      if (_managedTournament) {
-        showManageTournamentScreen(_managedTournament);
-      } else {
-        document.getElementById('user-dashboard').style.display = 'block';
-      }
-    });
-  }
-
-  const backFromManageTournamentBtn = document.getElementById('back-from-manage-tournament-btn');
-  if (backFromManageTournamentBtn) {
-    backFromManageTournamentBtn.addEventListener('click', () => {
-      document.getElementById('manage-tournament-container').style.display = 'none';
-      _managedTournament = null;
       document.getElementById('user-dashboard').style.display = 'block';
     });
   }
