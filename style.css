@@ -554,16 +554,17 @@ main {
   margin: 0;
 }
 
-/* ── Login / Register forms inside pin-container ─── */
-#login-form, #register-form {
+/* ── Login / Register / Signup / Join / Reset forms inside pin-container ─── */
+#login-form, #register-form, #signup-chooser, #join-form, #reset-form, #org-picker {
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 100%;
+  box-sizing: border-box;
   gap: 0;
 }
 
-#login-form h2, #register-form h2 {
+#login-form h2, #register-form h2, #signup-chooser h2, #join-form h2, #reset-form h2, #org-picker h2 {
   margin: 0 0 1.75rem;
   color: #fff;
   text-align: center;
