@@ -1,5 +1,5 @@
 // service-worker.js
-const CACHE_NAME = 'sandbagger-v4';
+const CACHE_NAME = 'sandbagger-v5';
 
 const STATIC_ASSETS = [
   '/',
@@ -60,9 +60,10 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // HTML and JS: network-first so changes are always reflected immediately
+  // HTML, JS, and CSS: network-first so changes are always reflected immediately
   const isAppShell = url.pathname.endsWith('.js')
     || url.pathname.endsWith('.html')
+    || url.pathname.endsWith('.css')
     || url.pathname === '/';
   if (isAppShell) {
     event.respondWith(
