@@ -7978,14 +7978,17 @@ async function showEditGroupPage() {
     ? new Date(created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
     : '—';
 
-  // Build members rows
+  // Build members rows — names are clickable for admin editing
   const memberRows = (members || []).map(m => `
     <div style="display:flex; justify-content:space-between; align-items:center; padding:0.6rem 0; border-bottom:1px solid #f0f0f0;">
-      <div>
-        <span style="font-size:0.95rem; color:#222;">${m.name}</span>
-        <span style="font-size:0.8rem; color:#888; margin-left:0.5rem;">${m.email}</span>
+      <div style="flex:1; min-width:0;">
+        <button class="member-detail-btn" data-user-id="${m.user_id}"
+          style="background:none; border:none; padding:0; cursor:pointer; text-align:left; font-size:0.95rem; color:#4F2185; font-weight:600; text-decoration:underline; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;">
+          ${m.name}
+        </button>
+        <div style="font-size:0.8rem; color:#888; margin-top:0.1rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${m.email}</div>
       </div>
-      <span style="font-size:0.75rem; font-weight:600; color:${m.role === 'admin' ? '#4F2185' : '#666'}; text-transform:uppercase; letter-spacing:0.04em;">${m.role}</span>
+      <span style="font-size:0.75rem; font-weight:600; color:${m.role === 'admin' ? '#4F2185' : '#666'}; text-transform:uppercase; letter-spacing:0.04em; margin-left:0.75rem;">${m.role}</span>
     </div>
   `).join('');
 
@@ -8056,6 +8059,15 @@ async function showEditGroupPage() {
     btn.textContent = 'Generate New Code';
   });
 
+  // Member name click → member detail page
+  document.querySelectorAll('.member-detail-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const userId = parseInt(btn.dataset.userId);
+      const member = (members || []).find(m => m.user_id === userId);
+      if (member) showMemberDetailPage(member);
+    });
+  });
+
   // Back button
   document.getElementById('back-from-edit-group-btn').onclick = () => {
     container.dataset.open = 'false';
@@ -8089,6 +8101,135 @@ async function _loadGroupInviteLink(regenerate = false) {
   } catch (e) {
     if (loadingEl) loadingEl.textContent = 'Failed to load invite link.';
   }
+}
+
+function showMemberDetailPage(member) {
+  const container = document.getElementById('edit-group-container');
+  const content   = document.getElementById('edit-group-content');
+
+  // Update heading
+  document.querySelector('#edit-group-container h2').textContent = 'Member';
+
+  content.innerHTML = `
+    <!-- Edit name / email card -->
+    <div style="background:#fff; border:1px solid #e0e0e0; border-radius:12px; padding:1.25rem; margin-bottom:1rem; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+      <h3 style="margin:0 0 1rem; font-size:1.1rem; color:#1a1a1a;">Edit Info</h3>
+
+      <label style="font-size:0.85rem; color:#555; display:block; margin-bottom:0.25rem;">Name</label>
+      <input type="text" id="member-edit-name" value="${member.name.replace(/"/g, '&quot;')}"
+        style="width:100%; padding:0.6rem; border:1px solid #ccc; border-radius:6px; font-size:1rem; box-sizing:border-box; margin-bottom:1rem;">
+
+      <label style="font-size:0.85rem; color:#555; display:block; margin-bottom:0.25rem;">Email</label>
+      <input type="email" id="member-edit-email" value="${member.email.replace(/"/g, '&quot;')}"
+        style="width:100%; padding:0.6rem; border:1px solid #ccc; border-radius:6px; font-size:1rem; box-sizing:border-box; margin-bottom:0.75rem;">
+
+      <p id="member-edit-status" style="display:none; font-size:0.875rem; text-align:center; margin:0 0 0.75rem;"></p>
+      <button id="member-save-btn" style="width:100%; padding:0.65rem; background:#4F2185; color:white; border:none; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Save Changes</button>
+    </div>
+
+    <!-- Password reset card -->
+    <div style="background:#fff; border:1px solid #e0e0e0; border-radius:12px; padding:1.25rem; margin-bottom:1rem; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+      <h3 style="margin:0 0 0.5rem; font-size:1.1rem; color:#1a1a1a;">Reset Password</h3>
+      <p style="margin:0 0 1rem; font-size:0.9rem; color:#666;">Generate a one-time reset link to share with this member. It expires in 24 hours.</p>
+      <button id="member-reset-btn" style="width:100%; padding:0.65rem; background:#fff; color:#4F2185; border:1px solid #4F2185; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Generate Reset Link</button>
+      <div id="member-reset-link-block" style="display:none; margin-top:1rem;">
+        <input type="text" id="member-reset-link-display" readonly
+          style="width:100%; padding:0.6rem; border:1px solid #ccc; border-radius:6px; font-size:0.8rem; box-sizing:border-box; margin-bottom:0.5rem; background:#f5f5f5;">
+        <p id="member-reset-expiry" style="margin:0 0 0.75rem; font-size:0.8rem; color:#888; text-align:center;"></p>
+        <button id="member-copy-reset-btn" style="width:100%; padding:0.65rem; background:#4F2185; color:white; border:none; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Copy Reset Link</button>
+      </div>
+    </div>
+  `;
+
+  // Save name/email
+  document.getElementById('member-save-btn').addEventListener('click', async () => {
+    const btn      = document.getElementById('member-save-btn');
+    const statusEl = document.getElementById('member-edit-status');
+    const name     = document.getElementById('member-edit-name').value.trim();
+    const email    = document.getElementById('member-edit-email').value.trim();
+
+    statusEl.style.display = 'none';
+    if (!name || !email) {
+      statusEl.textContent   = 'Name and email are required.';
+      statusEl.style.color   = '#c00';
+      statusEl.style.display = 'block';
+      return;
+    }
+
+    btn.disabled    = true;
+    btn.textContent = 'Saving…';
+    try {
+      const res  = await fetch(`${API_BASE_URL}/api/admin_update_member.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: member.user_id, name, email }),
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (data.success) {
+        member.name  = name;
+        member.email = email;
+        statusEl.textContent   = '✓ Saved.';
+        statusEl.style.color   = '#2e7d32';
+        statusEl.style.display = 'block';
+      } else {
+        statusEl.textContent   = data.error || 'Save failed.';
+        statusEl.style.color   = '#c00';
+        statusEl.style.display = 'block';
+      }
+    } catch {
+      statusEl.textContent   = 'Connection error. Please try again.';
+      statusEl.style.color   = '#c00';
+      statusEl.style.display = 'block';
+    }
+    btn.disabled    = false;
+    btn.textContent = 'Save Changes';
+  });
+
+  // Generate reset link
+  document.getElementById('member-reset-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('member-reset-btn');
+    btn.disabled    = true;
+    btn.textContent = 'Generating…';
+    try {
+      const res  = await fetch(`${API_BASE_URL}/api/admin_reset_password.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: member.user_id }),
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (data.success) {
+        document.getElementById('member-reset-link-display').value = data.reset_link;
+        document.getElementById('member-reset-expiry').textContent = `Expires in ${data.expires_in}`;
+        document.getElementById('member-reset-link-block').style.display = 'block';
+        btn.textContent = 'Regenerate Link';
+      } else {
+        alert(data.error || 'Could not generate reset link.');
+        btn.textContent = 'Generate Reset Link';
+      }
+    } catch {
+      alert('Connection error. Please try again.');
+      btn.textContent = 'Generate Reset Link';
+    }
+    btn.disabled = false;
+  });
+
+  // Copy reset link
+  document.getElementById('member-copy-reset-btn').addEventListener('click', () => {
+    const input = document.getElementById('member-reset-link-display');
+    navigator.clipboard.writeText(input.value).then(() => {
+      const btn = document.getElementById('member-copy-reset-btn');
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = 'Copy Reset Link'; }, 2000);
+    }).catch(() => { input.select(); document.execCommand('copy'); });
+  });
+
+  // Back → return to Edit Group (re-render it)
+  document.getElementById('back-from-edit-group-btn').onclick = () => {
+    document.querySelector('#edit-group-container h2').textContent = 'Edit Group';
+    showEditGroupPage();
+  };
 }
 
 function loadEditGolfersPage() {
