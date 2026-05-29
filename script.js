@@ -7950,6 +7950,147 @@ function loadGuysTripTournamentRound(roundId, tournamentId, roundName = '', form
   loadDefaultMatchTab(roundId, tournamentId, currentUser.golfer_id);
 }
 
+// ── Edit Group page ───────────────────────────────────────────────────────────
+async function showEditGroupPage() {
+  // Hide other views
+  document.getElementById('user-dashboard').style.display = 'none';
+  document.getElementById('edit-golfers-container').style.display = 'none';
+
+  const container = document.getElementById('edit-group-container');
+  container.dataset.open = 'true';
+  container.style.display = 'block';
+
+  const content = document.getElementById('edit-group-content');
+  content.innerHTML = '<p style="color:#666; text-align:center;">Loading…</p>';
+
+  // Fetch org info + members
+  let orgData;
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/org_members.php`, { credentials: 'include' });
+    orgData   = await res.json();
+  } catch (e) {
+    content.innerHTML = '<p style="color:red;">Failed to load group info.</p>';
+    return;
+  }
+
+  const { org_name, created_at, members } = orgData;
+  const createdDate = created_at
+    ? new Date(created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    : '—';
+
+  // Build members rows
+  const memberRows = (members || []).map(m => `
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:0.6rem 0; border-bottom:1px solid #f0f0f0;">
+      <div>
+        <span style="font-size:0.95rem; color:#222;">${m.name}</span>
+        <span style="font-size:0.8rem; color:#888; margin-left:0.5rem;">${m.email}</span>
+      </div>
+      <span style="font-size:0.75rem; font-weight:600; color:${m.role === 'admin' ? '#4F2185' : '#666'}; text-transform:uppercase; letter-spacing:0.04em;">${m.role}</span>
+    </div>
+  `).join('');
+
+  content.innerHTML = `
+    <!-- Group info card -->
+    <div style="background:#fff; border:1px solid #e0e0e0; border-radius:12px; padding:1.25rem; margin-bottom:1rem; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+      <h3 style="margin:0 0 1rem; font-size:1.2rem; color:#1a1a1a;">${org_name}</h3>
+
+      <div style="margin-bottom:1rem;">
+        <span style="font-size:0.8rem; font-weight:600; color:#888; text-transform:uppercase; letter-spacing:0.05em;">Group created</span>
+        <p style="margin:0.25rem 0 0; font-size:0.95rem; color:#333;">${createdDate}</p>
+      </div>
+
+      <div>
+        <span style="font-size:0.8rem; font-weight:600; color:#888; text-transform:uppercase; letter-spacing:0.05em;">Members (${(members || []).length})</span>
+        <div style="margin-top:0.25rem;">${memberRows || '<p style="color:#aaa; font-size:0.9rem;">No members found.</p>'}</div>
+      </div>
+    </div>
+
+    <!-- Edit Golfers button -->
+    <div style="background:#fff; border:1px solid #e0e0e0; border-radius:12px; padding:1.25rem; margin-bottom:1rem; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+      <h3 style="margin:0 0 0.5rem; font-size:1.1rem; color:#1a1a1a;">Golfers</h3>
+      <p style="margin:0 0 1rem; font-size:0.9rem; color:#666;">Add, edit, or remove golfers in your group.</p>
+      <button id="edit-group-golfers-btn" style="width:100%; padding:0.65rem; background:#4F2185; color:white; border:none; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Edit Golfers</button>
+    </div>
+
+    <!-- Invite members card -->
+    <div style="background:#fff; border:1px solid #e0e0e0; border-radius:12px; padding:1.25rem; margin-bottom:1rem; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+      <h3 style="margin:0 0 0.5rem; font-size:1.1rem; color:#1a1a1a;">Invite Members</h3>
+      <p style="margin:0 0 1rem; font-size:0.9rem; color:#666;">Share this link with anyone you want to join your group. Works for multiple people and expires in 7 days.</p>
+      <div id="invite-link-loading" style="color:#aaa; font-size:0.9rem; text-align:center; padding:0.5rem 0;">Generating link…</div>
+      <div id="invite-link-block" style="display:none;">
+        <input type="text" id="group-invite-link-display" readonly
+          style="width:100%; padding:0.6rem; border:1px solid #ccc; border-radius:6px; font-size:0.8rem; box-sizing:border-box; margin-bottom:0.5rem; background:#f5f5f5;">
+        <p id="group-invite-expiry" style="margin:0 0 0.75rem; font-size:0.8rem; color:#888; text-align:center;"></p>
+        <button id="group-copy-invite-btn" style="width:100%; padding:0.65rem; background:#4F2185; color:white; border:none; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer; margin-bottom:0.5rem;">Copy Invite Link</button>
+        <button id="group-regenerate-invite-btn" style="width:100%; padding:0.6rem; background:#fff; color:#4F2185; border:1px solid #4F2185; border-radius:8px; font-size:0.9rem; cursor:pointer;">Generate New Code</button>
+      </div>
+    </div>
+  `;
+
+  // Load invite link
+  _loadGroupInviteLink();
+
+  // Edit Golfers button
+  document.getElementById('edit-group-golfers-btn').addEventListener('click', () => {
+    container.style.display = 'none';
+    loadEditGolfersPage();
+  });
+
+  // Copy invite
+  document.getElementById('group-copy-invite-btn').addEventListener('click', () => {
+    const input = document.getElementById('group-invite-link-display');
+    navigator.clipboard.writeText(input.value).then(() => {
+      const btn = document.getElementById('group-copy-invite-btn');
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = 'Copy Invite Link'; }, 2000);
+    }).catch(() => { input.select(); document.execCommand('copy'); });
+  });
+
+  // Regenerate
+  document.getElementById('group-regenerate-invite-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('group-regenerate-invite-btn');
+    btn.disabled = true;
+    btn.textContent = 'Generating…';
+    await _loadGroupInviteLink(true);
+    btn.disabled = false;
+    btn.textContent = 'Generate New Code';
+  });
+
+  // Back button
+  document.getElementById('back-from-edit-group-btn').onclick = () => {
+    container.dataset.open = 'false';
+    container.style.display = 'none';
+    document.getElementById('user-dashboard').style.display = 'block';
+  };
+}
+
+async function _loadGroupInviteLink(regenerate = false) {
+  const loadingEl = document.getElementById('invite-link-loading');
+  const blockEl   = document.getElementById('invite-link-block');
+  const linkInput = document.getElementById('group-invite-link-display');
+  const expiryEl  = document.getElementById('group-invite-expiry');
+  if (loadingEl) loadingEl.style.display = 'block';
+  if (blockEl)   blockEl.style.display = 'none';
+
+  const url = `${API_BASE_URL}/api/create_invite.php${regenerate ? '?regenerate=1' : ''}`;
+  try {
+    const res  = await fetch(url, { method: 'POST', credentials: 'include' });
+    const data = await res.json();
+    if (data.success) {
+      const link = `${window.location.origin}${window.location.pathname}?join=${data.code}`;
+      if (linkInput) linkInput.value = link;
+      if (expiryEl && data.expires_at) {
+        const days = Math.ceil((new Date(data.expires_at) - Date.now()) / 86400000);
+        expiryEl.textContent = `Expires in ${days} day${days !== 1 ? 's' : ''}`;
+      }
+      if (loadingEl) loadingEl.style.display = 'none';
+      if (blockEl)   blockEl.style.display = 'block';
+    }
+  } catch (e) {
+    if (loadingEl) loadingEl.textContent = 'Failed to load invite link.';
+  }
+}
+
 function loadEditGolfersPage() {
   // Hide all other views
   document.getElementById('user-dashboard').style.display = 'none';
@@ -8103,7 +8244,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if (backBtn) {
     backBtn.addEventListener('click', () => {
       document.getElementById('edit-golfers-container').style.display = 'none';
-      document.getElementById('user-dashboard').style.display = 'block';
+      const editGroupContainer = document.getElementById('edit-group-container');
+      if (editGroupContainer && editGroupContainer.dataset.open === 'true') {
+        editGroupContainer.style.display = 'block';
+      } else {
+        document.getElementById('user-dashboard').style.display = 'block';
+      }
     });
   }
 
@@ -8224,10 +8370,8 @@ document.addEventListener('DOMContentLoaded', () => {
     e.stopPropagation();
     hamburgerDropdown.classList.toggle('show');
     const isAdmin = currentUser && currentUser.role === 'administrator';
-    const editGolfersBtn = document.getElementById('menu-edit-golfers');
-    if (editGolfersBtn) editGolfersBtn.style.display = isAdmin ? 'block' : 'none';
-    const inviteBtn = document.getElementById('menu-invite');
-    if (inviteBtn) inviteBtn.style.display = isAdmin ? 'block' : 'none';
+    const editGroupBtn = document.getElementById('menu-edit-group');
+    if (editGroupBtn) editGroupBtn.style.display = isAdmin ? 'block' : 'none';
   });
 
   // Close menu when clicking outside
@@ -8336,10 +8480,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Menu option: Edit Golfers (admin only)
-  document.getElementById('menu-edit-golfers').addEventListener('click', () => {
+  // Menu option: Edit Group (admin only)
+  document.getElementById('menu-edit-group').addEventListener('click', () => {
     hamburgerDropdown.classList.remove('show');
-    if (currentUser) loadEditGolfersPage();
+    showEditGroupPage();
   });
 
   // Menu option: Logout
@@ -8589,36 +8733,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     btn.disabled = false;
     btn.textContent = 'Join Group';
-  });
-
-  // ── Invite modal (admin only) ───────────────────────────────────────────────
-  document.getElementById('menu-invite').addEventListener('click', async () => {
-    hamburgerDropdown.classList.remove('show');
-    const res  = await fetch(`${API_BASE_URL}/api/create_invite.php`, {
-      method: 'POST',
-      credentials: 'include'
-    });
-    const data = await res.json();
-    if (data.success) {
-      const link = `${window.location.origin}${window.location.pathname}?join=${data.code}`;
-      document.getElementById('invite-link-display').value = link;
-      document.getElementById('invite-modal').style.display = 'flex';
-    }
-  });
-
-  document.getElementById('copy-invite-btn').addEventListener('click', () => {
-    const input = document.getElementById('invite-link-display');
-    navigator.clipboard.writeText(input.value).then(() => {
-      document.getElementById('copy-invite-btn').textContent = 'Copied!';
-      setTimeout(() => { document.getElementById('copy-invite-btn').textContent = 'Copy Link'; }, 2000);
-    }).catch(() => {
-      input.select();
-      document.execCommand('copy');
-    });
-  });
-
-  document.getElementById('close-invite-modal-btn').addEventListener('click', () => {
-    document.getElementById('invite-modal').style.display = 'none';
   });
 
   // ── Reset password form (admin-generated link: ?reset=TOKEN) ────────────────

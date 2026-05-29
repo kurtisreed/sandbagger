@@ -13,6 +13,13 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     exit;
 }
 
+// Fetch org info alongside members
+$orgStmt = $conn->prepare("SELECT name, created_at FROM organizations WHERE org_id = ?");
+$orgStmt->bind_param('i', $currentOrgId);
+$orgStmt->execute();
+$org = $orgStmt->get_result()->fetch_assoc();
+$orgStmt->close();
+
 $stmt = $conn->prepare("
     SELECT u.user_id, u.name, u.email, uo.role
       FROM users u
@@ -25,4 +32,8 @@ $stmt->execute();
 $members = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 
-echo json_encode($members);
+echo json_encode([
+    'org_name'   => $org['name'],
+    'created_at' => $org['created_at'],
+    'members'    => $members,
+]);
