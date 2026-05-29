@@ -8593,11 +8593,32 @@ document.addEventListener('DOMContentLoaded', () => {
   // Menu option: Dashboard
   function returnToDashboard() {
     hamburgerDropdown.classList.remove('show');
-    document.getElementById('app-content').style.display = 'none';
-    document.getElementById('round-history-container').style.display = 'none';
-    document.getElementById('best-ball-setup').style.display = 'none';
-    document.getElementById('tournament-history-container').style.display = 'none';
-    document.getElementById('edit-user-container').style.display = 'none';
+    // Hide every full-page container so the dashboard is always a clean start
+    const allPages = [
+      'app-content',
+      'add-round-container',
+      'add-matches-container',
+      'add-tee-times-container',
+      'edit-group-container',
+      'edit-tournament-container',
+      'round-history-container',
+      'tournament-history-container',
+      'edit-user-container',
+      'edit-golfers-container',
+      'best-ball-setup',
+      'quick-round-type-selector',
+    ];
+    allPages.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+    // Reset edit-group state flag and heading
+    const editGroupContainer = document.getElementById('edit-group-container');
+    if (editGroupContainer) {
+      editGroupContainer.dataset.open = 'false';
+      const h2 = editGroupContainer.querySelector('h2');
+      if (h2) h2.textContent = 'Edit Group';
+    }
     document.getElementById('user-dashboard').style.display = 'block';
   }
 
