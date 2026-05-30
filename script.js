@@ -8264,6 +8264,13 @@ function refreshGolferList() {
     .then(r => r.json())
     .then(golfers => {
       list.innerHTML = '';
+      // Show legend only if any golfer lacks an account
+      if (golfers.some(g => !g.user_id)) {
+        const legend = document.createElement('p');
+        legend.style.cssText = 'font-size:0.8rem; color:#888; margin:0 0 0.75rem; text-align:center;';
+        legend.textContent = 'Golfers marked "Pending" haven\'t created an account yet.';
+        list.appendChild(legend);
+      }
       golfers.forEach(g => renderGolferCard(g, list));
     })
     .catch(() => {
@@ -8277,10 +8284,13 @@ function renderGolferCard(g, list) {
   card.style.cssText = 'background:#fff; border:1px solid #eee; border-radius:8px; padding:0.75rem 1rem; margin-bottom:0.6rem; box-shadow:0 1px 3px rgba(0,0,0,0.05);';
 
   function showView() {
+    const pendingBadge = !g.user_id
+      ? `<span title="This golfer hasn't created an account yet" style="font-size:0.7rem; font-weight:600; color:#888; background:#f0f0f0; border:1px solid #ddd; border-radius:4px; padding:0.1rem 0.4rem; margin-left:0.4rem; vertical-align:middle;">Pending</span>`
+      : '';
     card.innerHTML = `
       <div style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem;">
         <div>
-          <span style="font-weight:600; font-size:1rem;">${g.first_name} ${g.last_name}</span>
+          <span style="font-weight:600; font-size:1rem;">${g.first_name} ${g.last_name}</span>${pendingBadge}
           <span style="color:#888; font-size:0.85rem; margin-left:0.5rem;">Hdcp: ${g.handicap}</span>
         </div>
         <div style="display:flex; gap:0.4rem; flex-shrink:0;">

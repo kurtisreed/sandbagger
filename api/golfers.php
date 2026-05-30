@@ -16,7 +16,7 @@ switch ($method) {
     if ($id) {
       // Fetch one golfer (scoped to org)
       $stmt = $conn->prepare("
-        SELECT golfer_id, first_name, last_name, handicap
+        SELECT golfer_id, first_name, last_name, handicap, user_id
           FROM golfers
          WHERE golfer_id = ?
            AND org_id = ?
@@ -28,7 +28,7 @@ switch ($method) {
     } else {
       // Fetch all golfers for this org
       $stmt = $conn->prepare("
-        SELECT golfer_id, first_name, last_name, handicap
+        SELECT golfer_id, first_name, last_name, handicap, user_id
           FROM golfers
          WHERE org_id = ?
          ORDER BY last_name, first_name
