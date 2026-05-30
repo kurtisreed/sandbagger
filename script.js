@@ -8528,26 +8528,25 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function loadEditUserPage() {
+  returnToDashboard();
   const editUserContainer = document.getElementById('edit-user-container');
-  const editUserMessage = document.getElementById('edit-user-message');
-
-  // Hide other containers
-  document.getElementById('user-dashboard').style.display = 'none';
-  document.getElementById('app-content').style.display = 'none';
-  document.getElementById('round-history-container').style.display = 'none';
-  document.getElementById('tournament-history-container').style.display = 'none';
-  document.getElementById('best-ball-setup').style.display = 'none';
-
-  // Show edit user container
   editUserContainer.style.display = 'block';
-  editUserMessage.textContent = '';
-  editUserMessage.style.color = '';
+  document.getElementById('user-dashboard').style.display = 'none';
 
-  // Pre-fill form with current user data
-  document.getElementById('edit-first-name').value = currentUser.first_name || '';
-  document.getElementById('edit-last-name').value = currentUser.last_name || '';
-  document.getElementById('edit-handicap').value = currentUser.handicap || 0;
-  document.getElementById('edit-email').value = currentUser.email || '';
+  // Pre-fill profile fields from currentUser
+  document.getElementById('edit-first-name').value  = currentUser.first_name || '';
+  document.getElementById('edit-last-name').value   = currentUser.last_name  || '';
+  document.getElementById('edit-handicap').value    = currentUser.handicap   ?? 0;
+  document.getElementById('edit-email').value       = currentUser.email      || '';
+
+  // Clear password fields and status messages
+  ['current-password', 'new-password', 'confirm-new-password'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  const profileMsg  = document.getElementById('edit-user-message');
+  const passwordMsg = document.getElementById('change-password-message');
+  profileMsg.style.display  = 'none';
+  passwordMsg.style.display = 'none';
 }
 
 function showQuickRoundTypeSelector() {
@@ -9317,67 +9316,116 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Edit User form submission
-  const editUserForm = document.getElementById('edit-user-form');
-  if (editUserForm) {
-    editUserForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const editUserMessage = document.getElementById('edit-user-message');
-
+  // ── Save Profile ──────────────────────────────────────────────────────────
+  const saveProfileBtn = document.getElementById('save-profile-btn');
+  if (saveProfileBtn) {
+    saveProfileBtn.addEventListener('click', async () => {
+      const msgEl     = document.getElementById('edit-user-message');
       const firstName = document.getElementById('edit-first-name').value.trim();
-      const lastName = document.getElementById('edit-last-name').value.trim();
-      const handicap = document.getElementById('edit-handicap').value;
-      const email = document.getElementById('edit-email').value.trim();
+      const lastName  = document.getElementById('edit-last-name').value.trim();
+      const email     = document.getElementById('edit-email').value.trim();
+      const handicap  = parseFloat(document.getElementById('edit-handicap').value) || 0;
 
-      if (!firstName || !lastName) {
-        editUserMessage.textContent = 'First name and last name are required';
-        editUserMessage.style.color = 'red';
+      msgEl.style.display = 'none';
+      if (!firstName || !lastName || !email) {
+        msgEl.textContent   = 'First name, last name, and email are required.';
+        msgEl.style.color   = '#c00';
+        msgEl.style.display = 'block';
         return;
       }
 
-      editUserMessage.textContent = 'Updating...';
-      editUserMessage.style.color = '#666';
-
-      // Update user via API
-      fetch(`${API_BASE_URL}/api/update_golfer.php`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          golfer_id: currentUser.golfer_id,
-          first_name: firstName,
-          last_name: lastName,
-          handicap: parseFloat(handicap) || 0,
-          email: email || null
-        }),
-        credentials: 'include'
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            // Update current user and UI
-            currentUser.first_name = firstName;
-            currentUser.last_name = lastName;
-            currentUser.handicap = parseFloat(handicap) || 0;
-            currentUser.email = email || '';
-            document.getElementById('user-header-name').textContent = `${firstName} ${lastName}`;
-
-            editUserMessage.textContent = 'Profile updated successfully!';
-            editUserMessage.style.color = '#4CAF50';
-
-            // Return to dashboard after 1.5 seconds
-            setTimeout(() => {
-              document.getElementById('edit-user-container').style.display = 'none';
-              document.getElementById('user-dashboard').style.display = 'block';
-            }, 1500);
-          } else {
-            editUserMessage.textContent = 'Error: ' + (data.error || 'Unknown error');
-            editUserMessage.style.color = 'red';
-          }
-        })
-        .catch(err => {
-          console.error('Error updating user:', err);
-          editUserMessage.textContent = 'Error updating profile. Please try again.';
-          editUserMessage.style.color = 'red';
+      saveProfileBtn.disabled    = true;
+      saveProfileBtn.textContent = 'Saving…';
+      try {
+        const res  = await fetch(`${API_BASE_URL}/api/update_account.php`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ first_name: firstName, last_name: lastName, email, handicap }),
+          credentials: 'include',
         });
+        const data = await res.json();
+        if (data.success) {
+          currentUser.first_name = firstName;
+          currentUser.last_name  = lastName;
+          currentUser.email      = email;
+          currentUser.handicap   = handicap;
+          document.getElementById('user-header-name').textContent = `${firstName} ${lastName}`;
+          msgEl.textContent   = '✓ Profile saved.';
+          msgEl.style.color   = '#2e7d32';
+          msgEl.style.display = 'block';
+        } else {
+          msgEl.textContent   = data.error || 'Save failed.';
+          msgEl.style.color   = '#c00';
+          msgEl.style.display = 'block';
+        }
+      } catch {
+        msgEl.textContent   = 'Connection error. Please try again.';
+        msgEl.style.color   = '#c00';
+        msgEl.style.display = 'block';
+      }
+      saveProfileBtn.disabled    = false;
+      saveProfileBtn.textContent = 'Save Profile';
+    });
+  }
+
+  // ── Change Password ────────────────────────────────────────────────────────
+  const savePasswordBtn = document.getElementById('save-password-btn');
+  if (savePasswordBtn) {
+    savePasswordBtn.addEventListener('click', async () => {
+      const msgEl          = document.getElementById('change-password-message');
+      const currentPw      = document.getElementById('current-password').value;
+      const newPw          = document.getElementById('new-password').value;
+      const confirmPw      = document.getElementById('confirm-new-password').value;
+
+      msgEl.style.display = 'none';
+      if (!currentPw || !newPw || !confirmPw) {
+        msgEl.textContent   = 'All password fields are required.';
+        msgEl.style.color   = '#c00';
+        msgEl.style.display = 'block';
+        return;
+      }
+      if (newPw.length < 8) {
+        msgEl.textContent   = 'New password must be at least 8 characters.';
+        msgEl.style.color   = '#c00';
+        msgEl.style.display = 'block';
+        return;
+      }
+      if (newPw !== confirmPw) {
+        msgEl.textContent   = 'New passwords do not match.';
+        msgEl.style.color   = '#c00';
+        msgEl.style.display = 'block';
+        return;
+      }
+
+      savePasswordBtn.disabled    = true;
+      savePasswordBtn.textContent = 'Saving…';
+      try {
+        const res  = await fetch(`${API_BASE_URL}/api/change_password.php`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ current_password: currentPw, new_password: newPw }),
+          credentials: 'include',
+        });
+        const data = await res.json();
+        if (data.success) {
+          ['current-password', 'new-password', 'confirm-new-password'].forEach(id => {
+            document.getElementById(id).value = '';
+          });
+          msgEl.textContent   = '✓ Password changed.';
+          msgEl.style.color   = '#2e7d32';
+          msgEl.style.display = 'block';
+        } else {
+          msgEl.textContent   = data.error || 'Could not change password.';
+          msgEl.style.color   = '#c00';
+          msgEl.style.display = 'block';
+        }
+      } catch {
+        msgEl.textContent   = 'Connection error. Please try again.';
+        msgEl.style.color   = '#c00';
+        msgEl.style.display = 'block';
+      }
+      savePasswordBtn.disabled    = false;
+      savePasswordBtn.textContent = 'Change Password';
     });
   }
 
