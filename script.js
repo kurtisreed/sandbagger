@@ -8008,6 +8008,15 @@ async function showEditGroupPage() {
       </div>
     </div>
 
+    <!-- Rename group card -->
+    <div style="background:#fff; border:1px solid #e0e0e0; border-radius:12px; padding:1.25rem; margin-bottom:1rem; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+      <h3 style="margin:0 0 0.5rem; font-size:1.1rem; color:#1a1a1a;">Rename Group</h3>
+      <input type="text" id="rename-group-input" value="${org_name.replace(/"/g, '&quot;')}" maxlength="100"
+        style="width:100%; padding:0.6rem; border:1px solid #ccc; border-radius:6px; font-size:1rem; box-sizing:border-box; margin-bottom:0.75rem;">
+      <p id="rename-group-status" style="display:none; font-size:0.875rem; text-align:center; margin:0 0 0.75rem;"></p>
+      <button id="rename-group-btn" style="width:100%; padding:0.65rem; background:#4F2185; color:white; border:none; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Save Name</button>
+    </div>
+
     <!-- Edit Golfers button -->
     <div style="background:#fff; border:1px solid #e0e0e0; border-radius:12px; padding:1.25rem; margin-bottom:1rem; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
       <h3 style="margin:0 0 0.5rem; font-size:1.1rem; color:#1a1a1a;">Golfers</h3>
@@ -8032,6 +8041,51 @@ async function showEditGroupPage() {
 
   // Load invite link
   _loadGroupInviteLink();
+
+  // Rename group
+  document.getElementById('rename-group-btn').addEventListener('click', async () => {
+    const btn      = document.getElementById('rename-group-btn');
+    const statusEl = document.getElementById('rename-group-status');
+    const newName  = document.getElementById('rename-group-input').value.trim();
+
+    statusEl.style.display = 'none';
+    if (!newName) {
+      statusEl.textContent   = 'Group name cannot be empty.';
+      statusEl.style.color   = '#c00';
+      statusEl.style.display = 'block';
+      return;
+    }
+
+    btn.disabled    = true;
+    btn.textContent = 'Saving…';
+    try {
+      const res  = await fetch(`${API_BASE_URL}/api/rename_group.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newName }),
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (data.success) {
+        // Update the group name shown in the card heading
+        const h3 = content.querySelector('h3');
+        if (h3) h3.textContent = data.name;
+        statusEl.textContent   = '✓ Group renamed.';
+        statusEl.style.color   = '#2e7d32';
+        statusEl.style.display = 'block';
+      } else {
+        statusEl.textContent   = data.error || 'Rename failed.';
+        statusEl.style.color   = '#c00';
+        statusEl.style.display = 'block';
+      }
+    } catch {
+      statusEl.textContent   = 'Connection error. Please try again.';
+      statusEl.style.color   = '#c00';
+      statusEl.style.display = 'block';
+    }
+    btn.disabled    = false;
+    btn.textContent = 'Save Name';
+  });
 
   // Edit Golfers button
   document.getElementById('edit-group-golfers-btn').addEventListener('click', () => {
