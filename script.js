@@ -6580,6 +6580,8 @@ function loadUserDashboard(golfer) {
   const userHeaderBar = document.getElementById('user-header-bar');
   userHeaderBar.style.display = 'block';
   document.getElementById('user-header-name').textContent = `${golfer.first_name} ${golfer.last_name}`;
+  const orgEl = document.getElementById('user-header-org');
+  if (orgEl) orgEl.textContent = golfer.org_name || '';
 
   loadUserTournaments(golfer.golfer_id);
 }
