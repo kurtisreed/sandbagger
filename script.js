@@ -3206,44 +3206,55 @@ function loadBestBallScorecardReadOnly() {
     });
 }
 
-// Function to start the heartbeat
-function startSessionHeartbeat() {
-  // If an interval already exists, clear it first
-  if (sessionHeartbeatInterval) {
-    clearInterval(sessionHeartbeatInterval);
+// Called when the session is confirmed dead — show login with a message.
+function handleSessionExpired() {
+  stopSessionHeartbeat();
+  localStorage.removeItem('sb_golfer');
+  currentUser = null;
+  // Show login screen with an explanatory message
+  showLoginScreen();
+  const err = document.getElementById('login-error');
+  if (err) {
+    err.textContent = 'Your session expired. Please sign in again.';
+    err.style.display = 'block';
   }
-
-  // Set the interval to run every 5 minutes (300,000 milliseconds)
-  // This is well within the default 24-minute PHP timeout.
-  sessionHeartbeatInterval = setInterval(() => {
-    console.log("Sending session heartbeat...");
-    fetch(`${API_BASE_URL}/api/keep_alive.php`, { credentials: 'include' })
-      .then(res => {
-        if (!res.ok) {
-          // If we get a 401 error from our PHP script, the session is dead.
-          // We should log the user out gracefully.
-          console.warn("Session has expired on the server. Logging out.");
-          logoutUser(); // You would create this function to force a page reload.
-        }
-        return res.json();
-      })
-      .then(data => {
-        console.log("Heartbeat response:", data.message);
-      })
-      .catch(err => {
-        console.error("Heartbeat fetch failed:", err);
-      });
-  }, 300000); 
 }
 
-// Function to stop the heartbeat
+// Ping keep_alive.php to extend the session cookie on the server.
+// Called on a timer AND whenever the app comes back to the foreground.
+async function pingKeepAlive() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/keep_alive.php`, { credentials: 'include' });
+    if (res.status === 401) {
+      handleSessionExpired();
+    }
+  } catch {
+    // Network error — don't log out, user may just be offline temporarily
+  }
+}
+
+function startSessionHeartbeat() {
+  if (sessionHeartbeatInterval) clearInterval(sessionHeartbeatInterval);
+  // Ping every 10 minutes — well within the 30-day window, but frequent
+  // enough to keep the session alive through normal app usage gaps.
+  sessionHeartbeatInterval = setInterval(pingKeepAlive, 10 * 60 * 1000);
+}
+
 function stopSessionHeartbeat() {
   if (sessionHeartbeatInterval) {
     clearInterval(sessionHeartbeatInterval);
     sessionHeartbeatInterval = null;
-    console.log("Session heartbeat stopped.");
   }
 }
+
+// When the app comes back from background (phone locked, tab switched),
+// immediately check if the session is still alive rather than waiting
+// for the next heartbeat interval.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && currentUser) {
+    pingKeepAlive();
+  }
+});
 
 
 
@@ -8783,6 +8794,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function proceedAfterAuth(golfer) {
     document.getElementById('pin-container').style.display = 'none';
+    startSessionHeartbeat(); // Keep the PHP session alive from this point on
     if (golfer) {
       // API returned a linked golfer — go straight to dashboard
       localStorage.setItem('sb_golfer', JSON.stringify(golfer));
