@@ -7662,9 +7662,10 @@ function loadTournamentHistory(golferId) {
                  onmouseover="this.style.boxShadow='0 4px 8px rgba(0,0,0,0.1)'; this.style.transform='translateY(-2px)';"
                  onmouseout="this.style.boxShadow='none'; this.style.transform='translateY(0)';">
               <div style="display: flex; justify-content: space-between; align-items: start;">
-                <h4 style="margin: 0 0 0.5rem 0;">${tournament.tournament_name}</h4>
+                <h4 style="margin: 0 0 0.25rem 0;">${tournament.tournament_name}</h4>
                 <span style="background: #FFC62F; color: black; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.85rem;">Quick Round</span>
               </div>
+              ${currentUser && currentUser.org_name ? `<p style="margin: 0 0 0.25rem 0; font-size: 0.8rem; color: #999; font-weight: 500; text-transform: uppercase; letter-spacing: 0.03em;">${currentUser.org_name}</p>` : ''}
               <p style="margin: 0; font-size: 0.9rem; color: #666;">${tournament.start_date} to ${tournament.end_date}</p>
             </div>
           `;
@@ -7672,7 +7673,8 @@ function loadTournamentHistory(golferId) {
           // Regular tournament - show round buttons
           html += `
             <div style="border: 1px solid #ddd; padding: 1rem; border-radius: 8px; background: white;">
-              <h4 style="margin: 0 0 0.5rem 0;">${tournament.tournament_name}</h4>
+              <h4 style="margin: 0 0 0.25rem 0;">${tournament.tournament_name}</h4>
+              ${currentUser && currentUser.org_name ? `<p style="margin: 0 0 0.25rem 0; font-size: 0.8rem; color: #999; font-weight: 500; text-transform: uppercase; letter-spacing: 0.03em;">${currentUser.org_name}</p>` : ''}
               <p style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: #666;">${tournament.start_date} to ${tournament.end_date}</p>
           `;
 
@@ -8899,7 +8901,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       if (data.authenticated) {
-        proceedAfterAuth(data.golfer || null);
+        proceedAfterAuth(data.golfer ? { ...data.golfer, org_name: data.org_name } : null);
       } else if (joinCode) {
         // Validate the URL invite code and show the join form with it pre-filled
         fetch(`${API_BASE_URL}/api/join.php?code=${encodeURIComponent(joinCode)}`, { credentials: 'include' })
@@ -9006,7 +9008,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         // Remove the ?join= param from URL cleanly
         window.history.replaceState({}, '', window.location.pathname);
-        proceedAfterAuth(data.golfer);
+        proceedAfterAuth(data.golfer ? { ...data.golfer, org_name: data.org_name } : null);
       }
     } catch (err) {
       errorEl.textContent = 'Connection error. Please try again.';
@@ -9145,12 +9147,12 @@ document.addEventListener('DOMContentLoaded', () => {
               credentials: 'include'
             });
             const d = await r.json();
-            if (d.success) proceedAfterAuth(d.golfer || null);
+            if (d.success) proceedAfterAuth(d.golfer ? { ...d.golfer, org_name: d.org_name } : null);
           });
           list.appendChild(btn);
         });
       } else {
-        proceedAfterAuth(data.golfer || null);
+        proceedAfterAuth(data.golfer ? { ...data.golfer, org_name: data.org_name } : null);
       }
     } catch (err) {
       errorEl.textContent = 'Connection error. Please try again.';
@@ -9189,7 +9191,7 @@ document.addEventListener('DOMContentLoaded', () => {
         errorEl.textContent = data.error || 'Registration failed. Please try again.';
         errorEl.style.display = 'block';
       } else {
-        proceedAfterAuth(data.golfer || null);
+        proceedAfterAuth(data.golfer ? { ...data.golfer, org_name: data.org_name } : null);
       }
     } catch (err) {
       errorEl.textContent = 'Connection error. Please try again.';
