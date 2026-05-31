@@ -6625,6 +6625,7 @@ function loadUserTournaments(golferId) {
                 </button>
               ` : ''}
             </div>
+            ${currentUser && currentUser.org_name ? `<p style="margin: 0 0 0.25rem 0; font-size: 0.8rem; color: #999; font-weight: 500; text-transform: uppercase; letter-spacing: 0.03em;">${currentUser.org_name}</p>` : ''}
             ${teamSubtitle}
             <p style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: #666;">${tournament.start_date} to ${tournament.end_date}</p>
         `;
