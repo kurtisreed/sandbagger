@@ -25,6 +25,9 @@ echo json_encode([
         'role'     => $_SESSION['role']      ?? null,
     ],
     'logged_in'             => !empty($_SESSION['user_id']),
+    'home_dir'              => getenv('HOME') ?: posix_getpwuid(posix_getuid())['dir'] ?? 'unknown',
+    'document_root'         => $_SERVER['DOCUMENT_ROOT'] ?? 'unknown',
+    'script_filename'       => __FILE__,
     'server_time'           => date('Y-m-d H:i:s'),
     'server_timezone'       => date_default_timezone_get(),
 ], JSON_PRETTY_PRINT);
