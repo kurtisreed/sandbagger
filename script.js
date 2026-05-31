@@ -92,6 +92,47 @@ if ('serviceWorker' in navigator && !API_BASE_URL) {
   });
 }
 
+// ── Global 401 interceptor ────────────────────────────────────────────────────
+// Any API call that returns 401 while the user appears logged-in means the
+// PHP session has expired. Instead of silently showing a blank screen, we
+// immediately show the login screen with an explanatory message.
+//
+// This covers the case where the session file was garbage-collected by the
+// shared host before the database-session fix could take effect, or any
+// future edge-case where a session is invalidated server-side.
+(function () {
+  const _origFetch = window.fetch.bind(window);
+  let _expiredNotified = false; // prevent duplicate toasts from parallel requests
+
+  window.fetch = async function (url, options) {
+    const res = await _origFetch(url, options);
+
+    // Only intercept 401s from our own API while the user is supposed to be logged in.
+    // Skips login/register/join/forgot-password calls where 401 is expected.
+    if (
+      res.status === 401 &&
+      typeof url === 'string' &&
+      url.includes('/api/') &&
+      !_expiredNotified &&
+      typeof currentUser !== 'undefined' && currentUser !== null
+    ) {
+      _expiredNotified = true;
+      console.warn('[Sandbagger] 401 from', url, '— session expired, redirecting to login');
+      if (typeof handleSessionExpired === 'function') {
+        handleSessionExpired();
+      }
+    }
+
+    return res; // always return the original response so callers can inspect it
+  };
+
+  // Reset the flag when the user successfully logs back in.
+  // Called from proceedAfterAuth() so parallel 401s don't block re-login.
+  window._resetSessionExpiredFlag = function () {
+    _expiredNotified = false;
+  };
+})();
+
 
 let deferredPrompt;
 
@@ -8794,6 +8835,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function proceedAfterAuth(golfer) {
     document.getElementById('pin-container').style.display = 'none';
+    if (typeof window._resetSessionExpiredFlag === 'function') {
+      window._resetSessionExpiredFlag(); // allow 401 detection again after re-login
+    }
     startSessionHeartbeat(); // Keep the PHP session alive from this point on
     if (golfer) {
       // API returned a linked golfer — go straight to dashboard

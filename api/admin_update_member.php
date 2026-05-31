@@ -2,8 +2,7 @@
 // Admin endpoint — update a group member's name and/or email.
 require_once '../cors_headers.php';
 header('Content-Type: application/json');
-if (session_status() === PHP_SESSION_NONE) session_start();
-require_once 'auth_middleware.php';
+require_once 'auth_middleware.php'; // includes session_setup.php + db_connect.php
 requireAdmin();
 require_once 'db_connect.php';
 

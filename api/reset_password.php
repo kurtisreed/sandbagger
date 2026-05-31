@@ -4,8 +4,7 @@
 // POST {token, password} → sets new password and marks token used
 require_once '../cors_headers.php';
 header('Content-Type: application/json');
-if (session_status() === PHP_SESSION_NONE) session_start();
-require_once 'db_connect.php';
+require_once __DIR__ . '/session_setup.php'; // db_connect included by session_setup
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $token = trim($_GET['token'] ?? '');

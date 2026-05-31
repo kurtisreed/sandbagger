@@ -4,7 +4,7 @@
 require_once '../cors_headers.php';
 header('Content-Type: application/json');
 
-if (session_status() === PHP_SESSION_NONE) session_start();
+require_once __DIR__ . '/session_setup.php';
 
 if (empty($_SESSION['user_id'])) {
     http_response_code(401);

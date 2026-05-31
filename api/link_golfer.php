@@ -4,8 +4,7 @@
 require_once '../cors_headers.php';
 header('Content-Type: application/json');
 
-if (session_status() === PHP_SESSION_NONE) session_start();
-require_once 'auth_middleware.php';
+require_once 'auth_middleware.php'; // includes session_setup.php + db_connect.php
 require_once 'db_connect.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
