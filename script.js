@@ -8013,6 +8013,14 @@ function loadGuysTripTournamentRound(roundId, tournamentId, roundName = '', form
   loadDefaultMatchTab(roundId, tournamentId, currentUser.golfer_id);
 }
 
+// ── New Tournament — shared cancel ───────────────────────────────────────────
+function cancelNewTournament() {
+  window._newTournamentData = null;
+  ['create-tournament-container', 'create-tournament-step2', 'create-tournament-step3']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+  document.getElementById('user-dashboard').style.display = 'block';
+}
+
 // ── New Tournament — Step 1 ───────────────────────────────────────────────────
 async function showNewTournamentStep1() {
   document.getElementById('user-dashboard').style.display = 'none';
@@ -9486,6 +9494,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('create-tournament-container').style.display = 'none';
     document.getElementById('user-dashboard').style.display = 'block';
   });
+  document.getElementById('nt-cancel-btn').addEventListener('click', cancelNewTournament);
+  document.getElementById('nt-step2-cancel-btn').addEventListener('click', cancelNewTournament);
+  document.getElementById('nt-step3-cancel-btn').addEventListener('click', cancelNewTournament);
 
   document.getElementById('nt-step2-back-btn').addEventListener('click', () => {
     document.getElementById('create-tournament-step2').style.display = 'none';
