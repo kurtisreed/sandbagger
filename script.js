@@ -8049,6 +8049,10 @@ function showNewTournamentStep2() {
   document.getElementById('create-tournament-container').style.display = 'none';
   document.getElementById('create-tournament-step2').style.display = 'block';
 
+  // Show format name as subtitle
+  const subtitle = document.getElementById('nt-step2-subtitle');
+  if (subtitle) subtitle.textContent = window._newTournamentData.formatName || '';
+
   // Reset to defaults
   document.getElementById('nt-team1-name').value  = '';
   document.getElementById('nt-team2-name').value  = '';
@@ -8062,6 +8066,10 @@ async function showNewTournamentStep3() {
   document.getElementById('create-tournament-step2').style.display = 'none';
   document.getElementById('create-tournament-step3').style.display = 'block';
   document.getElementById('nt-step3-error').style.display = 'none';
+
+  // Show format name as subtitle
+  const subtitle = document.getElementById('nt-step3-subtitle');
+  if (subtitle) subtitle.textContent = window._newTournamentData.formatName || '';
 
   const content = document.getElementById('nt-step3-content');
   content.innerHTML = '<p style="color: rgba(255,255,255,0.7); text-align: center;">Loading players…</p>';
@@ -9551,9 +9559,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     errorEl.style.display = 'none';
 
+    // Capture the human-readable format name from the selected option
+    const formatSelect = document.getElementById('nt-format');
+    const formatName   = formatSelect.options[formatSelect.selectedIndex]?.text || '';
+
     // Store for use in subsequent steps
-    window._newTournamentData = { name, startDate, endDate, handicap, formatId };
-    showNewTournamentStep2();
+    window._newTournamentData = { name, startDate, endDate, handicap, formatId, formatName };
+
+    // Branch wizard based on format
+    const fId = parseInt(formatId);
+    if (fId === 3) {
+      // Ryder Cup → Team Setup → Player Assignment
+      showNewTournamentStep2();
+    } else {
+      // Other formats (Guys Trip etc.) — wizard steps TBD
+      errorEl.textContent = `Setup for "${formatName}" tournaments is coming soon.`;
+      errorEl.style.display = 'block';
+    }
   });
 
   // Round History back button
