@@ -6883,7 +6883,7 @@ async function showEditTournamentForm(tournament) {
       <input type="text" id="edit-tournament-name" value="${tournament.tournament_name}"
         style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
     </div>
-    <div style="display:flex; gap:0.75rem; margin-bottom:1.5rem;">
+    <div style="display:flex; gap:0.75rem; margin-bottom:1rem;">
       <div style="flex:1;">
         <label style="display:block; margin-bottom:0.4rem; font-weight:bold;">Start Date</label>
         <input type="date" id="edit-tournament-start" value="${tournament.start_date}"
@@ -6894,6 +6894,11 @@ async function showEditTournamentForm(tournament) {
         <input type="date" id="edit-tournament-end" value="${tournament.end_date}"
           style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
       </div>
+    </div>
+    <div style="margin-bottom:1.5rem;">
+      <label style="display:block; margin-bottom:0.4rem; font-weight:bold;">Handicap %</label>
+      <input type="number" id="edit-tournament-handicap" value="${tournament.handicap_pct ?? 80}" min="0" max="100"
+        style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
     </div>
     ${teamsHtml}
     ${rosterHtml}
@@ -7048,9 +7053,10 @@ async function saveEditTournament(tournament, teams, isRyderCup) {
   status.textContent = 'Saving…';
   status.style.color = '#666';
 
-  const name = document.getElementById('edit-tournament-name').value.trim();
-  const startDate = document.getElementById('edit-tournament-start').value;
-  const endDate = document.getElementById('edit-tournament-end').value;
+  const name       = document.getElementById('edit-tournament-name').value.trim();
+  const startDate  = document.getElementById('edit-tournament-start').value;
+  const endDate    = document.getElementById('edit-tournament-end').value;
+  const handicapPct = parseInt(document.getElementById('edit-tournament-handicap').value) || 80;
 
   if (!name || !startDate || !endDate) {
     status.textContent = 'Name and dates are required.';
@@ -7060,12 +7066,12 @@ async function saveEditTournament(tournament, teams, isRyderCup) {
   }
 
   try {
-    // 1. Save tournament name + dates
+    // 1. Save tournament name, dates, and handicap %
     await fetch(`${API_BASE_URL}/api/tournaments.php?tournament_id=${tournament.tournament_id}`, {
       method: 'PUT',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, start_date: startDate, end_date: endDate, handicap_pct: tournament.handicap_pct ?? 100 }),
+      body: JSON.stringify({ name, start_date: startDate, end_date: endDate, handicap_pct: handicapPct }),
     });
 
     // 2. Save team names + colors (Ryder Cup)
