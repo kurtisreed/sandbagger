@@ -8110,7 +8110,7 @@ async function showNewTournamentStep3() {
 
     const golferRow = (g, assigned) => `
       <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0; border-bottom: 1px solid #eee;">
-        <span style="font-weight: 500; color: #333;">${g.first_name} ${g.last_name}</span>
+        <span style="font-weight: 500; color: #333;">${g.first_name} ${g.last_name} <span style="font-weight: 400; color: #999; font-size: 0.85rem;">HCP ${parseFloat(g.handicap) % 1 === 0 ? parseInt(g.handicap) : parseFloat(g.handicap)}</span></span>
         <div style="display: flex; gap: 0.4rem;">
           <button class="nt-assign-btn" data-golfer-id="${g.golfer_id}" data-team="1"
             style="padding: 0.3rem 0.7rem; border: 2px solid ${team1.color}; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 600;
