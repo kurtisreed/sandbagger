@@ -8045,51 +8045,15 @@ async function showNewTournamentStep1() {
 }
 
 // ── New Tournament — Step 2 ───────────────────────────────────────────────────
-const NT_COLORS = [
-  { hex: '#1565C0', label: 'Blue'   },
-  { hex: '#C62828', label: 'Red'    },
-  { hex: '#2E7D32', label: 'Green'  },
-  { hex: '#F9A825', label: 'Gold'   },
-  { hex: '#6A1B9A', label: 'Purple' },
-  { hex: '#00838F', label: 'Teal'   },
-  { hex: '#E65100', label: 'Orange' },
-  { hex: '#37474F', label: 'Grey'   },
-  { hex: '#000000', label: 'Black'  },
-  { hex: '#FFFFFF', label: 'White'  },
-];
-
-function buildSwatches(containerId, hiddenInputId, defaultColor) {
-  const container = document.getElementById(containerId);
-  const hidden    = document.getElementById(hiddenInputId);
-  container.innerHTML = '';
-  NT_COLORS.forEach(({ hex, label }) => {
-    const swatch = document.createElement('button');
-    swatch.type        = 'button';
-    swatch.title       = label;
-    swatch.className   = 'nt-swatch' + (hex === defaultColor ? ' selected' : '');
-    swatch.style.background = hex;
-    if (hex === '#FFFFFF') swatch.style.border = '3px solid #ccc';
-    swatch.addEventListener('click', () => {
-      container.querySelectorAll('.nt-swatch').forEach(s => s.classList.remove('selected'));
-      swatch.classList.add('selected');
-      hidden.value = hex;
-    });
-    container.appendChild(swatch);
-  });
-  hidden.value = defaultColor;
-}
-
 function showNewTournamentStep2() {
   document.getElementById('create-tournament-container').style.display = 'none';
   document.getElementById('create-tournament-step2').style.display = 'block';
 
-  // Build color swatches for both teams
-  buildSwatches('nt-team1-swatches', 'nt-team1-color', '#1565C0');
-  buildSwatches('nt-team2-swatches', 'nt-team2-color', '#C62828');
-
-  // Clear fields
-  document.getElementById('nt-team1-name').value = '';
-  document.getElementById('nt-team2-name').value = '';
+  // Reset to defaults
+  document.getElementById('nt-team1-name').value  = '';
+  document.getElementById('nt-team2-name').value  = '';
+  document.getElementById('nt-team1-color').value = '#1565C0';
+  document.getElementById('nt-team2-color').value = '#C62828';
   document.getElementById('nt-step2-error').style.display = 'none';
 }
 
@@ -9545,8 +9509,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('nt-step2-continue-btn').addEventListener('click', () => {
     const team1Name  = document.getElementById('nt-team1-name').value.trim();
     const team2Name  = document.getElementById('nt-team2-name').value.trim();
-    const team1Color = document.getElementById('nt-team1-color').value;
-    const team2Color = document.getElementById('nt-team2-color').value;
+    const team1Color = document.getElementById('nt-team1-color').value || '#1565C0';
+    const team2Color = document.getElementById('nt-team2-color').value || '#C62828';
     const errorEl    = document.getElementById('nt-step2-error');
 
     if (!team1Name || !team2Name) {
