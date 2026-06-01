@@ -8116,9 +8116,9 @@ async function showNewTournamentStep3() {
       </div>`;
 
     content.innerHTML =
-      section('Unassigned', '#666', unassigned, 'All players assigned') +
       section(team1.name, team1.color, inTeam1, 'No players yet') +
-      section(team2.name, team2.color, inTeam2, 'No players yet');
+      section(team2.name, team2.color, inTeam2, 'No players yet') +
+      section('Unassigned', '#666', unassigned, 'All players assigned ✓');
 
     // Bind assign buttons
     content.querySelectorAll('.nt-assign-btn').forEach(btn => {
