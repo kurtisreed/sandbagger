@@ -6583,6 +6583,12 @@ function loadUserDashboard(golfer) {
   const orgEl = document.getElementById('user-header-org');
   if (orgEl) orgEl.textContent = golfer.org_name || '';
 
+  // Show +New Tournament button for admins only
+  const newTournamentBtn = document.getElementById('create-tournament-btn');
+  if (newTournamentBtn) {
+    newTournamentBtn.style.display = (golfer.role === 'admin' || golfer.role === 'administrator') ? 'block' : 'none';
+  }
+
   loadUserTournaments(golfer.golfer_id);
 }
 
