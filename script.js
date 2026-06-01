@@ -5724,11 +5724,12 @@ function renderHandicapTable(parentContainer, courses, golfers) {
         container.appendChild(tableDiv);
         const explanation = document.createElement("div");
         explanation.className = "handicap-explanation";
+        const displayPct = parseFloat(tournamentHandicapPct || 100);
         explanation.innerHTML = `
           <strong>How Playing Handicap is Calculated:</strong><br>
           Each golfer's <b>course handicap</b> is calculated according to USGA guidelines using the formula:<br>
           <code>(Handicap &times; (Slope / 113) + (Rating - 72))</code><br>
-          For this tournament, we are using <b>${pct}%</b> of the course handicap to calculate the <b>playing handicap</b>.<br>
+          For this tournament, we are using <b>${displayPct}%</b> of the course handicap to calculate the <b>playing handicap</b>.<br>
         `;
         container.appendChild(explanation);
     parentContainer.appendChild(container);
@@ -5847,6 +5848,10 @@ async function loadTournamentPage(container) {
         // Render Handicap Table
         if (handicapResult.status === 'fulfilled') {
             const [courses, golfers] = handicapResult.value; // Destructure the resolved array
+            // Set tournamentHandicapPct from the courses data (each course row carries it)
+            if (Array.isArray(courses) && courses.length > 0 && courses[0].handicap_pct != null) {
+                tournamentHandicapPct = parseFloat(courses[0].handicap_pct);
+            }
             renderHandicapTable(container, courses, golfers);
             renderCoursePDFLinks(container, courses); // Assuming this function exists to render course PDFs
         } else {
@@ -5920,6 +5925,10 @@ async function loadGuysTripTournamentPage(container) {
         // Render Handicap Table
         if (handicapResult.status === 'fulfilled') {
             const [courses, golfers] = handicapResult.value;
+            // Set tournamentHandicapPct from the courses data (each course row carries it)
+            if (Array.isArray(courses) && courses.length > 0 && courses[0].handicap_pct != null) {
+                tournamentHandicapPct = parseFloat(courses[0].handicap_pct);
+            }
             renderHandicapTable(container, courses, golfers);
             renderCoursePDFLinks(container, courses);
         } else {
@@ -8738,6 +8747,39 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+function returnToDashboard() {
+  const hamburgerDropdown = document.getElementById('hamburger-dropdown');
+  if (hamburgerDropdown) hamburgerDropdown.classList.remove('show');
+  const allPages = [
+    'app-content',
+    'add-round-container',
+    'add-matches-container',
+    'add-tee-times-container',
+    'edit-group-container',
+    'edit-tournament-container',
+    'round-history-container',
+    'tournament-history-container',
+    'edit-user-container',
+    'edit-golfers-container',
+    'best-ball-setup',
+    'quick-round-type-selector',
+    'create-tournament-container',
+    'create-tournament-step2',
+    'create-tournament-step3',
+  ];
+  allPages.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  const editGroupContainer = document.getElementById('edit-group-container');
+  if (editGroupContainer) {
+    editGroupContainer.dataset.open = 'false';
+    const h2 = editGroupContainer.querySelector('h2');
+    if (h2) h2.textContent = 'Edit Group';
+  }
+  document.getElementById('user-dashboard').style.display = 'block';
+}
+
 function loadEditUserPage() {
   returnToDashboard();
   const editUserContainer = document.getElementById('edit-user-container');
@@ -8865,40 +8907,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Menu option: Dashboard
-  function returnToDashboard() {
-    hamburgerDropdown.classList.remove('show');
-    // Hide every full-page container so the dashboard is always a clean start
-    const allPages = [
-      'app-content',
-      'add-round-container',
-      'add-matches-container',
-      'add-tee-times-container',
-      'edit-group-container',
-      'edit-tournament-container',
-      'round-history-container',
-      'tournament-history-container',
-      'edit-user-container',
-      'edit-golfers-container',
-      'best-ball-setup',
-      'quick-round-type-selector',
-      'create-tournament-container',
-      'create-tournament-step2',
-      'create-tournament-step3',
-    ];
-    allPages.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.style.display = 'none';
-    });
-    // Reset edit-group state flag and heading
-    const editGroupContainer = document.getElementById('edit-group-container');
-    if (editGroupContainer) {
-      editGroupContainer.dataset.open = 'false';
-      const h2 = editGroupContainer.querySelector('h2');
-      if (h2) h2.textContent = 'Edit Group';
-    }
-    document.getElementById('user-dashboard').style.display = 'block';
-  }
-
   document.getElementById('menu-dashboard').addEventListener('click', returnToDashboard);
 
   document.getElementById('user-header-name').addEventListener('click', returnToDashboard);
