@@ -9370,10 +9370,11 @@ document.addEventListener('DOMContentLoaded', () => {
   sessionStorage.removeItem('rabbit_tournament_id');
   sessionStorage.removeItem('wolf_tournament_id');
 
-  // Load golfers into dropdown
-  fetch(`${API_BASE_URL}/api/get_golfers.php`)
-    .then(response => response.json())
+  // Load golfers into dropdown (only when authenticated — silently skip on 401)
+  fetch(`${API_BASE_URL}/api/get_golfers.php`, { credentials: 'include' })
+    .then(response => response.ok ? response.json() : [])
     .then(golfers => {
+      if (!Array.isArray(golfers)) return;
       golfers.forEach(golfer => {
         const option = document.createElement('option');
         option.value = golfer.golfer_id;
@@ -9382,7 +9383,7 @@ document.addEventListener('DOMContentLoaded', () => {
         selectUser.appendChild(option);
       });
     })
-    .catch(err => console.error('Error loading golfers:', err));
+    .catch(() => {}); // silently ignore — user may simply not be logged in yet
 
   // Get the continue button reference
   const continueBtn = authForm.querySelector('button[type="submit"]');
