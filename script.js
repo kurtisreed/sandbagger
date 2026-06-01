@@ -9515,11 +9515,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('create-tournament-step2').style.display = 'block';
   });
 
-  document.getElementById('nt-step3-continue-btn').addEventListener('click', () => {
+  document.getElementById('nt-step3-continue-btn').addEventListener('click', async () => {
     const assignments = window._newTournamentData.assignments || {};
     const team1Count  = Object.values(assignments).filter(t => t === 1).length;
     const team2Count  = Object.values(assignments).filter(t => t === 2).length;
     const errorEl     = document.getElementById('nt-step3-error');
+    const btn         = document.getElementById('nt-step3-continue-btn');
 
     if (team1Count === 0 || team2Count === 0) {
       errorEl.textContent = 'Please assign at least one player to each team.';
@@ -9527,9 +9528,68 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     errorEl.style.display = 'none';
+    btn.disabled = true;
+    btn.textContent = 'Creating…';
 
-    console.log('New tournament step 3 complete:', window._newTournamentData);
-    // TODO: advance to step 4
+    try {
+      const d = window._newTournamentData;
+
+      // 1. Create the tournament
+      const tRes  = await fetch(`${API_BASE_URL}/api/tournaments.php`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name:          d.name,
+          start_date:    d.startDate,
+          end_date:      d.endDate,
+          handicap_pct:  parseFloat(d.handicap),
+          format_id:     parseInt(d.formatId),
+        }),
+      });
+      const tData = await tRes.json();
+      if (!tData.inserted_id) throw new Error('Tournament creation failed');
+      const tournamentId = tData.inserted_id;
+
+      // 2. Create both teams and capture their IDs
+      const teamResults = await Promise.all(d.teams.map(team =>
+        fetch(`${API_BASE_URL}/api/tournament_teams.php`, {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tournament_id: tournamentId, name: team.name, color: team.color }),
+        }).then(r => r.json())
+      ));
+      // teamResults[0] → team 1 (index 1 in assignments), teamResults[1] → team 2 (index 2)
+      const teamIdMap = {
+        1: teamResults[0].team_id,
+        2: teamResults[1].team_id,
+      };
+
+      // 3. Build assignments array and save
+      const golferAssignments = Object.entries(assignments).map(([golferId, teamNum]) => ({
+        golfer_id: parseInt(golferId),
+        team_id:   teamIdMap[teamNum],
+      }));
+
+      await fetch(`${API_BASE_URL}/api/save_tournament_assignments.php`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tournament_id: tournamentId, assignments: golferAssignments }),
+      });
+
+      // Done — clean up and return to dashboard
+      window._newTournamentData = null;
+      ['create-tournament-container', 'create-tournament-step2', 'create-tournament-step3']
+        .forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+      document.getElementById('user-dashboard').style.display = 'block';
+      loadUserTournaments(currentUser.golfer_id);
+
+    } catch (err) {
+      console.error('Tournament creation error:', err);
+      errorEl.textContent = 'Error creating tournament. Please try again.';
+      errorEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Create Tournament';
+    }
   });
 
   document.getElementById('nt-step2-continue-btn').addEventListener('click', () => {
