@@ -8013,6 +8013,168 @@ function loadGuysTripTournamentRound(roundId, tournamentId, roundName = '', form
   loadDefaultMatchTab(roundId, tournamentId, currentUser.golfer_id);
 }
 
+// ── New Tournament — Step 1 ───────────────────────────────────────────────────
+async function showNewTournamentStep1() {
+  document.getElementById('user-dashboard').style.display = 'none';
+  document.getElementById('create-tournament-container').style.display = 'block';
+
+  // Populate format dropdown if not already done
+  const formatSelect = document.getElementById('nt-format');
+  if (formatSelect.options.length <= 1) {
+    try {
+      const res  = await fetch(`${API_BASE_URL}/api/formats.php`, { credentials: 'include' });
+      const data = await res.json();
+      (Array.isArray(data) ? data : []).forEach(f => {
+        const opt = document.createElement('option');
+        opt.value       = f.format_id;
+        opt.textContent = f.label || f.name;
+        formatSelect.appendChild(opt);
+      });
+    } catch (e) {
+      console.error('Failed to load formats:', e);
+    }
+  }
+
+  // Clear previous values
+  document.getElementById('nt-name').value      = '';
+  document.getElementById('nt-start-date').value = '';
+  document.getElementById('nt-end-date').value   = '';
+  document.getElementById('nt-handicap').value   = '80';
+  formatSelect.value = '';
+  document.getElementById('nt-error').style.display = 'none';
+}
+
+// ── New Tournament — Step 2 ───────────────────────────────────────────────────
+const NT_COLORS = [
+  { hex: '#1565C0', label: 'Blue'   },
+  { hex: '#C62828', label: 'Red'    },
+  { hex: '#2E7D32', label: 'Green'  },
+  { hex: '#F9A825', label: 'Gold'   },
+  { hex: '#6A1B9A', label: 'Purple' },
+  { hex: '#00838F', label: 'Teal'   },
+  { hex: '#E65100', label: 'Orange' },
+  { hex: '#37474F', label: 'Grey'   },
+  { hex: '#000000', label: 'Black'  },
+  { hex: '#FFFFFF', label: 'White'  },
+];
+
+function buildSwatches(containerId, hiddenInputId, defaultColor) {
+  const container = document.getElementById(containerId);
+  const hidden    = document.getElementById(hiddenInputId);
+  container.innerHTML = '';
+  NT_COLORS.forEach(({ hex, label }) => {
+    const swatch = document.createElement('button');
+    swatch.type        = 'button';
+    swatch.title       = label;
+    swatch.className   = 'nt-swatch' + (hex === defaultColor ? ' selected' : '');
+    swatch.style.background = hex;
+    if (hex === '#FFFFFF') swatch.style.border = '3px solid #ccc';
+    swatch.addEventListener('click', () => {
+      container.querySelectorAll('.nt-swatch').forEach(s => s.classList.remove('selected'));
+      swatch.classList.add('selected');
+      hidden.value = hex;
+    });
+    container.appendChild(swatch);
+  });
+  hidden.value = defaultColor;
+}
+
+function showNewTournamentStep2() {
+  document.getElementById('create-tournament-container').style.display = 'none';
+  document.getElementById('create-tournament-step2').style.display = 'block';
+
+  // Build color swatches for both teams
+  buildSwatches('nt-team1-swatches', 'nt-team1-color', '#1565C0');
+  buildSwatches('nt-team2-swatches', 'nt-team2-color', '#C62828');
+
+  // Clear fields
+  document.getElementById('nt-team1-name').value = '';
+  document.getElementById('nt-team2-name').value = '';
+  document.getElementById('nt-step2-error').style.display = 'none';
+}
+
+// ── New Tournament — Step 3 ───────────────────────────────────────────────────
+async function showNewTournamentStep3() {
+  document.getElementById('create-tournament-step2').style.display = 'none';
+  document.getElementById('create-tournament-step3').style.display = 'block';
+  document.getElementById('nt-step3-error').style.display = 'none';
+
+  const content = document.getElementById('nt-step3-content');
+  content.innerHTML = '<p style="color: rgba(255,255,255,0.7); text-align: center;">Loading players…</p>';
+
+  const teams = window._newTournamentData.teams;
+  const team1 = teams[0];
+  const team2 = teams[1];
+
+  // assignments: golfer_id → 1 or 2 (or 0 = unassigned)
+  if (!window._newTournamentData.assignments) {
+    window._newTournamentData.assignments = {};
+  }
+
+  let golfers = [];
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/golfers.php`, { credentials: 'include' });
+    golfers = await res.json();
+    if (!Array.isArray(golfers)) golfers = [];
+  } catch (e) {
+    content.innerHTML = '<p style="color: #ffcccc;">Failed to load players. Please go back and try again.</p>';
+    return;
+  }
+
+  function renderStep3() {
+    const assignments = window._newTournamentData.assignments;
+
+    const unassigned = golfers.filter(g => !assignments[g.golfer_id]);
+    const inTeam1    = golfers.filter(g => assignments[g.golfer_id] === 1);
+    const inTeam2    = golfers.filter(g => assignments[g.golfer_id] === 2);
+
+    const golferRow = (g, assigned) => `
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0; border-bottom: 1px solid #eee;">
+        <span style="font-weight: 500; color: #333;">${g.first_name} ${g.last_name}</span>
+        <div style="display: flex; gap: 0.4rem;">
+          <button class="nt-assign-btn" data-golfer-id="${g.golfer_id}" data-team="1"
+            style="padding: 0.3rem 0.7rem; border: 2px solid ${team1.color}; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 600;
+                   background: ${assigned === 1 ? team1.color : 'white'}; color: ${assigned === 1 ? 'white' : team1.color};">
+            ${team1.name}
+          </button>
+          <button class="nt-assign-btn" data-golfer-id="${g.golfer_id}" data-team="2"
+            style="padding: 0.3rem 0.7rem; border: 2px solid ${team2.color}; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 600;
+                   background: ${assigned === 2 ? team2.color : 'white'}; color: ${assigned === 2 ? 'white' : team2.color};">
+            ${team2.name}
+          </button>
+        </div>
+      </div>`;
+
+    const section = (title, color, list, emptyMsg) => `
+      <div style="background: white; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem;">
+        <h3 style="margin: 0 0 0.5rem 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; color: ${color};">${title}</h3>
+        ${list.length ? list.map(g => golferRow(g, window._newTournamentData.assignments[g.golfer_id] || 0)).join('') : `<p style="color:#999; margin:0; font-size:0.9rem;">${emptyMsg}</p>`}
+      </div>`;
+
+    content.innerHTML =
+      section('Unassigned', '#666', unassigned, 'All players assigned') +
+      section(team1.name, team1.color, inTeam1, 'No players yet') +
+      section(team2.name, team2.color, inTeam2, 'No players yet');
+
+    // Bind assign buttons
+    content.querySelectorAll('.nt-assign-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const gId  = parseInt(btn.dataset.golferId);
+        const team = parseInt(btn.dataset.team);
+        // Toggle off if already on this team, otherwise assign
+        if (window._newTournamentData.assignments[gId] === team) {
+          delete window._newTournamentData.assignments[gId];
+        } else {
+          window._newTournamentData.assignments[gId] = team;
+        }
+        renderStep3();
+      });
+    });
+  }
+
+  renderStep3();
+}
+
 // ── Edit Group page ───────────────────────────────────────────────────────────
 async function showEditGroupPage() {
   // Hide other views
@@ -8733,6 +8895,9 @@ document.addEventListener('DOMContentLoaded', () => {
       'edit-golfers-container',
       'best-ball-setup',
       'quick-round-type-selector',
+      'create-tournament-container',
+      'create-tournament-step2',
+      'create-tournament-step3',
     ];
     allPages.forEach(id => {
       const el = document.getElementById(id);
@@ -9338,6 +9503,93 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('user-dashboard').style.display = 'none';
     // Show round type selector
     showQuickRoundTypeSelector();
+  });
+
+  // ── New Tournament button ────────────────────────────────────────────────────
+  document.getElementById('create-tournament-btn').addEventListener('click', () => {
+    showNewTournamentStep1();
+  });
+
+  document.getElementById('create-tournament-back-btn').addEventListener('click', () => {
+    document.getElementById('create-tournament-container').style.display = 'none';
+    document.getElementById('user-dashboard').style.display = 'block';
+  });
+
+  document.getElementById('nt-step2-back-btn').addEventListener('click', () => {
+    document.getElementById('create-tournament-step2').style.display = 'none';
+    document.getElementById('create-tournament-container').style.display = 'block';
+  });
+
+  document.getElementById('nt-step3-back-btn').addEventListener('click', () => {
+    document.getElementById('create-tournament-step3').style.display = 'none';
+    document.getElementById('create-tournament-step2').style.display = 'block';
+  });
+
+  document.getElementById('nt-step3-continue-btn').addEventListener('click', () => {
+    const assignments = window._newTournamentData.assignments || {};
+    const team1Count  = Object.values(assignments).filter(t => t === 1).length;
+    const team2Count  = Object.values(assignments).filter(t => t === 2).length;
+    const errorEl     = document.getElementById('nt-step3-error');
+
+    if (team1Count === 0 || team2Count === 0) {
+      errorEl.textContent = 'Please assign at least one player to each team.';
+      errorEl.style.display = 'block';
+      return;
+    }
+    errorEl.style.display = 'none';
+
+    console.log('New tournament step 3 complete:', window._newTournamentData);
+    // TODO: advance to step 4
+  });
+
+  document.getElementById('nt-step2-continue-btn').addEventListener('click', () => {
+    const team1Name  = document.getElementById('nt-team1-name').value.trim();
+    const team2Name  = document.getElementById('nt-team2-name').value.trim();
+    const team1Color = document.getElementById('nt-team1-color').value;
+    const team2Color = document.getElementById('nt-team2-color').value;
+    const errorEl    = document.getElementById('nt-step2-error');
+
+    if (!team1Name || !team2Name) {
+      errorEl.textContent = 'Please enter a name for both teams.';
+      errorEl.style.display = 'block';
+      return;
+    }
+    if (team1Color === team2Color) {
+      errorEl.textContent = 'Please choose a different color for each team.';
+      errorEl.style.display = 'block';
+      return;
+    }
+    errorEl.style.display = 'none';
+
+    window._newTournamentData = {
+      ...window._newTournamentData,
+      teams: [
+        { name: team1Name, color: team1Color },
+        { name: team2Name, color: team2Color },
+      ],
+      assignments: {}, // reset assignments when teams change
+    };
+    showNewTournamentStep3();
+  });
+
+  document.getElementById('nt-continue-btn').addEventListener('click', () => {
+    const name      = document.getElementById('nt-name').value.trim();
+    const startDate = document.getElementById('nt-start-date').value;
+    const endDate   = document.getElementById('nt-end-date').value;
+    const handicap  = document.getElementById('nt-handicap').value;
+    const formatId  = document.getElementById('nt-format').value;
+    const errorEl   = document.getElementById('nt-error');
+
+    if (!name || !startDate || !endDate || !formatId) {
+      errorEl.textContent = 'Please fill in all fields.';
+      errorEl.style.display = 'block';
+      return;
+    }
+    errorEl.style.display = 'none';
+
+    // Store for use in subsequent steps
+    window._newTournamentData = { name, startDate, endDate, handicap, formatId };
+    showNewTournamentStep2();
   });
 
   // Round History back button

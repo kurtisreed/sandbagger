@@ -196,7 +196,7 @@
   <div id="dashboard-content">
     <!-- Tournaments Section -->
     <div id="tournaments-section" style="margin-bottom: 2rem;">
-      <h3 style="border-bottom: 2px solid #4F2185; padding-bottom: 0.5rem;">Current Tournaments</h3>
+      <h3 style="border-bottom: 2px solid #4F2185; padding-bottom: 0.5rem;">Current Matches</h3>
       <div id="tournaments-list"></div>
     </div>
 
@@ -209,6 +209,94 @@
       </div>
     </div>
   </div>
+</div>
+
+<!-- New Tournament: Step 1 — Basic Info -->
+<div class="container" id="create-tournament-container" style="display: none;">
+  <div style="display: flex; align-items: center; margin-bottom: 1.5rem;">
+    <button id="create-tournament-back-btn" type="button" style="background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; padding: 0; margin-right: 0.75rem;">&#8592;</button>
+    <h2 style="margin: 0;">New Tournament</h2>
+  </div>
+
+  <div style="background: white; border-radius: 8px; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem;">
+    <div>
+      <label style="display: block; font-weight: 600; margin-bottom: 0.35rem; color: #333;">Tournament Name</label>
+      <input type="text" id="nt-name" placeholder="e.g. Reed Golf Trip 2026" style="width: 100%; padding: 0.6rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; box-sizing: border-box;">
+    </div>
+    <div style="display: flex; gap: 1rem;">
+      <div style="flex: 1;">
+        <label style="display: block; font-weight: 600; margin-bottom: 0.35rem; color: #333;">Start Date</label>
+        <input type="date" id="nt-start-date" style="width: 100%; padding: 0.6rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; box-sizing: border-box;">
+      </div>
+      <div style="flex: 1;">
+        <label style="display: block; font-weight: 600; margin-bottom: 0.35rem; color: #333;">End Date</label>
+        <input type="date" id="nt-end-date" style="width: 100%; padding: 0.6rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; box-sizing: border-box;">
+      </div>
+    </div>
+    <div>
+      <label style="display: block; font-weight: 600; margin-bottom: 0.35rem; color: #333;">Handicap %</label>
+      <input type="number" id="nt-handicap" value="80" min="0" max="100" style="width: 100%; padding: 0.6rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; box-sizing: border-box;">
+    </div>
+    <div>
+      <label style="display: block; font-weight: 600; margin-bottom: 0.35rem; color: #333;">Format</label>
+      <select id="nt-format" style="width: 100%; padding: 0.6rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; box-sizing: border-box;">
+        <option value="">-- Choose Format --</option>
+      </select>
+    </div>
+    <p id="nt-error" style="display: none; color: red; margin: 0;"></p>
+  </div>
+
+  <button id="nt-continue-btn" type="button" style="margin-top: 1.25rem; width: 100%; padding: 0.75rem; background: #4F2185; color: white; border: none; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer;">Continue</button>
+</div>
+
+<!-- New Tournament: Step 2 — Team Setup -->
+<div class="container" id="create-tournament-step2" style="display: none;">
+  <div style="display: flex; align-items: center; margin-bottom: 1.5rem;">
+    <button id="nt-step2-back-btn" type="button" style="background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; padding: 0; margin-right: 0.75rem;">&#8592;</button>
+    <h2 style="margin: 0;">Team Setup</h2>
+  </div>
+
+  <!-- Team 1 -->
+  <div style="background: white; border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem;">
+    <h3 style="margin: 0 0 1rem 0; color: #333; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.05em;">Team 1</h3>
+    <div style="margin-bottom: 1rem;">
+      <label style="display: block; font-weight: 600; margin-bottom: 0.35rem; color: #333;">Team Name</label>
+      <input type="text" id="nt-team1-name" placeholder="e.g. USA" style="width: 100%; padding: 0.6rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; box-sizing: border-box;">
+    </div>
+    <div>
+      <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #333;">Team Color</label>
+      <div id="nt-team1-swatches" class="nt-swatch-row"></div>
+      <input type="hidden" id="nt-team1-color" value="#1565C0">
+    </div>
+  </div>
+
+  <!-- Team 2 -->
+  <div style="background: white; border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem;">
+    <h3 style="margin: 0 0 1rem 0; color: #333; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.05em;">Team 2</h3>
+    <div style="margin-bottom: 1rem;">
+      <label style="display: block; font-weight: 600; margin-bottom: 0.35rem; color: #333;">Team Name</label>
+      <input type="text" id="nt-team2-name" placeholder="e.g. Europe" style="width: 100%; padding: 0.6rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; box-sizing: border-box;">
+    </div>
+    <div>
+      <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #333;">Team Color</label>
+      <div id="nt-team2-swatches" class="nt-swatch-row"></div>
+      <input type="hidden" id="nt-team2-color" value="#C62828">
+    </div>
+  </div>
+
+  <p id="nt-step2-error" style="display: none; color: red; margin: 0 0 0.75rem 0;"></p>
+  <button id="nt-step2-continue-btn" type="button" style="width: 100%; padding: 0.75rem; background: #4F2185; color: white; border: none; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer;">Continue</button>
+</div>
+
+<!-- New Tournament: Step 3 — Assign Players -->
+<div class="container" id="create-tournament-step3" style="display: none;">
+  <div style="display: flex; align-items: center; margin-bottom: 1.5rem;">
+    <button id="nt-step3-back-btn" type="button" style="background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; padding: 0; margin-right: 0.75rem;">&#8592;</button>
+    <h2 style="margin: 0;">Assign Players</h2>
+  </div>
+  <div id="nt-step3-content"></div>
+  <p id="nt-step3-error" style="display: none; color: #ffcccc; margin: 0.75rem 0;"></p>
+  <button id="nt-step3-continue-btn" type="button" style="margin-top: 1rem; width: 100%; padding: 0.75rem; background: #4F2185; color: white; border: none; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer;">Continue</button>
 </div>
 
 <div class="container" id="best-ball-setup" style="display: none;">
