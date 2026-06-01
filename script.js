@@ -3421,7 +3421,7 @@ function showUserBar(teamName = null, teamColor = null) {
 function showTournamentBar(data = null) {
     const tournamentName = data?.tournament_name || sessionStorage.getItem("tournament_name");
     const team = data?.team_name || sessionStorage.getItem("team_name");
-    const roundName = data?.round_name || sesionStorage.getItem("round_name");
+    const roundName = data?.round_name || sessionStorage.getItem("round_name");
     
     const tournamentBar = document.getElementById("tournament-bar");
     const tournamentSpan = document.getElementById("tournament-name");
