@@ -6586,7 +6586,7 @@ function loadUserDashboard(golfer) {
   // Show +New Tournament button for admins only
   const newTournamentBtn = document.getElementById('create-tournament-btn');
   if (newTournamentBtn) {
-    newTournamentBtn.style.display = (golfer.role === 'admin' || golfer.role === 'administrator') ? 'block' : 'none';
+    newTournamentBtn.style.display = golfer.role === 'admin' ? 'block' : 'none';
   }
 
   loadUserTournaments(golfer.golfer_id);
@@ -6622,7 +6622,7 @@ function loadUserTournaments(golferId) {
             </p>`;
         }
 
-        const isAdminCard = currentUser && currentUser.role === 'administrator';
+        const isAdminCard = currentUser && currentUser.role === 'admin';
         html += `
           <div style="border: 1px solid #ddd; padding: 1rem; border-radius: 8px; background: white;">
             <div style="position: relative; margin-bottom: 0.25rem;">
@@ -6642,7 +6642,7 @@ function loadUserTournaments(golferId) {
 
         if (tournament.rounds && tournament.rounds.length > 0) {
           tournament.rounds.forEach(round => {
-            const isAdmin = currentUser && currentUser.role === 'administrator';
+            const isAdmin = currentUser && currentUser.role === 'admin';
             const isGuysTrip = tournament.format_id === 4;
             const isRyderCup = tournament.format_id === 3;
             const hasEditButton = isGuysTrip || isRyderCup;
@@ -6689,7 +6689,7 @@ function loadUserTournaments(golferId) {
         }
 
         // Add "+ Add Round" button for administrators
-        if (currentUser && currentUser.role === 'administrator') {
+        if (currentUser && currentUser.role === 'admin') {
           html += `
             <button class="add-round-btn" data-tournament-id="${tournament.tournament_id}" data-format-id="${tournament.format_id || ''}" style="display: block; width: 100%; margin-bottom: 0.5rem; padding: 0.5rem; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; text-align: left;">
               + Add Round
@@ -8784,7 +8784,7 @@ document.addEventListener('DOMContentLoaded', () => {
   hamburgerBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     hamburgerDropdown.classList.toggle('show');
-    const isAdmin = currentUser && currentUser.role === 'administrator';
+    const isAdmin = currentUser && currentUser.role === 'admin';
     const editGroupBtn = document.getElementById('menu-edit-group');
     if (editGroupBtn) editGroupBtn.style.display = isAdmin ? 'block' : 'none';
   });

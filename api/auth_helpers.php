@@ -5,10 +5,12 @@
 // Returns the golfer row as an assoc array, or null if not linked yet.
 function getLinkedGolfer($conn, $userId, $orgId) {
     $stmt = $conn->prepare("
-        SELECT g.golfer_id, g.first_name, g.last_name, g.handicap, g.role,
+        SELECT g.golfer_id, g.first_name, g.last_name, g.handicap,
+               uo.role,
                u.email
         FROM golfers g
-        JOIN users u ON u.user_id = g.user_id
+        JOIN users u            ON u.user_id  = g.user_id
+        JOIN user_organizations uo ON uo.user_id = g.user_id AND uo.org_id = g.org_id
         WHERE g.user_id = ? AND g.org_id = ?
         LIMIT 1
     ");
