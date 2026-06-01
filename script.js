@@ -1519,7 +1519,7 @@ function loadWolfScoring() {
         <strong>Scoring:</strong> Lone Wolf win = 3 pts (loss = 0 pts, others get 1 pt each). Partnership win = 1 pt each (loss = 0 pts each).<br><br>
         <strong>How Playing Handicap is Calculated:</strong><br>
         Each golfer's course handicap is calculated according to USGA guidelines using the formula:<br>
-        <code>(Handicap × (Slope / 113) + (Rating - 72)) * Round %</code><br>
+        <code>(Handicap × (Slope / 113) + (Rating - 72)) × ${tournamentHandicapPct}%</code><br>
       `;
       container.appendChild(explanation);
 
@@ -2033,7 +2033,7 @@ function loadRabbitScoring() {
         Another player must win a hole to set the Rabbit free. Points awarded every 3 holes (6 total).<br><br>
         <strong>How Playing Handicap is Calculated:</strong><br>
         Each golfer's course handicap is calculated according to USGA guidelines using the formula:<br>
-        <code>(Handicap × (Slope / 113) + (Rating - 72)) * Round %</code><br>
+        <code>(Handicap × (Slope / 113) + (Rating - 72)) × ${tournamentHandicapPct}%</code><br>
       `;
       container.appendChild(handicapExplanation);
 
@@ -2961,7 +2961,7 @@ function loadBestBallScoring() {
       handicapExplanation.innerHTML = `
         <strong>How Playing Handicap is Calculated:</strong><br>
         Each golfer's <b>playing handicap</b> is calculated according to USGA guidelines using the formula:<br>
-        <code>(Handicap × (Slope / 113) + (Rating - 72)) * Round %</code><br>
+        <code>(Handicap × (Slope / 113) + (Rating - 72)) × ${tournamentHandicapPct}%</code><br>
       `;
       container.appendChild(handicapExplanation);
 
@@ -3209,7 +3209,7 @@ function loadBestBallScorecardReadOnly() {
       handicapExplanation.innerHTML = `
         <strong>How Playing Handicap is Calculated:</strong><br>
         Each golfer's <b>course handicap</b> is calculated according to USGA guidelines using the formula:<br>
-        <code>(Handicap × (Slope / 113) + (Rating - 72))</code><br>
+        <code>(Handicap × (Slope / 113) + (Rating - 72)) × ${tournamentHandicapPct}%</code><br>
       `;
       container.appendChild(handicapExplanation);
 
@@ -5711,7 +5711,7 @@ function renderHandicapTable(parentContainer, courses, golfers) {
             // Calculate playing handicap for this golfer/course
             const slope = parseFloat(course.slope);
             const rating = parseFloat(course.rating);
-            const pct = parseFloat(course.handicap_pct || tournamentHandicapPct || 80); // fallback to 80 if not present
+            const pct = parseFloat(course.handicap_pct || tournamentHandicapPct || 100);
             const hcp = parseFloat(golfer.handicap);
             const playingHandicap = ((hcp * (slope / 113)) + (rating - 72)) * (pct / 100);
             html += `<td>${playingHandicap ? playingHandicap.toFixed(1) : '-'}</td>`;
@@ -5728,7 +5728,7 @@ function renderHandicapTable(parentContainer, courses, golfers) {
           <strong>How Playing Handicap is Calculated:</strong><br>
           Each golfer's <b>course handicap</b> is calculated according to USGA guidelines using the formula:<br>
           <code>(Handicap &times; (Slope / 113) + (Rating - 72))</code><br>
-          For this tournament, we chose to use 80% of the course handicap to calculate the <b>playing handicap</b> to minimize the effect of handicaps overall.<br>
+          For this tournament, we are using <b>${pct}%</b> of the course handicap to calculate the <b>playing handicap</b>.<br>
         `;
         container.appendChild(explanation);
     parentContainer.appendChild(container);
