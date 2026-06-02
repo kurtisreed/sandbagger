@@ -409,30 +409,29 @@
 
   <div style="max-width: 500px; margin: 0 auto;">
 
-    <!-- Profile card -->
+    <!-- Profile card (read-only display) -->
     <div style="background:#fff; border:1px solid #e0e0e0; border-radius:12px; padding:1.25rem; margin-bottom:1rem; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
       <h3 style="margin:0 0 1rem; font-size:1.1rem; color:#1a1a1a;">Profile</h3>
-      <div style="display:flex; gap:0.75rem; margin-bottom:0.75rem;">
-        <div style="flex:1;">
-          <label for="edit-first-name" style="display:block; font-size:0.85rem; color:#555; margin-bottom:0.25rem;">First Name</label>
-          <input type="text" id="edit-first-name" required style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem 1.25rem; margin-bottom:1rem;">
+        <div>
+          <p style="margin:0 0 0.2rem; font-size:0.78rem; color:#888; text-transform:uppercase; letter-spacing:0.04em;">First Name</p>
+          <p id="profile-display-first-name" style="margin:0; font-size:1rem; color:#1a1a1a; font-weight:500;"></p>
         </div>
-        <div style="flex:1;">
-          <label for="edit-last-name" style="display:block; font-size:0.85rem; color:#555; margin-bottom:0.25rem;">Last Name</label>
-          <input type="text" id="edit-last-name" required style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
+        <div>
+          <p style="margin:0 0 0.2rem; font-size:0.78rem; color:#888; text-transform:uppercase; letter-spacing:0.04em;">Last Name</p>
+          <p id="profile-display-last-name" style="margin:0; font-size:1rem; color:#1a1a1a; font-weight:500;"></p>
+        </div>
+        <div>
+          <p style="margin:0 0 0.2rem; font-size:0.78rem; color:#888; text-transform:uppercase; letter-spacing:0.04em;">Email</p>
+          <p id="profile-display-email" style="margin:0; font-size:1rem; color:#1a1a1a; font-weight:500; word-break:break-all;"></p>
+        </div>
+        <div>
+          <p style="margin:0 0 0.2rem; font-size:0.78rem; color:#888; text-transform:uppercase; letter-spacing:0.04em;">Handicap Index</p>
+          <p id="profile-display-handicap" style="margin:0; font-size:1rem; color:#1a1a1a; font-weight:500;"></p>
         </div>
       </div>
-      <div style="margin-bottom:0.75rem;">
-        <label for="edit-email" style="display:block; font-size:0.85rem; color:#555; margin-bottom:0.25rem;">Email</label>
-        <input type="email" id="edit-email" required style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
-      </div>
-      <div style="margin-bottom:1rem;">
-        <label for="edit-handicap" style="display:block; font-size:0.85rem; color:#555; margin-bottom:0.25rem;">Handicap Index</label>
-        <input type="number" id="edit-handicap" step="0.1" min="0" max="54" style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
-      </div>
-      <p id="edit-user-message" style="display:none; font-size:0.875rem; text-align:center; margin:0 0 0.75rem;"></p>
       <div style="display:flex; gap:0.75rem;">
-        <button id="save-profile-btn" style="flex:1; padding:0.65rem; background:#4F2185; color:white; border:none; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Save Profile</button>
+        <button id="open-edit-profile-btn" style="flex:1; padding:0.65rem; background:#4F2185; color:white; border:none; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Edit Profile</button>
         <button id="open-change-password-btn" style="flex:1; padding:0.65rem; background:white; color:#4F2185; border:2px solid #4F2185; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Change Password</button>
       </div>
     </div>
@@ -524,6 +523,38 @@
     <div id="score-entry-content" style="padding-bottom: 2rem;"></div>
   </main>
 </div>  
+  <!-- Edit Profile Modal -->
+  <div id="edit-profile-modal" style="display:none; position:fixed; inset:0; z-index:1000;
+       background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:14px; padding:1.5rem; width:90%; max-width:420px;
+                box-shadow:0 8px 32px rgba(0,0,0,0.18); position:relative;">
+      <button id="close-edit-profile-modal" style="position:absolute; top:0.75rem; right:1rem;
+              background:none; border:none; font-size:1.5rem; cursor:pointer; color:#888; line-height:1;">&#x2715;</button>
+      <h3 style="margin:0 0 1.25rem; font-size:1.1rem; color:#1a1a1a;">Edit Profile</h3>
+      <div style="display:flex; gap:0.75rem; margin-bottom:0.75rem;">
+        <div style="flex:1;">
+          <label for="edit-first-name" style="display:block; font-size:0.85rem; color:#555; margin-bottom:0.25rem;">First Name</label>
+          <input type="text" id="edit-first-name" required style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
+        </div>
+        <div style="flex:1;">
+          <label for="edit-last-name" style="display:block; font-size:0.85rem; color:#555; margin-bottom:0.25rem;">Last Name</label>
+          <input type="text" id="edit-last-name" required style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
+        </div>
+      </div>
+      <div style="margin-bottom:0.75rem;">
+        <label for="edit-email" style="display:block; font-size:0.85rem; color:#555; margin-bottom:0.25rem;">Email</label>
+        <input type="email" id="edit-email" required style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
+      </div>
+      <div style="margin-bottom:1rem;">
+        <label for="edit-handicap" style="display:block; font-size:0.85rem; color:#555; margin-bottom:0.25rem;">Handicap Index</label>
+        <input type="number" id="edit-handicap" step="0.1" min="0" max="54" style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
+      </div>
+      <p id="edit-user-message" style="display:none; font-size:0.875rem; text-align:center; margin:0 0 0.75rem;"></p>
+      <button id="save-profile-btn" style="width:100%; padding:0.65rem; background:#4F2185; color:white;
+              border:none; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Save Profile</button>
+    </div>
+  </div>
+
   <!-- Change Password Modal -->
   <div id="change-password-modal" style="display:none; position:fixed; inset:0; z-index:1000;
        background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">

@@ -8786,11 +8786,14 @@ function loadEditUserPage() {
   editUserContainer.style.display = 'block';
   document.getElementById('user-dashboard').style.display = 'none';
 
-  // Pre-fill profile fields from currentUser
-  document.getElementById('edit-first-name').value  = currentUser.first_name || '';
-  document.getElementById('edit-last-name').value   = currentUser.last_name  || '';
-  document.getElementById('edit-handicap').value    = currentUser.handicap   ?? 0;
-  document.getElementById('edit-email').value       = currentUser.email      || '';
+  // Populate read-only profile display
+  function refreshProfileDisplay() {
+    document.getElementById('profile-display-first-name').textContent = currentUser.first_name || '';
+    document.getElementById('profile-display-last-name').textContent  = currentUser.last_name  || '';
+    document.getElementById('profile-display-email').textContent      = currentUser.email      || '';
+    document.getElementById('profile-display-handicap').textContent   = currentUser.handicap != null ? parseFloat(currentUser.handicap).toFixed(1) : '0.0';
+  }
+  refreshProfileDisplay();
 
   // Clear password fields and status messages
   ['current-password', 'new-password', 'confirm-new-password'].forEach(id => {
@@ -8800,6 +8803,24 @@ function loadEditUserPage() {
   const passwordMsg = document.getElementById('change-password-message');
   profileMsg.style.display  = 'none';
   passwordMsg.style.display = 'none';
+
+  // Edit Profile modal wiring
+  const editProfileModal      = document.getElementById('edit-profile-modal');
+  const openEditProfileBtn    = document.getElementById('open-edit-profile-btn');
+  const closeEditProfileModal = document.getElementById('close-edit-profile-modal');
+
+  function openEditProfile() {
+    document.getElementById('edit-first-name').value = currentUser.first_name || '';
+    document.getElementById('edit-last-name').value  = currentUser.last_name  || '';
+    document.getElementById('edit-email').value      = currentUser.email      || '';
+    document.getElementById('edit-handicap').value   = currentUser.handicap   ?? 0;
+    profileMsg.style.display = 'none';
+    editProfileModal.style.display = 'flex';
+  }
+
+  if (openEditProfileBtn) openEditProfileBtn.addEventListener('click', openEditProfile);
+  if (closeEditProfileModal) closeEditProfileModal.addEventListener('click', () => { editProfileModal.style.display = 'none'; });
+  editProfileModal.addEventListener('click', (e) => { if (e.target === editProfileModal) editProfileModal.style.display = 'none'; });
 
   // Change Password modal wiring
   const modal         = document.getElementById('change-password-modal');
@@ -9917,9 +9938,18 @@ document.addEventListener('DOMContentLoaded', () => {
           currentUser.email      = email;
           currentUser.handicap   = handicap;
           document.getElementById('user-header-name').textContent = `${firstName} ${lastName}`;
+          // Refresh the read-only display and close the modal
+          document.getElementById('profile-display-first-name').textContent = firstName;
+          document.getElementById('profile-display-last-name').textContent  = lastName;
+          document.getElementById('profile-display-email').textContent      = email;
+          document.getElementById('profile-display-handicap').textContent   = parseFloat(handicap).toFixed(1);
           msgEl.textContent   = '✓ Profile saved.';
           msgEl.style.color   = '#2e7d32';
           msgEl.style.display = 'block';
+          setTimeout(() => {
+            const modal = document.getElementById('edit-profile-modal');
+            if (modal) modal.style.display = 'none';
+          }, 1000);
         } else {
           msgEl.textContent   = data.error || 'Save failed.';
           msgEl.style.color   = '#c00';
