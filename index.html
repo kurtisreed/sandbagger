@@ -453,6 +453,27 @@
       <button id="save-password-btn" style="width:100%; padding:0.65rem; background:#4F2185; color:white; border:none; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Change Password</button>
     </div>
 
+    <!-- My Groups card -->
+    <div style="background:#fff; border:1px solid #e0e0e0; border-radius:12px; padding:1.25rem; margin-bottom:1rem; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+      <h3 style="margin:0 0 1rem; font-size:1.1rem; color:#1a1a1a;">My Groups</h3>
+      <div id="my-groups-list" style="margin-bottom:1rem;">
+        <p style="color:#888; font-size:0.9rem;">Loading groups…</p>
+      </div>
+
+      <!-- Join another group -->
+      <div id="join-group-form" style="border-top:1px solid #eee; padding-top:1rem;">
+        <p style="margin:0 0 0.5rem; font-size:0.9rem; color:#555;">Have an invite code? Join another group:</p>
+        <div style="display:flex; gap:0.5rem; align-items:center;">
+          <input type="text" id="join-group-code" placeholder="Enter invite code" maxlength="12"
+            style="flex:1; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box; text-transform:uppercase; letter-spacing:0.1em;">
+          <button id="join-group-btn" style="padding:0.6rem 1rem; background:#4F2185; color:white; border:none; border-radius:6px; font-size:0.95rem; font-weight:bold; cursor:pointer; white-space:nowrap;">Join</button>
+        </div>
+        <p id="join-group-preview" style="display:none; margin:0.5rem 0 0; font-size:0.9rem; color:#2e7d32; font-weight:500;"></p>
+        <p id="join-group-message" style="display:none; margin:0.5rem 0 0; font-size:0.875rem; text-align:center;"></p>
+        <button id="join-group-confirm-btn" style="display:none; width:100%; margin-top:0.75rem; padding:0.65rem; background:#28a745; color:white; border:none; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Confirm &amp; Join</button>
+      </div>
+    </div>
+
     <!-- Delete account -->
     <div style="margin-bottom:1rem;">
       <div id="delete-account-confirm" style="display:none; background:#fff3f3; border:1px solid #f5c6c6; border-radius:8px; padding:1rem; margin-bottom:0.75rem;">

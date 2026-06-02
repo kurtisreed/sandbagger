@@ -8800,6 +8800,160 @@ function loadEditUserPage() {
   const passwordMsg = document.getElementById('change-password-message');
   profileMsg.style.display  = 'none';
   passwordMsg.style.display = 'none';
+
+  // Load My Groups
+  loadMyGroups();
+
+  // Wire up join group flow
+  initJoinGroupForm();
+}
+
+function loadMyGroups() {
+  const list = document.getElementById('my-groups-list');
+  if (!list) return;
+  list.innerHTML = '<p style="color:#888; font-size:0.9rem;">Loading groups…</p>';
+
+  fetch(`${API_BASE_URL}/api/my_orgs.php`, { credentials: 'include' })
+    .then(r => r.json())
+    .then(data => {
+      if (!data.orgs || data.orgs.length === 0) {
+        list.innerHTML = '<p style="color:#888; font-size:0.9rem;">No groups found.</p>';
+        return;
+      }
+      list.innerHTML = data.orgs.map(org => `
+        <div style="display:flex; align-items:center; justify-content:space-between;
+                    padding:0.6rem 0; border-bottom:1px solid #f0f0f0;">
+          <div>
+            <span style="font-size:0.95rem; font-weight:${org.is_current ? '700' : '400'}; color:#1a1a1a;">${org.org_name}</span>
+            <span style="margin-left:0.5rem; font-size:0.78rem; color:#888; text-transform:uppercase;">${org.role}</span>
+            ${org.is_current ? '<span style="margin-left:0.5rem; font-size:0.75rem; background:#4F2185; color:white; border-radius:4px; padding:1px 6px;">Active</span>' : ''}
+          </div>
+          ${!org.is_current ? `<button onclick="switchGroup(${org.org_id})"
+            style="padding:0.35rem 0.75rem; font-size:0.82rem; background:#f5f5f5; border:1px solid #ccc;
+                   border-radius:6px; cursor:pointer; color:#333;">Switch</button>` : ''}
+        </div>
+      `).join('');
+    })
+    .catch(() => {
+      list.innerHTML = '<p style="color:#c0392b; font-size:0.9rem;">Could not load groups.</p>';
+    });
+}
+
+function switchGroup(orgId) {
+  fetch(`${API_BASE_URL}/api/select_org.php`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ org_id: orgId })
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        // Update currentUser and reload dashboard
+        currentUser = { ...currentUser, ...data.golfer, org_name: data.org_name, role: data.role };
+        returnToDashboard();
+        loadUserDashboard(currentUser);
+      } else {
+        alert(data.error || 'Could not switch group.');
+      }
+    })
+    .catch(() => alert('Connection error. Please try again.'));
+}
+
+function initJoinGroupForm() {
+  const codeInput      = document.getElementById('join-group-code');
+  const joinBtn        = document.getElementById('join-group-btn');
+  const preview        = document.getElementById('join-group-preview');
+  const message        = document.getElementById('join-group-message');
+  const confirmBtn     = document.getElementById('join-group-confirm-btn');
+  if (!codeInput || !joinBtn) return;
+
+  // Reset state
+  preview.style.display    = 'none';
+  message.style.display    = 'none';
+  confirmBtn.style.display = 'none';
+  codeInput.value          = '';
+
+  let pendingCode = null;
+
+  joinBtn.addEventListener('click', () => {
+    const code = codeInput.value.trim().toUpperCase();
+    if (!code) return;
+    preview.style.display    = 'none';
+    message.style.display    = 'none';
+    confirmBtn.style.display = 'none';
+    joinBtn.disabled         = true;
+    joinBtn.textContent      = '…';
+
+    fetch(`${API_BASE_URL}/api/join_existing.php?code=${encodeURIComponent(code)}`, { credentials: 'include' })
+      .then(r => r.json())
+      .then(data => {
+        joinBtn.disabled    = false;
+        joinBtn.textContent = 'Join';
+        if (data.error) {
+          message.textContent   = data.error;
+          message.style.color   = '#c0392b';
+          message.style.display = 'block';
+          return;
+        }
+        if (data.already_member) {
+          message.textContent   = `You're already a member of ${data.org_name}.`;
+          message.style.color   = '#888';
+          message.style.display = 'block';
+          return;
+        }
+        pendingCode            = code;
+        preview.textContent    = `✓ Found group: ${data.org_name}`;
+        preview.style.display  = 'block';
+        confirmBtn.style.display = 'block';
+      })
+      .catch(() => {
+        joinBtn.disabled    = false;
+        joinBtn.textContent = 'Join';
+        message.textContent   = 'Connection error. Please try again.';
+        message.style.color   = '#c0392b';
+        message.style.display = 'block';
+      });
+  });
+
+  confirmBtn.addEventListener('click', () => {
+    if (!pendingCode) return;
+    confirmBtn.disabled    = true;
+    confirmBtn.textContent = 'Joining…';
+
+    fetch(`${API_BASE_URL}/api/join_existing.php`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: pendingCode })
+    })
+      .then(r => r.json())
+      .then(data => {
+        confirmBtn.disabled    = false;
+        confirmBtn.textContent = 'Confirm & Join';
+        if (data.success) {
+          message.textContent      = `✓ Joined ${data.org_name}! Reload the page to switch to your new group.`;
+          message.style.color      = '#2e7d32';
+          message.style.display    = 'block';
+          preview.style.display    = 'none';
+          confirmBtn.style.display = 'none';
+          codeInput.value          = '';
+          pendingCode              = null;
+          loadMyGroups(); // refresh the list
+        } else {
+          message.textContent   = data.error || 'Could not join group.';
+          message.style.color   = '#c0392b';
+          message.style.display = 'block';
+        }
+      })
+      .catch(() => {
+        confirmBtn.disabled    = false;
+        confirmBtn.textContent = 'Confirm & Join';
+        message.textContent   = 'Connection error. Please try again.';
+        message.style.color   = '#c0392b';
+        message.style.display = 'block';
+      });
+  });
 }
 
 function showQuickRoundTypeSelector() {

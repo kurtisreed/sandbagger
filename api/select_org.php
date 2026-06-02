@@ -13,12 +13,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-if (empty($_SESSION['pending_user_id'])) {
-    http_response_code(401);
-    echo json_encode(['error' => 'No pending login session']);
-    exit;
-}
-
 $data  = json_decode(file_get_contents('php://input'), true);
 $orgId = (int) ($data['org_id'] ?? 0);
 
@@ -28,7 +22,18 @@ if (!$orgId) {
     exit;
 }
 
-$userId = (int) $_SESSION['pending_user_id'];
+// Support two modes:
+//   1. Post-login pending session (pending_user_id set, user_id not yet set)
+//   2. Fully-logged-in user switching active group (user_id already in session)
+if (!empty($_SESSION['pending_user_id'])) {
+    $userId = (int) $_SESSION['pending_user_id'];
+} elseif (!empty($_SESSION['user_id'])) {
+    $userId = (int) $_SESSION['user_id'];
+} else {
+    http_response_code(401);
+    echo json_encode(['error' => 'Not logged in']);
+    exit;
+}
 
 // Verify the user actually belongs to this org
 $stmt = $conn->prepare("
