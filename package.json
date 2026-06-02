@@ -11,8 +11,8 @@
     "copy:admin": "cp admin.php tournament-assign.html www/ 2>/dev/null || true && cp -r js css www/",
     "build:user": "npm run clean && npm run copy:core && npm run copy:php && npm run copy:dirs",
     "build": "npm run build:user && npm run copy:admin",
-    "sync:user": "npm run build:user && npx cap sync",
-    "sync": "npm run build && npx cap sync",
+    "sync:user": "npm run build:user && LANG=en_US.UTF-8 npx cap sync",
+    "sync": "npm run build && LANG=en_US.UTF-8 npx cap sync",
     "open:android": "npx cap open android",
     "open:ios": "npx cap open ios",
     "cap": "npx cap"
