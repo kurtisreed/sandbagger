@@ -74,6 +74,15 @@ body::before {
   margin-left: 0.25rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  transition: opacity 0.15s ease;
+}
+
+#user-header-org.switchable {
+  cursor: pointer;
+}
+
+#user-header-org.switchable:hover {
+  opacity: 1;
 }
 
 /* Hamburger Menu */

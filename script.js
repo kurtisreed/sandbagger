@@ -6590,7 +6590,22 @@ function loadUserDashboard(golfer) {
   userHeaderBar.style.display = 'block';
   document.getElementById('user-header-name').textContent = `${golfer.first_name} ${golfer.last_name}`;
   const orgEl = document.getElementById('user-header-org');
-  if (orgEl) orgEl.textContent = golfer.org_name || '';
+  if (orgEl) {
+    orgEl.textContent = golfer.org_name || '';
+    // Wire up switch-group modal on the org name — check if user has multiple orgs
+    orgEl.classList.remove('switchable');
+    orgEl.onclick = null;
+    fetch(`${API_BASE_URL}/api/my_orgs.php`, { credentials: 'include' })
+      .then(r => r.json())
+      .then(data => {
+        if (data.orgs && data.orgs.length > 1) {
+          orgEl.classList.add('switchable');
+          orgEl.title = 'Switch group';
+          orgEl.onclick = (e) => { e.stopPropagation(); openSwitchGroupModal(data.orgs); };
+        }
+      })
+      .catch(() => {});
+  }
 
   // Show +New Tournament button for admins only
   const newTournamentBtn = document.getElementById('create-tournament-btn');
@@ -8881,6 +8896,38 @@ function loadMyGroups() {
     .catch(() => {
       list.innerHTML = '<p style="color:#c0392b; font-size:0.9rem;">Could not load groups.</p>';
     });
+}
+
+function openSwitchGroupModal(orgs) {
+  const modal = document.getElementById('switch-group-modal');
+  const list  = document.getElementById('switch-group-list');
+  const closeBtn = document.getElementById('close-switch-group-modal');
+
+  list.innerHTML = orgs.map(org => {
+    if (org.is_current) {
+      return `
+        <div style="display:flex; align-items:center; justify-content:space-between;
+                    padding:0.75rem 0; border-bottom:1px solid #f0f0f0;">
+          <div>
+            <span style="font-size:1rem; font-weight:700; color:#1a1a1a;">${org.org_name}</span>
+            <span style="margin-left:0.5rem; font-size:0.75rem; background:#4F2185; color:white;
+                         border-radius:4px; padding:1px 6px;">Active</span>
+          </div>
+        </div>`;
+    }
+    return `
+      <div onclick="switchGroup(${org.org_id}); document.getElementById('switch-group-modal').style.display='none';"
+           style="display:flex; align-items:center; justify-content:space-between;
+                  padding:0.75rem 0; border-bottom:1px solid #f0f0f0; cursor:pointer;">
+        <span style="font-size:1rem; color:#4F2185; font-weight:500;">${org.org_name}</span>
+        <span style="font-size:0.8rem; color:#888;">Switch →</span>
+      </div>`;
+  }).join('');
+
+  modal.style.display = 'flex';
+
+  closeBtn.onclick = () => { modal.style.display = 'none'; };
+  modal.onclick    = (e) => { if (e.target === modal) modal.style.display = 'none'; };
 }
 
 function switchGroup(orgId) {

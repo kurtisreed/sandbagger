@@ -523,6 +523,21 @@
     <div id="score-entry-content" style="padding-bottom: 2rem;"></div>
   </main>
 </div>  
+  <!-- Switch Group Modal -->
+  <div id="switch-group-modal" style="display:none; position:fixed; inset:0; z-index:1000;
+       background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:14px; padding:1.5rem; width:88%; max-width:380px;
+                box-shadow:0 8px 32px rgba(0,0,0,0.18); position:relative;">
+      <button id="close-switch-group-modal" style="position:absolute; top:0.75rem; right:1rem;
+              background:none; border:none; font-size:1.5rem; cursor:pointer; color:#888; line-height:1;">&#x2715;</button>
+      <h3 style="margin:0 0 0.25rem; font-size:1.1rem; color:#1a1a1a;">Switch Group</h3>
+      <p style="margin:0 0 1.25rem; font-size:0.85rem; color:#888;">Select a group to switch to</p>
+      <div id="switch-group-list">
+        <p style="color:#888; font-size:0.9rem;">Loading…</p>
+      </div>
+    </div>
+  </div>
+
   <!-- Edit Profile Modal -->
   <div id="edit-profile-modal" style="display:none; position:fixed; inset:0; z-index:1000;
        background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
