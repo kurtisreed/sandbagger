@@ -8866,14 +8866,15 @@ function loadMyGroups() {
       list.innerHTML = data.orgs.map(org => `
         <div style="display:flex; align-items:center; justify-content:space-between;
                     padding:0.6rem 0; border-bottom:1px solid #f0f0f0;">
-          <div>
-            <span style="font-size:0.95rem; font-weight:${org.is_current ? '700' : '400'}; color:#1a1a1a;">${org.org_name}</span>
+          <div style="flex:1;">
+            ${org.is_current
+              ? `<span style="font-size:0.95rem; font-weight:700; color:#1a1a1a;">${org.org_name}</span>`
+              : `<span onclick="switchGroup(${org.org_id})" style="font-size:0.95rem; font-weight:500;
+                   color:#4F2185; cursor:pointer; text-decoration:underline;">${org.org_name}</span>`
+            }
             <span style="margin-left:0.5rem; font-size:0.78rem; color:#888; text-transform:uppercase;">${org.role}</span>
-            ${org.is_current ? '<span style="margin-left:0.5rem; font-size:0.75rem; background:#4F2185; color:white; border-radius:4px; padding:1px 6px;">Active</span>' : ''}
+            ${org.is_current ? '<span style="margin-left:0.5rem; font-size:0.75rem; background:#4F2185; color:white; border-radius:4px; padding:1px 6px;">Active</span>' : '<span style="margin-left:0.5rem; font-size:0.75rem; color:#4F2185;">(tap to switch)</span>'}
           </div>
-          ${!org.is_current ? `<button onclick="switchGroup(${org.org_id})"
-            style="padding:0.35rem 0.75rem; font-size:0.82rem; background:#f5f5f5; border:1px solid #ccc;
-                   border-radius:6px; cursor:pointer; color:#333;">Switch</button>` : ''}
         </div>
       `).join('');
     })
@@ -8892,8 +8893,10 @@ function switchGroup(orgId) {
     .then(r => r.json())
     .then(data => {
       if (data.success) {
-        // Update currentUser and reload dashboard
-        currentUser = { ...currentUser, ...data.golfer, org_name: data.org_name, role: data.role };
+        // Merge new group info into currentUser and reload everything
+        currentUser = { ...currentUser, ...(data.golfer || {}), org_name: data.org_name, role: data.role };
+        sessionStorage.setItem('current_user', JSON.stringify(currentUser));
+        localStorage.setItem('sb_golfer', JSON.stringify(currentUser));
         returnToDashboard();
         loadUserDashboard(currentUser);
       } else {
