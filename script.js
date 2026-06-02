@@ -8801,6 +8801,28 @@ function loadEditUserPage() {
   profileMsg.style.display  = 'none';
   passwordMsg.style.display = 'none';
 
+  // Change Password modal wiring
+  const modal         = document.getElementById('change-password-modal');
+  const openModalBtn  = document.getElementById('open-change-password-btn');
+  const closeModalBtn = document.getElementById('close-change-password-modal');
+
+  function openChangePasswordModal() {
+    ['current-password', 'new-password', 'confirm-new-password'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    passwordMsg.style.display = 'none';
+    modal.style.display = 'flex';
+  }
+
+  function closeChangePasswordModal() {
+    modal.style.display = 'none';
+  }
+
+  if (openModalBtn) openModalBtn.addEventListener('click', openChangePasswordModal);
+  if (closeModalBtn) closeModalBtn.addEventListener('click', closeChangePasswordModal);
+  // Close on backdrop click
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeChangePasswordModal(); });
+
   // Load My Groups
   loadMyGroups();
 
@@ -9959,6 +9981,11 @@ document.addEventListener('DOMContentLoaded', () => {
           msgEl.textContent   = '✓ Password changed.';
           msgEl.style.color   = '#2e7d32';
           msgEl.style.display = 'block';
+          // Close modal after a brief moment so user sees the success message
+          setTimeout(() => {
+            const modal = document.getElementById('change-password-modal');
+            if (modal) modal.style.display = 'none';
+          }, 1200);
         } else {
           msgEl.textContent   = data.error || 'Could not change password.';
           msgEl.style.color   = '#c00';

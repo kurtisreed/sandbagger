@@ -431,26 +431,10 @@
         <input type="number" id="edit-handicap" step="0.1" min="0" max="54" style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
       </div>
       <p id="edit-user-message" style="display:none; font-size:0.875rem; text-align:center; margin:0 0 0.75rem;"></p>
-      <button id="save-profile-btn" style="width:100%; padding:0.65rem; background:#4F2185; color:white; border:none; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Save Profile</button>
-    </div>
-
-    <!-- Change password card -->
-    <div style="background:#fff; border:1px solid #e0e0e0; border-radius:12px; padding:1.25rem; margin-bottom:1rem; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-      <h3 style="margin:0 0 1rem; font-size:1.1rem; color:#1a1a1a;">Change Password</h3>
-      <div style="margin-bottom:0.75rem;">
-        <label for="current-password" style="display:block; font-size:0.85rem; color:#555; margin-bottom:0.25rem;">Current Password</label>
-        <input type="password" id="current-password" autocomplete="current-password" style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
+      <div style="display:flex; gap:0.75rem;">
+        <button id="save-profile-btn" style="flex:1; padding:0.65rem; background:#4F2185; color:white; border:none; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Save Profile</button>
+        <button id="open-change-password-btn" style="flex:1; padding:0.65rem; background:white; color:#4F2185; border:2px solid #4F2185; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Change Password</button>
       </div>
-      <div style="margin-bottom:0.75rem;">
-        <label for="new-password" style="display:block; font-size:0.85rem; color:#555; margin-bottom:0.25rem;">New Password</label>
-        <input type="password" id="new-password" autocomplete="new-password" style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
-      </div>
-      <div style="margin-bottom:1rem;">
-        <label for="confirm-new-password" style="display:block; font-size:0.85rem; color:#555; margin-bottom:0.25rem;">Confirm New Password</label>
-        <input type="password" id="confirm-new-password" autocomplete="new-password" style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
-      </div>
-      <p id="change-password-message" style="display:none; font-size:0.875rem; text-align:center; margin:0 0 0.75rem;"></p>
-      <button id="save-password-btn" style="width:100%; padding:0.65rem; background:#4F2185; color:white; border:none; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Change Password</button>
     </div>
 
     <!-- My Groups card -->
@@ -540,6 +524,35 @@
     <div id="score-entry-content" style="padding-bottom: 2rem;"></div>
   </main>
 </div>  
+  <!-- Change Password Modal -->
+  <div id="change-password-modal" style="display:none; position:fixed; inset:0; z-index:1000;
+       background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:14px; padding:1.5rem; width:90%; max-width:420px;
+                box-shadow:0 8px 32px rgba(0,0,0,0.18); position:relative;">
+      <button id="close-change-password-modal" style="position:absolute; top:0.75rem; right:1rem;
+              background:none; border:none; font-size:1.5rem; cursor:pointer; color:#888; line-height:1;">&#x2715;</button>
+      <h3 style="margin:0 0 1.25rem; font-size:1.1rem; color:#1a1a1a;">Change Password</h3>
+      <div style="margin-bottom:0.75rem;">
+        <label for="current-password" style="display:block; font-size:0.85rem; color:#555; margin-bottom:0.25rem;">Current Password</label>
+        <input type="password" id="current-password" autocomplete="current-password"
+          style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
+      </div>
+      <div style="margin-bottom:0.75rem;">
+        <label for="new-password" style="display:block; font-size:0.85rem; color:#555; margin-bottom:0.25rem;">New Password</label>
+        <input type="password" id="new-password" autocomplete="new-password"
+          style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
+      </div>
+      <div style="margin-bottom:1rem;">
+        <label for="confirm-new-password" style="display:block; font-size:0.85rem; color:#555; margin-bottom:0.25rem;">Confirm New Password</label>
+        <input type="password" id="confirm-new-password" autocomplete="new-password"
+          style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
+      </div>
+      <p id="change-password-message" style="display:none; font-size:0.875rem; text-align:center; margin:0 0 0.75rem;"></p>
+      <button id="save-password-btn" style="width:100%; padding:0.65rem; background:#4F2185; color:white;
+              border:none; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Change Password</button>
+    </div>
+  </div>
+
   <script src="offline-sync.js"></script>
   <script src="script.js"></script>
 </body>
