@@ -103,16 +103,16 @@ body::before {
   left: 0;
   right: 0;
   height: env(safe-area-inset-top);
-  background-color: var(--color-brand-primary);
+  background: linear-gradient(135deg, #3d1a6e 0%, var(--color-brand-primary) 100%);
   z-index: 9999;
 }
 
 /* ── Universal User Header Bar ────────────────────────────────────────────── */
 #user-header-bar {
-  background: var(--color-brand-primary);
+  background: linear-gradient(135deg, #3d1a6e 0%, var(--color-brand-primary) 100%);
   color: white;
   padding: var(--space-2) var(--space-4);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
   position: fixed;
   top: env(safe-area-inset-top);
   left: 0;
@@ -243,7 +243,7 @@ body::before {
 }
 
 header {
-  background: var(--color-brand-primary);
+  background: linear-gradient(135deg, #3d1a6e 0%, var(--color-brand-primary) 100%);
   padding: 0;
 }
 
