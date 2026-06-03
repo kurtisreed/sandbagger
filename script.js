@@ -8262,14 +8262,48 @@ async function showEditGroupPage() {
     <!-- Invite members card -->
     <div style="background:#fff; border:1px solid #e0e0e0; border-radius:12px; padding:1.25rem; margin-bottom:1rem; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
       <h3 style="margin:0 0 0.5rem; font-size:1.1rem; color:#1a1a1a;">Invite Members</h3>
-      <p style="margin:0 0 1rem; font-size:0.9rem; color:#666;">Share this link with anyone you want to join your group. Works for multiple people and expires in 7 days.</p>
-      <div id="invite-link-loading" style="color:#aaa; font-size:0.9rem; text-align:center; padding:0.5rem 0;">Generating link…</div>
+      <p style="margin:0 0 1rem; font-size:0.9rem; color:#666;">Share the code or link below — anyone with it can join your group.</p>
+      <div id="invite-link-loading" style="color:#aaa; font-size:0.9rem; text-align:center; padding:0.5rem 0;">Loading…</div>
       <div id="invite-link-block" style="display:none;">
+
+        <!-- Prominent code display -->
+        <div style="background:#f4f0fa; border:2px solid #4F2185; border-radius:10px; padding:1rem;
+                    text-align:center; margin-bottom:1rem;">
+          <p style="margin:0 0 0.25rem; font-size:0.75rem; font-weight:700; color:#4F2185;
+                    text-transform:uppercase; letter-spacing:0.08em;">Invite Code</p>
+          <p id="group-invite-code-display" style="margin:0; font-size:2rem; font-weight:800;
+              color:#4F2185; letter-spacing:0.18em; font-family:monospace;"></p>
+        </div>
+
+        <!-- Copy buttons -->
+        <div style="display:flex; gap:0.6rem; margin-bottom:1rem;">
+          <button id="group-copy-code-btn" style="flex:1; padding:0.65rem; background:#4F2185; color:white;
+              border:none; border-radius:8px; font-size:0.95rem; font-weight:bold; cursor:pointer;">Copy Code</button>
+          <button id="group-copy-link-btn" style="flex:1; padding:0.65rem; background:white; color:#4F2185;
+              border:2px solid #4F2185; border-radius:8px; font-size:0.95rem; font-weight:bold; cursor:pointer;">Copy Link</button>
+        </div>
+
+        <!-- Full link (smaller, read-only) -->
         <input type="text" id="group-invite-link-display" readonly
-          style="width:100%; padding:0.6rem; border:1px solid #ccc; border-radius:6px; font-size:0.8rem; box-sizing:border-box; margin-bottom:0.5rem; background:#f5f5f5;">
-        <p id="group-invite-expiry" style="margin:0 0 0.75rem; font-size:0.8rem; color:#888; text-align:center;"></p>
-        <button id="group-copy-invite-btn" style="width:100%; padding:0.65rem; background:#4F2185; color:white; border:none; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer; margin-bottom:0.5rem;">Copy Invite Link</button>
-        <button id="group-regenerate-invite-btn" style="width:100%; padding:0.6rem; background:#fff; color:#4F2185; border:1px solid #4F2185; border-radius:8px; font-size:0.9rem; cursor:pointer;">Generate New Code</button>
+          style="width:100%; padding:0.55rem; border:1px solid #ddd; border-radius:6px; font-size:0.78rem;
+                 box-sizing:border-box; margin-bottom:1rem; background:#f9f9f9; color:#666;">
+
+        <!-- Regenerate -->
+        <button id="group-regenerate-invite-btn" style="width:100%; padding:0.6rem; background:#fff;
+            color:#c0392b; border:1px solid #c0392b; border-radius:8px; font-size:0.88rem; cursor:pointer;">
+          Generate New Code (deprecates current)
+        </button>
+        <div id="group-regen-confirm" style="display:none; margin-top:0.75rem; background:#fff3f3;
+             border:1px solid #f5c6c6; border-radius:8px; padding:0.85rem;">
+          <p style="margin:0 0 0.6rem; font-size:0.9rem; font-weight:600; color:#c0392b;">Are you sure?</p>
+          <p style="margin:0 0 0.75rem; font-size:0.85rem; color:#555;">The current code will stop working immediately. Anyone who hasn't joined yet will need the new code.</p>
+          <div style="display:flex; gap:0.6rem;">
+            <button id="group-regen-yes-btn" style="flex:1; padding:0.6rem; background:#c0392b; color:white;
+                border:none; border-radius:6px; font-size:0.9rem; font-weight:bold; cursor:pointer;">Yes, Generate New</button>
+            <button id="group-regen-cancel-btn" style="flex:1; padding:0.6rem; background:#eee; color:#333;
+                border:none; border-radius:6px; font-size:0.9rem; cursor:pointer;">Cancel</button>
+          </div>
+        </div>
       </div>
     </div>
   `;
@@ -8328,24 +8362,56 @@ async function showEditGroupPage() {
     loadEditGolfersPage();
   });
 
-  // Copy invite
-  document.getElementById('group-copy-invite-btn').addEventListener('click', () => {
-    const input = document.getElementById('group-invite-link-display');
-    navigator.clipboard.writeText(input.value).then(() => {
-      const btn = document.getElementById('group-copy-invite-btn');
+  // Copy code
+  document.getElementById('group-copy-code-btn').addEventListener('click', () => {
+    const code = document.getElementById('group-invite-code-display').textContent.trim();
+    const btn  = document.getElementById('group-copy-code-btn');
+    navigator.clipboard.writeText(code).then(() => {
       btn.textContent = 'Copied!';
-      setTimeout(() => { btn.textContent = 'Copy Invite Link'; }, 2000);
-    }).catch(() => { input.select(); document.execCommand('copy'); });
+      setTimeout(() => { btn.textContent = 'Copy Code'; }, 2000);
+    }).catch(() => {
+      const ta = document.createElement('textarea');
+      ta.value = code; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = 'Copy Code'; }, 2000);
+    });
   });
 
-  // Regenerate
-  document.getElementById('group-regenerate-invite-btn').addEventListener('click', async () => {
-    const btn = document.getElementById('group-regenerate-invite-btn');
+  // Copy link
+  document.getElementById('group-copy-link-btn').addEventListener('click', () => {
+    const link = document.getElementById('group-invite-link-display').value;
+    const btn  = document.getElementById('group-copy-link-btn');
+    navigator.clipboard.writeText(link).then(() => {
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = 'Copy Link'; }, 2000);
+    }).catch(() => {
+      const input = document.getElementById('group-invite-link-display');
+      input.select(); document.execCommand('copy');
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = 'Copy Link'; }, 2000);
+    });
+  });
+
+  // Regenerate — show confirmation panel first
+  document.getElementById('group-regenerate-invite-btn').addEventListener('click', () => {
+    document.getElementById('group-regen-confirm').style.display = 'block';
+    document.getElementById('group-regenerate-invite-btn').style.display = 'none';
+  });
+
+  document.getElementById('group-regen-cancel-btn').addEventListener('click', () => {
+    document.getElementById('group-regen-confirm').style.display = 'none';
+    document.getElementById('group-regenerate-invite-btn').style.display = 'block';
+  });
+
+  document.getElementById('group-regen-yes-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('group-regen-yes-btn');
     btn.disabled = true;
     btn.textContent = 'Generating…';
     await _loadGroupInviteLink(true);
+    document.getElementById('group-regen-confirm').style.display = 'none';
+    document.getElementById('group-regenerate-invite-btn').style.display = 'block';
     btn.disabled = false;
-    btn.textContent = 'Generate New Code';
+    btn.textContent = 'Yes, Generate New';
   });
 
   // Member name click → member detail page
@@ -8366,29 +8432,30 @@ async function showEditGroupPage() {
 }
 
 async function _loadGroupInviteLink(regenerate = false) {
-  const loadingEl = document.getElementById('invite-link-loading');
-  const blockEl   = document.getElementById('invite-link-block');
-  const linkInput = document.getElementById('group-invite-link-display');
-  const expiryEl  = document.getElementById('group-invite-expiry');
+  const loadingEl  = document.getElementById('invite-link-loading');
+  const blockEl    = document.getElementById('invite-link-block');
+  const codeEl     = document.getElementById('group-invite-code-display');
+  const linkInput  = document.getElementById('group-invite-link-display');
   if (loadingEl) loadingEl.style.display = 'block';
-  if (blockEl)   blockEl.style.display = 'none';
+  if (blockEl)   blockEl.style.display   = 'none';
 
   const url = `${API_BASE_URL}/api/create_invite.php${regenerate ? '?regenerate=1' : ''}`;
   try {
     const res  = await fetch(url, { method: 'POST', credentials: 'include' });
     const data = await res.json();
     if (data.success) {
-      const link = `${window.location.origin}${window.location.pathname}?join=${data.code}`;
-      if (linkInput) linkInput.value = link;
-      if (expiryEl && data.expires_at) {
-        const days = Math.ceil((new Date(data.expires_at) - Date.now()) / 86400000);
-        expiryEl.textContent = `Expires in ${days} day${days !== 1 ? 's' : ''}`;
-      }
+      const origin = window.location.origin;
+      const path   = window.location.pathname.replace(/\/$/, '');
+      const link   = `${origin}${path}?join=${data.code}`;
+      if (codeEl)    codeEl.textContent = data.code;
+      if (linkInput) linkInput.value    = link;
       if (loadingEl) loadingEl.style.display = 'none';
-      if (blockEl)   blockEl.style.display = 'block';
+      if (blockEl)   blockEl.style.display   = 'block';
+    } else {
+      if (loadingEl) loadingEl.textContent = 'Failed to load invite code.';
     }
   } catch (e) {
-    if (loadingEl) loadingEl.textContent = 'Failed to load invite link.';
+    if (loadingEl) loadingEl.textContent = 'Failed to load invite code.';
   }
 }
 
