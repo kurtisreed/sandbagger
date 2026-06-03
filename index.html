@@ -296,6 +296,27 @@
   <button id="nt-step3-cancel-btn" type="button" style="margin-top: 0.5rem; width: 100%; padding: 0.75rem; background: #ccc; color: #333; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer;">Cancel</button>
 </div>
 
+<!-- Guys Trip wizard — Step 2: Choose Players -->
+<div class="container" id="create-tournament-gt-step2" style="display: none;">
+  <button id="nt-gt-back-btn" class="history-back-btn" style="margin-bottom: 1rem;">← Back</button>
+  <h2 style="margin: 0 0 0.25rem 0; color: #333;">Choose Players</h2>
+  <p id="nt-gt-subtitle" style="margin: 0 0 0.5rem; font-size: 0.85rem; color: #888;"></p>
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+    <span id="nt-gt-selected-count" style="font-size:0.9rem; color:#555;"></span>
+    <button id="nt-gt-select-all-btn" type="button"
+      style="padding:0.4rem 0.9rem; background:white; color:#4F2185; border:1px solid #4F2185;
+             border-radius:6px; font-size:0.85rem; font-weight:600; cursor:pointer;">Select All</button>
+  </div>
+  <div id="nt-gt-players-list"></div>
+  <p id="nt-gt-error" style="display:none; color:red; margin:0.75rem 0;"></p>
+  <button id="nt-gt-create-btn" type="button"
+    style="margin-top:1rem; width:100%; padding:0.75rem; background:#28a745; color:white;
+           border:none; border-radius:6px; font-size:1rem; font-weight:bold; cursor:pointer;">Create Tournament</button>
+  <button id="nt-gt-cancel-btn" type="button"
+    style="margin-top:0.5rem; width:100%; padding:0.75rem; background:#ccc; color:#333;
+           border:none; border-radius:6px; font-size:1rem; cursor:pointer;">Cancel</button>
+</div>
+
 <div class="container" id="best-ball-setup" style="display: none;">
   <div id="best-ball-setup-content"></div>
 </div>

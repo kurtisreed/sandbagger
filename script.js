@@ -8046,7 +8046,7 @@ function loadGuysTripTournamentRound(roundId, tournamentId, roundName = '', form
 // ── New Tournament — shared cancel ───────────────────────────────────────────
 function cancelNewTournament() {
   window._newTournamentData = null;
-  ['create-tournament-container', 'create-tournament-step2', 'create-tournament-step3']
+  ['create-tournament-container', 'create-tournament-step2', 'create-tournament-step3', 'create-tournament-gt-step2']
     .forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
   document.getElementById('user-dashboard').style.display = 'block';
 }
@@ -8183,6 +8183,163 @@ async function showNewTournamentStep3() {
   }
 
   renderStep3();
+}
+
+// ── New Tournament — Guys Trip Step 2: Choose Players ────────────────────────
+async function showGuysTripStep2() {
+  document.getElementById('create-tournament-container').style.display = 'none';
+  const step = document.getElementById('create-tournament-gt-step2');
+  step.style.display = 'block';
+
+  const subtitle = document.getElementById('nt-gt-subtitle');
+  if (subtitle) subtitle.textContent = window._newTournamentData.formatName || '';
+
+  const listEl     = document.getElementById('nt-gt-players-list');
+  const countEl    = document.getElementById('nt-gt-selected-count');
+  const errorEl    = document.getElementById('nt-gt-error');
+  errorEl.style.display = 'none';
+
+  if (!window._newTournamentData.selectedGolfers) {
+    window._newTournamentData.selectedGolfers = new Set();
+  }
+
+  listEl.innerHTML = '<p style="color:#888; text-align:center;">Loading players…</p>';
+
+  let golfers = [];
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/golfers.php`, { credentials: 'include' });
+    golfers = await res.json();
+    if (!Array.isArray(golfers)) golfers = [];
+  } catch (e) {
+    listEl.innerHTML = '<p style="color:red;">Failed to load players. Please go back and try again.</p>';
+    return;
+  }
+
+  function updateCount() {
+    const n = window._newTournamentData.selectedGolfers.size;
+    countEl.textContent = `${n} player${n !== 1 ? 's' : ''} selected`;
+  }
+
+  function renderPlayers() {
+    const selected = window._newTournamentData.selectedGolfers;
+    listEl.innerHTML = golfers.map(g => {
+      const checked = selected.has(g.golfer_id);
+      const hcp = parseFloat(g.handicap) % 1 === 0 ? parseInt(g.handicap) : parseFloat(g.handicap).toFixed(1);
+      return `
+        <label data-golfer-id="${g.golfer_id}"
+          style="display:flex; align-items:center; gap:0.75rem; padding:0.7rem 0.5rem;
+                 border-bottom:1px solid #f0f0f0; cursor:pointer;
+                 background:${checked ? '#f4f0fa' : 'transparent'}; border-radius:6px;">
+          <input type="checkbox" data-golfer-id="${g.golfer_id}" ${checked ? 'checked' : ''}
+            style="width:1.2rem; height:1.2rem; accent-color:#4F2185; cursor:pointer; flex-shrink:0;">
+          <span style="flex:1; font-size:0.95rem; font-weight:500; color:#1a1a1a;">
+            ${g.first_name} ${g.last_name}
+          </span>
+          <span style="font-size:0.82rem; color:#888;">HCP ${hcp}</span>
+        </label>`;
+    }).join('');
+
+    listEl.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const gId = parseInt(cb.dataset.golferId);
+        if (cb.checked) {
+          window._newTournamentData.selectedGolfers.add(gId);
+        } else {
+          window._newTournamentData.selectedGolfers.delete(gId);
+        }
+        updateCount();
+        // Update row background without full re-render
+        const lbl = listEl.querySelector(`label[data-golfer-id="${gId}"]`);
+        if (lbl) lbl.style.background = cb.checked ? '#f4f0fa' : 'transparent';
+      });
+    });
+
+    updateCount();
+  }
+
+  renderPlayers();
+
+  // Select All toggle
+  const selectAllBtn = document.getElementById('nt-gt-select-all-btn');
+  selectAllBtn.onclick = () => {
+    const allSelected = window._newTournamentData.selectedGolfers.size === golfers.length;
+    if (allSelected) {
+      window._newTournamentData.selectedGolfers.clear();
+      selectAllBtn.textContent = 'Select All';
+    } else {
+      golfers.forEach(g => window._newTournamentData.selectedGolfers.add(g.golfer_id));
+      selectAllBtn.textContent = 'Deselect All';
+    }
+    renderPlayers();
+  };
+
+  // Back
+  document.getElementById('nt-gt-back-btn').onclick = () => {
+    step.style.display = 'none';
+    document.getElementById('create-tournament-container').style.display = 'block';
+  };
+
+  // Cancel
+  document.getElementById('nt-gt-cancel-btn').onclick = cancelNewTournament;
+
+  // Create Tournament
+  const createBtn = document.getElementById('nt-gt-create-btn');
+  createBtn.onclick = async () => {
+    const selected = window._newTournamentData.selectedGolfers;
+    if (selected.size === 0) {
+      errorEl.textContent = 'Please select at least one player.';
+      errorEl.style.display = 'block';
+      return;
+    }
+    errorEl.style.display = 'none';
+    createBtn.disabled = true;
+    createBtn.textContent = 'Creating…';
+
+    try {
+      const d = window._newTournamentData;
+
+      // 1. Create the tournament
+      const tRes  = await fetch(`${API_BASE_URL}/api/tournaments.php`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name:         d.name,
+          start_date:   d.startDate,
+          end_date:     d.endDate,
+          handicap_pct: parseFloat(d.handicap),
+          format_id:    parseInt(d.formatId),
+        }),
+      });
+      const tData = await tRes.json();
+      if (!tData.inserted_id) throw new Error('Tournament creation failed');
+
+      // 2. Save golfer list (no teams)
+      const gRes = await fetch(`${API_BASE_URL}/api/save_guys_trip_golfers.php`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tournament_id: tData.inserted_id,
+          golfer_ids:    [...selected],
+        }),
+      });
+      const gData = await gRes.json();
+      if (!gData.success) throw new Error(gData.error || 'Failed to save players');
+
+      // Done
+      window._newTournamentData = null;
+      ['create-tournament-container', 'create-tournament-step2', 'create-tournament-step3', 'create-tournament-gt-step2']
+        .forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+      document.getElementById('user-dashboard').style.display = 'block';
+      loadUserTournaments(currentUser.golfer_id);
+
+    } catch (err) {
+      console.error('Tournament creation error:', err);
+      errorEl.textContent = 'Error creating tournament. Please try again.';
+      errorEl.style.display = 'block';
+      createBtn.disabled = false;
+      createBtn.textContent = 'Create Tournament';
+    }
+  };
 }
 
 // ── Edit Group page ───────────────────────────────────────────────────────────
@@ -8848,6 +9005,7 @@ function returnToDashboard() {
     'create-tournament-container',
     'create-tournament-step2',
     'create-tournament-step3',
+    'create-tournament-gt-step2',
   ];
   allPages.forEach(id => {
     const el = document.getElementById(id);
@@ -9971,8 +10129,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (fId === 3) {
       // Ryder Cup → Team Setup → Player Assignment
       showNewTournamentStep2();
+    } else if (fId === 4) {
+      // Guys Trip → Player Selection → Create
+      showGuysTripStep2();
     } else {
-      // Other formats (Guys Trip etc.) — wizard steps TBD
       errorEl.textContent = `Setup for "${formatName}" tournaments is coming soon.`;
       errorEl.style.display = 'block';
     }
