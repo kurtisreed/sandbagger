@@ -66,8 +66,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-$data = json_decode(file_get_contents('php://input'), true);
-$code = strtoupper(trim($data['code'] ?? ''));
+$data          = json_decode(file_get_contents('php://input'), true);
+$code          = strtoupper(trim($data['code'] ?? ''));
+$claimGolferId = isset($data['claim_golfer_id']) ? intval($data['claim_golfer_id']) : null;
 
 if (!$code) {
     http_response_code(400);
@@ -119,41 +120,98 @@ try {
     $stmt->execute();
     $stmt->close();
 
-    // Try to link to a pre-existing unlinked golfer with matching name
-    $stmt = $conn->prepare("
-        SELECT golfer_id FROM golfers
-        WHERE org_id = ? AND user_id IS NULL
-          AND LOWER(first_name) = LOWER(?) AND LOWER(last_name) = LOWER(?)
-        LIMIT 1
-    ");
-    $firstName = $_SESSION['name'] ? explode(' ', $_SESSION['name'])[0] : '';
-    $lastName  = $_SESSION['name'] ? implode(' ', array_slice(explode(' ', $_SESSION['name']), 1)) : '';
-    $stmt->bind_param('iss', $orgId, $firstName, $lastName);
-    $stmt->execute();
-    $result   = $stmt->get_result();
-    $existing = $result->fetch_assoc();
-    $stmt->close();
+    $nameParts = explode(' ', $_SESSION['name'] ?? '', 2);
+    $firstName = trim($nameParts[0] ?? '');
+    $lastName  = trim($nameParts[1] ?? '');
 
-    if ($existing) {
-        $golferId = (int) $existing['golfer_id'];
-        $stmt = $conn->prepare("UPDATE golfers SET user_id = ? WHERE golfer_id = ?");
-        $stmt->bind_param('ii', $userId, $golferId);
+    if ($claimGolferId !== null && $claimGolferId > 0) {
+        // Link to a specific golfer the user picked
+        $stmt = $conn->prepare("SELECT golfer_id FROM golfers WHERE golfer_id = ? AND org_id = ? AND user_id IS NULL");
+        $stmt->bind_param('ii', $claimGolferId, $orgId);
         $stmt->execute();
+        $claimed = $stmt->get_result()->fetch_assoc();
         $stmt->close();
+
+        if ($claimed) {
+            $stmt = $conn->prepare("UPDATE golfers SET user_id = ? WHERE golfer_id = ?");
+            $stmt->bind_param('ii', $userId, $claimGolferId);
+            $stmt->execute();
+            $stmt->close();
+        } else {
+            // Golfer no longer available — create new
+            $handicap = 0.0;
+            $stmt = $conn->prepare("INSERT INTO golfers (first_name, last_name, handicap, org_id, user_id, active) VALUES (?, ?, ?, ?, ?, 1)");
+            $stmt->bind_param('ssdii', $firstName, $lastName, $handicap, $orgId, $userId);
+            $stmt->execute();
+            $stmt->close();
+        }
+        $conn->commit();
+        echo json_encode(['success' => true, 'org_name' => $invite['org_name']]);
+
     } else {
-        // Create a new golfer record in this org
-        $handicap = 0.0;
+        // Auto-match by name
         $stmt = $conn->prepare("
-            INSERT INTO golfers (first_name, last_name, handicap, org_id, user_id, active)
-            VALUES (?, ?, ?, ?, ?, 1)
+            SELECT golfer_id FROM golfers
+            WHERE org_id = ? AND user_id IS NULL
+              AND LOWER(first_name) = LOWER(?) AND LOWER(last_name) = LOWER(?)
+            LIMIT 1
         ");
-        $stmt->bind_param('ssdii', $firstName, $lastName, $handicap, $orgId, $userId);
+        $stmt->bind_param('iss', $orgId, $firstName, $lastName);
         $stmt->execute();
+        $existing = $stmt->get_result()->fetch_assoc();
         $stmt->close();
-    }
 
-    $conn->commit();
-    echo json_encode(['success' => true, 'org_name' => $invite['org_name']]);
+        if ($existing) {
+            // Exact match — link
+            $stmt = $conn->prepare("UPDATE golfers SET user_id = ? WHERE golfer_id = ?");
+            $existingId = (int) $existing['golfer_id'];
+            $stmt->bind_param('ii', $userId, $existingId);
+            $stmt->execute();
+            $stmt->close();
+            $conn->commit();
+            echo json_encode(['success' => true, 'org_name' => $invite['org_name']]);
+        } elseif ($claimGolferId === null) {
+            // No match — check for unlinked golfers to claim
+            $stmt = $conn->prepare("
+                SELECT golfer_id, first_name, last_name, handicap
+                FROM golfers WHERE org_id = ? AND user_id IS NULL
+                ORDER BY last_name, first_name
+            ");
+            $stmt->bind_param('i', $orgId);
+            $stmt->execute();
+            $candidates = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+            $stmt->close();
+
+            if (!empty($candidates)) {
+                // Org joined successfully, but ask user to claim a profile
+                $conn->commit();
+                echo json_encode([
+                    'success'     => true,
+                    'org_name'    => $invite['org_name'],
+                    'needs_claim' => true,
+                    'candidates'  => $candidates,
+                ]);
+            } else {
+                // No candidates — create a new golfer
+                $handicap = 0.0;
+                $stmt = $conn->prepare("INSERT INTO golfers (first_name, last_name, handicap, org_id, user_id, active) VALUES (?, ?, ?, ?, ?, 1)");
+                $stmt->bind_param('ssdii', $firstName, $lastName, $handicap, $orgId, $userId);
+                $stmt->execute();
+                $stmt->close();
+                $conn->commit();
+                echo json_encode(['success' => true, 'org_name' => $invite['org_name']]);
+            }
+        } else {
+            // claim_golfer_id === 0: explicitly create new
+            $handicap = 0.0;
+            $stmt = $conn->prepare("INSERT INTO golfers (first_name, last_name, handicap, org_id, user_id, active) VALUES (?, ?, ?, ?, ?, 1)");
+            $stmt->bind_param('ssdii', $firstName, $lastName, $handicap, $orgId, $userId);
+            $stmt->execute();
+            $stmt->close();
+            $conn->commit();
+            echo json_encode(['success' => true, 'org_name' => $invite['org_name']]);
+        }
+    }
 } catch (Exception $e) {
     $conn->rollback();
     http_response_code(500);

@@ -9237,43 +9237,97 @@ function initJoinGroupForm() {
       });
   });
 
-  confirmBtn.addEventListener('click', () => {
-    if (!pendingCode) return;
+  async function doJoinExisting(code, claimGolferId = null) {
+    const body = { code };
+    if (claimGolferId !== null) body.claim_golfer_id = claimGolferId;
+
     confirmBtn.disabled    = true;
     confirmBtn.textContent = 'Joining…';
 
-    fetch(`${API_BASE_URL}/api/join_existing.php`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code: pendingCode })
-    })
-      .then(r => r.json())
-      .then(data => {
-        confirmBtn.disabled    = false;
-        confirmBtn.textContent = 'Confirm & Join';
-        if (data.success) {
-          message.textContent      = `✓ Joined ${data.org_name}! Reload the page to switch to your new group.`;
-          message.style.color      = '#2e7d32';
-          message.style.display    = 'block';
-          preview.style.display    = 'none';
-          confirmBtn.style.display = 'none';
-          codeInput.value          = '';
-          pendingCode              = null;
-          loadMyGroups(); // refresh the list
-        } else {
-          message.textContent   = data.error || 'Could not join group.';
-          message.style.color   = '#c0392b';
-          message.style.display = 'block';
-        }
-      })
-      .catch(() => {
-        confirmBtn.disabled    = false;
-        confirmBtn.textContent = 'Confirm & Join';
-        message.textContent   = 'Connection error. Please try again.';
+    try {
+      const res  = await fetch(`${API_BASE_URL}/api/join_existing.php`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      confirmBtn.disabled    = false;
+      confirmBtn.textContent = 'Confirm & Join';
+
+      if (!data.success) {
+        message.textContent   = data.error || 'Could not join group.';
         message.style.color   = '#c0392b';
         message.style.display = 'block';
-      });
+        return;
+      }
+
+      if (data.needs_claim) {
+        // Show inline claim UI below the confirm button
+        preview.style.display    = 'none';
+        confirmBtn.style.display = 'none';
+        message.style.display    = 'none';
+
+        const claimDiv = document.createElement('div');
+        claimDiv.id = 'inline-claim-panel';
+        claimDiv.style.cssText = 'margin-top:0.75rem; border-top:1px solid #eee; padding-top:0.75rem;';
+        claimDiv.innerHTML = `
+          <p style="margin:0 0 0.6rem; font-size:0.9rem; font-weight:600; color:#333;">Are you one of these golfers?</p>
+          <p style="margin:0 0 0.75rem; font-size:0.82rem; color:#666;">Your name wasn't found in the roster. Select your profile or create a new one.</p>
+          ${data.candidates.map(g => {
+            const hcp = parseFloat(g.handicap) % 1 === 0 ? parseInt(g.handicap) : parseFloat(g.handicap).toFixed(1);
+            return `<button class="inline-claim-btn" data-golfer-id="${g.golfer_id}"
+              style="display:flex; align-items:center; justify-content:space-between; width:100%;
+                     padding:0.65rem 0.9rem; margin-bottom:0.4rem; background:#f4f0fa;
+                     border:1px solid #c5a8f0; border-radius:8px; cursor:pointer; font-size:0.92rem;">
+              <span style="font-weight:600; color:#1a1a1a;">${g.first_name} ${g.last_name}</span>
+              <span style="font-size:0.8rem; color:#888;">HCP ${hcp}</span>
+            </button>`;
+          }).join('')}
+          <button id="inline-claim-none"
+            style="width:100%; margin-top:0.25rem; padding:0.55rem; background:transparent;
+                   border:1px solid #ccc; border-radius:8px; font-size:0.85rem; color:#666; cursor:pointer;">
+            I'm not listed — create a new profile
+          </button>`;
+
+        const joinFormEl = document.getElementById('join-group-form');
+        joinFormEl.appendChild(claimDiv);
+
+        claimDiv.querySelectorAll('.inline-claim-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            claimDiv.remove();
+            await doJoinExisting(code, parseInt(btn.dataset.golferId));
+          });
+        });
+
+        document.getElementById('inline-claim-none').addEventListener('click', async () => {
+          claimDiv.remove();
+          await doJoinExisting(code, 0);
+        });
+
+      } else {
+        // Success — clean up
+        message.textContent      = `✓ Joined ${data.org_name}!`;
+        message.style.color      = '#2e7d32';
+        message.style.display    = 'block';
+        preview.style.display    = 'none';
+        confirmBtn.style.display = 'none';
+        codeInput.value          = '';
+        pendingCode              = null;
+        document.getElementById('inline-claim-panel')?.remove();
+        loadMyGroups();
+      }
+    } catch {
+      confirmBtn.disabled    = false;
+      confirmBtn.textContent = 'Confirm & Join';
+      message.textContent   = 'Connection error. Please try again.';
+      message.style.color   = '#c0392b';
+      message.style.display = 'block';
+    }
+  }
+
+  confirmBtn.addEventListener('click', () => {
+    if (!pendingCode) return;
+    doJoinExisting(pendingCode);
   });
 }
 
@@ -9689,16 +9743,89 @@ document.addEventListener('DOMContentLoaded', () => {
     showSignupChooser();
   });
 
+  // Stores pending join data while the claim step is shown
+  let _pendingJoin = null;
+
+  async function submitJoin(payload) {
+    const errorEl = document.getElementById('join-error');
+    const btn     = document.getElementById('join-submit-btn');
+    errorEl.style.display = 'none';
+    if (btn) { btn.disabled = true; btn.textContent = 'Joining…'; }
+
+    try {
+      const res  = await fetch(`${API_BASE_URL}/api/join.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        credentials: 'include'
+      });
+      const data = await res.json();
+
+      if (data.needs_claim) {
+        // Show claim step
+        _pendingJoin = payload;
+        showClaimStep(data.candidates, payload.code);
+      } else if (!res.ok || !data.success) {
+        errorEl.textContent = data.error || 'Could not join group. Please try again.';
+        errorEl.style.display = 'block';
+        if (btn) { btn.disabled = false; btn.textContent = 'Join Group'; }
+      } else {
+        window.history.replaceState({}, '', window.location.pathname);
+        proceedAfterAuth(data.golfer ? { ...data.golfer, org_name: data.org_name } : null);
+      }
+    } catch (err) {
+      errorEl.textContent = 'Connection error. Please try again.';
+      errorEl.style.display = 'block';
+      if (btn) { btn.disabled = false; btn.textContent = 'Join Group'; }
+    }
+  }
+
+  function showClaimStep(candidates, code) {
+    document.getElementById('join-form').style.display = 'none';
+    const claimForm  = document.getElementById('claim-profile-form');
+    const listEl     = document.getElementById('claim-candidates-list');
+    claimForm.style.display = '';
+
+    listEl.innerHTML = candidates.map(g => {
+      const hcp = parseFloat(g.handicap) % 1 === 0 ? parseInt(g.handicap) : parseFloat(g.handicap).toFixed(1);
+      return `
+        <button class="claim-candidate-btn" data-golfer-id="${g.golfer_id}"
+          style="display:flex; align-items:center; justify-content:space-between; width:100%;
+                 padding:0.75rem 1rem; margin-bottom:0.5rem; background:rgba(255,255,255,0.12);
+                 border:1px solid rgba(255,255,255,0.3); border-radius:8px; cursor:pointer;
+                 color:white; font-size:0.95rem; text-align:left;">
+          <span style="font-weight:600;">${g.first_name} ${g.last_name}</span>
+          <span style="font-size:0.82rem; opacity:0.75;">HCP ${hcp}</span>
+        </button>`;
+    }).join('');
+
+    listEl.querySelectorAll('.claim-candidate-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const golferId = parseInt(btn.dataset.golferId);
+        document.getElementById('claim-error').style.display = 'none';
+        listEl.querySelectorAll('.claim-candidate-btn').forEach(b => b.disabled = true);
+        document.getElementById('claim-none-btn').disabled = true;
+        btn.textContent = 'Joining…';
+        await submitJoin({ ..._pendingJoin, claim_golfer_id: golferId });
+      });
+    });
+
+    document.getElementById('claim-none-btn').onclick = async () => {
+      document.getElementById('claim-error').style.display = 'none';
+      document.getElementById('claim-none-btn').disabled = true;
+      await submitJoin({ ..._pendingJoin, claim_golfer_id: 0 });
+    };
+  }
+
   document.getElementById('join-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const firstName = document.getElementById('join-first-name').value.trim();
-    const lastName  = document.getElementById('join-last-name').value.trim();
-    const email    = document.getElementById('join-email').value.trim();
-    const password = document.getElementById('join-password').value.trim();
-    const handicap = parseFloat(document.getElementById('join-handicap').value) || 0;
-    const errorEl  = document.getElementById('join-error');
-    const btn      = document.getElementById('join-submit-btn');
-    const codeToUse = joinCode || document.getElementById('join-code-input').value.trim().toUpperCase();
+    const firstName  = document.getElementById('join-first-name').value.trim();
+    const lastName   = document.getElementById('join-last-name').value.trim();
+    const email      = document.getElementById('join-email').value.trim();
+    const password   = document.getElementById('join-password').value.trim();
+    const handicap   = parseFloat(document.getElementById('join-handicap').value) || 0;
+    const errorEl    = document.getElementById('join-error');
+    const codeToUse  = joinCode || document.getElementById('join-code-input').value.trim().toUpperCase();
 
     if (!codeToUse) {
       errorEl.textContent = 'Please enter a valid invite code.';
@@ -9706,34 +9833,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    errorEl.style.display = 'none';
-    btn.disabled = true;
-    btn.textContent = 'Joining…';
-
-    try {
-      const res  = await fetch(`${API_BASE_URL}/api/join.php`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: codeToUse, first_name: firstName, last_name: lastName, email, password, handicap }),
-        credentials: 'include'
-      });
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        errorEl.textContent = data.error || 'Could not join group. Please try again.';
-        errorEl.style.display = 'block';
-      } else {
-        // Remove the ?join= param from URL cleanly
-        window.history.replaceState({}, '', window.location.pathname);
-        proceedAfterAuth(data.golfer ? { ...data.golfer, org_name: data.org_name } : null);
-      }
-    } catch (err) {
-      errorEl.textContent = 'Connection error. Please try again.';
-      errorEl.style.display = 'block';
-    }
-
-    btn.disabled = false;
-    btn.textContent = 'Join Group';
+    await submitJoin({ code: codeToUse, first_name: firstName, last_name: lastName, email, password, handicap });
   });
 
   // ── Reset password form (admin-generated link: ?reset=TOKEN) ────────────────

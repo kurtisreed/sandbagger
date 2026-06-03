@@ -154,6 +154,25 @@
     </div>
   </form>
 
+  <!-- Claim profile step (shown after join form when name doesn't match) -->
+  <div id="claim-profile-form" style="display:none;">
+    <h2>Sandbagger Scoring</h2>
+    <img class="form-logo" src="/images/cartoon.png" alt="Sandbagger Logo">
+    <div class="auth-card">
+      <p class="pin-prompt" id="claim-org-label">Are you one of these golfers?</p>
+      <p style="text-align:center; font-size:0.88rem; color:rgba(255,255,255,0.75); margin:0 0 1rem;">
+        Your name wasn't found in the group roster. Select your profile below, or create a new one.
+      </p>
+      <div id="claim-candidates-list" style="margin-bottom:0.75rem;"></div>
+      <button id="claim-none-btn" type="button"
+        style="width:100%; padding:0.65rem; background:transparent; color:rgba(255,255,255,0.7);
+               border:1px solid rgba(255,255,255,0.3); border-radius:8px; font-size:0.9rem; cursor:pointer; margin-top:0.25rem;">
+        I'm not listed — create a new profile
+      </button>
+      <p id="claim-error" style="display:none; color:#ffcdd2; text-align:center; font-size:0.9rem; margin:0.75rem 0 0;"></p>
+    </div>
+  </div>
+
 </div>
 
 <!-- Invite modal (admin only) -->

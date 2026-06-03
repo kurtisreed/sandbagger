@@ -44,14 +44,16 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-$data      = json_decode(file_get_contents('php://input'), true);
-$code      = strtoupper(trim($data['code']       ?? ''));
-$firstName = trim($data['first_name'] ?? '');
-$lastName  = trim($data['last_name']  ?? '');
-$email     = trim($data['email']      ?? '');
-$password  = trim($data['password']   ?? '');
-$handicap  = isset($data['handicap']) ? floatval($data['handicap']) : 0.0;
-$name      = trim("$firstName $lastName");
+$data           = json_decode(file_get_contents('php://input'), true);
+$code           = strtoupper(trim($data['code']       ?? ''));
+$firstName      = trim($data['first_name'] ?? '');
+$lastName       = trim($data['last_name']  ?? '');
+$email          = trim($data['email']      ?? '');
+$password       = trim($data['password']   ?? '');
+$handicap       = isset($data['handicap']) ? floatval($data['handicap']) : 0.0;
+$name           = trim("$firstName $lastName");
+// claim_golfer_id: positive int = link to that golfer, 0 = explicitly create new, null = auto-match
+$claimGolferId  = isset($data['claim_golfer_id']) ? intval($data['claim_golfer_id']) : null;
 
 // Validation
 if (!$code || !$firstName || !$lastName || !$email || !$password) {
@@ -124,37 +126,90 @@ try {
     $stmt->execute();
     $stmt->close();
 
-    // Check if admin pre-created a golfer with this exact name (case-insensitive, unlinked)
-    $stmt = $conn->prepare("
-        SELECT golfer_id, handicap FROM golfers
-        WHERE org_id = ? AND user_id IS NULL
-          AND LOWER(first_name) = LOWER(?) AND LOWER(last_name) = LOWER(?)
-        LIMIT 1
-    ");
-    $stmt->bind_param('iss', $orgId, $firstName, $lastName);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $existing = $result->fetch_assoc();
-    $stmt->close();
-
-    if ($existing) {
-        // Reconcile: link the pre-existing golfer to this new user,
-        // and update the handicap to whatever the user entered (their value wins)
-        $golferId = (int) $existing['golfer_id'];
-        $stmt = $conn->prepare("UPDATE golfers SET user_id = ?, handicap = ? WHERE golfer_id = ?");
-        $stmt->bind_param('idi', $userId, $handicap, $golferId);
-        $stmt->execute();
-        $stmt->close();
-    } else {
-        // No match — create a new golfer record for this user
+    if ($claimGolferId !== null && $claimGolferId > 0) {
+        // Admin explicitly claimed a specific unlinked golfer
         $stmt = $conn->prepare("
-            INSERT INTO golfers (first_name, last_name, handicap, org_id, user_id, active)
-            VALUES (?, ?, ?, ?, ?, 1)
+            SELECT golfer_id, first_name, last_name FROM golfers
+            WHERE golfer_id = ? AND org_id = ? AND user_id IS NULL
         ");
-        $stmt->bind_param('ssdii', $firstName, $lastName, $handicap, $orgId, $userId);
+        $stmt->bind_param('ii', $claimGolferId, $orgId);
         $stmt->execute();
-        $golferId = $conn->insert_id;
+        $claimed = $stmt->get_result()->fetch_assoc();
         $stmt->close();
+
+        if ($claimed) {
+            $golferId = (int) $claimed['golfer_id'];
+            $stmt = $conn->prepare("UPDATE golfers SET user_id = ?, handicap = ? WHERE golfer_id = ?");
+            $stmt->bind_param('idi', $userId, $handicap, $golferId);
+            $stmt->execute();
+            $stmt->close();
+            // Use the existing golfer's name for the session
+            $firstName = $claimed['first_name'];
+            $lastName  = $claimed['last_name'];
+        } else {
+            // Claimed golfer no longer available — create a new one
+            $stmt = $conn->prepare("INSERT INTO golfers (first_name, last_name, handicap, org_id, user_id, active) VALUES (?, ?, ?, ?, ?, 1)");
+            $stmt->bind_param('ssdii', $firstName, $lastName, $handicap, $orgId, $userId);
+            $stmt->execute();
+            $golferId = $conn->insert_id;
+            $stmt->close();
+        }
+    } else {
+        // Auto-match: look for an unlinked golfer with the same name (case-insensitive)
+        $stmt = $conn->prepare("
+            SELECT golfer_id, handicap FROM golfers
+            WHERE org_id = ? AND user_id IS NULL
+              AND LOWER(first_name) = LOWER(?) AND LOWER(last_name) = LOWER(?)
+            LIMIT 1
+        ");
+        $stmt->bind_param('iss', $orgId, $firstName, $lastName);
+        $stmt->execute();
+        $existing = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        if ($existing) {
+            // Exact match — link and update handicap
+            $golferId = (int) $existing['golfer_id'];
+            $stmt = $conn->prepare("UPDATE golfers SET user_id = ?, handicap = ? WHERE golfer_id = ?");
+            $stmt->bind_param('idi', $userId, $handicap, $golferId);
+            $stmt->execute();
+            $stmt->close();
+        } elseif ($claimGolferId === null) {
+            // No match and no explicit "create new" signal — check if there are unlinked golfers to claim
+            $stmt = $conn->prepare("
+                SELECT golfer_id, first_name, last_name, handicap
+                FROM golfers
+                WHERE org_id = ? AND user_id IS NULL
+                ORDER BY last_name, first_name
+            ");
+            $stmt->bind_param('i', $orgId);
+            $stmt->execute();
+            $candidates = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+            $stmt->close();
+
+            if (!empty($candidates)) {
+                // Roll back — don't create the account yet, ask the user to claim a profile
+                $conn->rollback();
+                echo json_encode([
+                    'needs_claim' => true,
+                    'candidates'  => $candidates,
+                ]);
+                exit;
+            }
+            // No candidates — create a new golfer record
+            $stmt = $conn->prepare("INSERT INTO golfers (first_name, last_name, handicap, org_id, user_id, active) VALUES (?, ?, ?, ?, ?, 1)");
+            $stmt->bind_param('ssdii', $firstName, $lastName, $handicap, $orgId, $userId);
+            $stmt->execute();
+            $golferId = $conn->insert_id;
+            $stmt->close();
+        } else {
+            // claim_golfer_id === 0: user explicitly said "I'm not listed, create new"
+            $stmt = $conn->prepare("INSERT INTO golfers (first_name, last_name, handicap, org_id, user_id, active) VALUES (?, ?, ?, ?, ?, 1)");
+            $stmt->bind_param('ssdii', $firstName, $lastName, $handicap, $orgId, $userId);
+            $stmt->execute();
+            $golferId = $conn->insert_id;
+            $stmt->close();
+        }
     }
 
     $conn->commit();
