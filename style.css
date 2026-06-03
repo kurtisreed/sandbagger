@@ -855,22 +855,7 @@ main {
   background-color: var(--color-border);
 }
 
-#user-dashboard button[type="button"] {
-  background-color: var(--color-bg-muted);
-  color: var(--color-text-primary);
-  border: none;
-  border-radius: var(--radius-sm);
-  padding: var(--space-3) var(--space-4);
-  font-family: var(--font-family);
-  font-size: var(--font-size-base);
-  font-weight: 700;
-  cursor: pointer;
-  width: 100%;
-}
-
-#user-dashboard button[type="button"]:hover {
-  background-color: var(--color-border);
-}
+/* Dashboard action buttons use .btn classes directly */
 
 #change-user-btn {
   width: auto !important;
