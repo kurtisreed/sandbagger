@@ -9403,7 +9403,7 @@ function initCreateGroupModal() {
       submitBtn.disabled    = false;
       submitBtn.textContent = 'Create Group';
     }
-  });
+  };
 }
 
 function showQuickRoundTypeSelector() {
