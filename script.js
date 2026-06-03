@@ -8346,6 +8346,7 @@ async function showGuysTripStep2() {
 async function showEditGroupPage() {
   // Hide other views
   document.getElementById('user-dashboard').style.display = 'none';
+  document.getElementById('edit-user-container').style.display = 'none';
   document.getElementById('edit-golfers-container').style.display = 'none';
 
   const container = document.getElementById('edit-group-container');
