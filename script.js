@@ -2946,8 +2946,7 @@ function loadBestBallScoring() {
           .then(res => res.json())
           .then(data => {
             if (data.success) {
-              alert("Results finalized!");
-              loadBestBallScoring(); // Reload to show read-only version
+              showMatchResultsModal(() => loadBestBallScoring());
             } else {
               alert("Error finalizing results: " + (data.error || "Unknown error"));
             }
@@ -3616,9 +3615,10 @@ function loadTodaysMatch() {
         .then(res => res.json())
         .then(data => {
           if (data.success) {
-            alert("Results finalized!");
-            document.getElementById("finalize-results-btn").style.display = "none";
-            loadTodaysMatch();
+            showMatchResultsModal(() => {
+              document.getElementById("finalize-results-btn").style.display = "none";
+              loadTodaysMatch();
+            });
           } else {
             alert("Error finalizing results: " + (data.error || "Unknown error"));
           }
@@ -3896,9 +3896,10 @@ function loadGuysTripMatch() {
         .then(res => res.json())
         .then(data => {
           if (data.success) {
-            alert("Results finalized!");
-            finalizeButton.style.display = "none";
-            loadGuysTripMatch();
+            showMatchResultsModal(() => {
+              finalizeButton.style.display = "none";
+              loadGuysTripMatch();
+            });
           } else {
             alert("Error finalizing results: " + (data.error || "Unknown error"));
           }
@@ -4348,6 +4349,145 @@ function calculateMatchPoints() {
     points[secondaryTeamId] = 0.5;
   }
   return points;
+}
+
+// ── Match Results Modal ────────────────────────────────────────────────────
+
+function buildMatchResultsData() {
+  // Snapshot scores from the DOM before the page reloads
+  const rawScores = {};
+  document.querySelectorAll('select[data-hole][data-golfer]').forEach(sel => {
+    const hole = parseInt(sel.dataset.hole);
+    const gid  = parseInt(sel.dataset.golfer);
+    const strokes = parseInt(sel.value);
+    if (!isNaN(strokes) && strokes > 0) {
+      if (!rawScores[gid]) rawScores[gid] = {};
+      rawScores[gid][hole] = strokes;
+    }
+  });
+
+  return golfers.map(g => {
+    let gross = 0;
+    let totalHcpStrokes = 0;
+    const birdiesAndBetter = [];
+
+    for (let h = 1; h <= 18; h++) {
+      const strokes = rawScores[g.id]?.[h];
+      if (!strokes) continue;
+      const par       = holeInfo.find(hi => hi.hole_number === h)?.par || 4;
+      const hcpStrokes = strokeMaps[g.id]?.[h] || 0;
+
+      gross         += strokes;
+      totalHcpStrokes += hcpStrokes;
+
+      if (strokes <= par - 1) {
+        const diff = strokes - par;
+        birdiesAndBetter.push({
+          hole: h, par, strokes, diff,
+          label: diff <= -3 ? 'Albatross' : diff <= -2 ? 'Eagle' : 'Birdie',
+          icon:  diff <= -2 ? '🦅' : '🐦'
+        });
+      }
+    }
+
+    return {
+      golfer: g,
+      gross: gross || null,
+      net:   gross ? gross - totalHcpStrokes : null,
+      birdiesAndBetter
+    };
+  });
+}
+
+function showMatchResultsModal(onDone) {
+  const results = buildMatchResultsData();
+
+  // Determine winner from team points (Best Ball / regular tournament)
+  let winnerHtml = '';
+  try {
+    const points = calculateMatchPoints();
+    if (primaryTeamId && secondaryTeamId && points) {
+      const p1 = points[primaryTeamId] ?? 0;
+      const p2 = points[secondaryTeamId] ?? 0;
+      if (p1 > p2) {
+        winnerHtml = `<p class="winner-display">${primaryTeamName} wins! 🏆</p>`;
+      } else if (p2 > p1) {
+        winnerHtml = `<p class="winner-display">${secondaryTeamName} wins! 🏆</p>`;
+      } else {
+        winnerHtml = `<p class="winner-display">It&rsquo;s a tie! 🤝</p>`;
+      }
+    }
+  } catch (e) { /* no teams — skip winner line */ }
+
+  // Score table — sorted by net (ascending), then gross as tiebreaker
+  const withScores = results.filter(r => r.gross !== null);
+  withScores.sort((a, b) => a.net - b.net || a.gross - b.gross);
+  const medals = ['🥇', '🥈', '🥉'];
+
+  const scoreRows = withScores.map((r, i) => `
+    <tr>
+      <td>${medals[i] || ''} <strong>${r.golfer.name} ${r.golfer.lastName || ''}</strong></td>
+      <td>${r.gross}</td>
+      <td style="font-weight:700;">${r.net}</td>
+    </tr>`).join('');
+
+  // Birdies & better — all golfers, sorted by hole
+  const allBirdies = [];
+  results.forEach(r => {
+    r.birdiesAndBetter.forEach(b => {
+      allBirdies.push({ ...b, golferName: `${r.golfer.name} ${r.golfer.lastName || ''}` });
+    });
+  });
+  allBirdies.sort((a, b) => a.hole - b.hole);
+
+  const birdieHtml = allBirdies.length > 0 ? `
+    <div style="margin-top:var(--space-6);">
+      <h3 class="section-header">Birdies &amp; Better</h3>
+      <div style="display:flex; flex-direction:column; gap:var(--space-2); margin-top:var(--space-3);">
+        ${allBirdies.map(b => `
+          <div class="birdie-item">
+            ${b.icon} <strong>${b.golferName}</strong> &mdash; ${b.label} on Hole ${b.hole}
+            <span style="color:var(--color-text-muted); font-size:var(--font-size-xs);">&nbsp;(${b.strokes} on par ${b.par})</span>
+          </div>`).join('')}
+      </div>
+    </div>` : `
+    <div style="margin-top:var(--space-6); text-align:center; color:var(--color-text-muted); font-size:var(--font-size-sm);">
+      No birdies this round — get &rsquo;em next time! ⛳
+    </div>`;
+
+  document.getElementById('match-results-body').innerHTML = `
+    <div style="text-align:center; margin-bottom:var(--space-5);">
+      <div style="font-size:3rem; line-height:1; margin-bottom:var(--space-3);">🏆</div>
+      <h2 class="modal-title">Match Complete!</h2>
+      ${courses && courses.course_name
+        ? `<p class="tournament-card-dates" style="margin-top:var(--space-1);">${courses.course_name}</p>`
+        : ''}
+      ${winnerHtml}
+    </div>
+
+    <h3 class="section-header">Scores</h3>
+    <table class="results-score-table">
+      <thead>
+        <tr>
+          <th>Golfer</th>
+          <th>Gross</th>
+          <th>Net</th>
+        </tr>
+      </thead>
+      <tbody>${scoreRows}</tbody>
+    </table>
+
+    ${birdieHtml}
+  `;
+
+  // Wire Done button
+  const doneBtn = document.getElementById('match-results-done-btn');
+  doneBtn.onclick = function() {
+    document.getElementById('match-results-modal').style.display = 'none';
+    if (typeof onDone === 'function') onDone();
+  };
+
+  document.getElementById('match-results-modal').style.display = 'flex';
 }
 
 //calculate golfer total scores
@@ -7593,15 +7733,15 @@ function renderTeeTimes() {
 
   teeTimesData.forEach((teeTime, index) => {
     const teeTimeDiv = document.createElement('div');
-    teeTimeDiv.style.cssText = 'border: 1px solid #ddd; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; background: white;';
+    teeTimeDiv.style.cssText = 'border:1px solid #ddd; padding:1rem; border-radius:8px; margin-bottom:1rem; background:white; overflow:hidden; box-sizing:border-box;';
 
     const matchSlots = (teeTime.match_ids || []).map((matchId, slotIdx) => `
-      <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem; align-items: center;">
-        <select class="tee-time-match-select" data-tee-index="${index}" data-slot-index="${slotIdx}" style="flex: 1; padding: 0.5rem; font-size: 0.95rem; border: 1px solid #ccc; border-radius: 4px;">
+      <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem; align-items:center; overflow:hidden;">
+        <select class="tee-time-match-select" data-tee-index="${index}" data-slot-index="${slotIdx}" style="flex:1; min-width:0; padding:0.5rem; font-size:0.95rem; border:1px solid #ccc; border-radius:4px; overflow:hidden; text-overflow:ellipsis;">
           <option value="">-- Select Match --</option>
           ${generateMatchOptions(matchId)}
         </select>
-        <button class="remove-match-from-tee-btn" data-tee-index="${index}" data-slot-index="${slotIdx}" style="background: #dc3545; color: white; border: none; padding: 0.4rem 0.6rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem; flex-shrink: 0;">✕</button>
+        <button class="remove-match-from-tee-btn" data-tee-index="${index}" data-slot-index="${slotIdx}" style="background:#dc3545; color:white; border:none; padding:0.4rem 0.6rem; border-radius:4px; cursor:pointer; font-size:0.85rem; flex-shrink:0;">✕</button>
       </div>
     `).join('');
 
