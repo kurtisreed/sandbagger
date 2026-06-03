@@ -31,10 +31,10 @@
   --color-action-neutral: #6b7280;
 
   /* Score colors */
-  --color-score-birdie: #dbeafe;
-  --color-score-bogey:  #fee2e2;
-  --color-score-eagle:  #a5f3c0;
-  --color-score-par:    #f3f4f6;
+  --color-score-birdie: #bfdbfe;  /* clear blue — under par */
+  --color-score-bogey:  #fecaca;  /* clear red — over par */
+  --color-score-eagle:  #86efac;  /* bright green — eagle/better */
+  --color-score-par:    #f3f4f6;  /* neutral grey — par */
 
   /* Typography */
   --font-family:    'Nunito', system-ui, -apple-system, sans-serif;
@@ -498,8 +498,7 @@ main {
 
 /* ── Score Table ──────────────────────────────────────────────────────────── */
 #score-entry-content {
-  overflow-y: auto;
-  max-height: 800px;
+  overflow-x: auto;  /* allow horizontal scroll on narrow screens */
 }
 
 .score-table {
@@ -530,14 +529,18 @@ main {
 
 .score-table td {
   position: relative;
+  font-weight: 600;
 }
 
 .score-table td select {
   width: 100%;
   padding: var(--space-2);
   font-size: var(--font-size-base);
+  font-family: var(--font-family);
+  font-weight: 700;
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-border-strong);
+  text-align: center;
 }
 
 .score-table tr:nth-child(even) {
