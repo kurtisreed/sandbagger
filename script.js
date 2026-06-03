@@ -9666,32 +9666,55 @@ function loadEditUserPage() {
 function loadMyGroups() {
   const list = document.getElementById('my-groups-list');
   if (!list) return;
-  list.innerHTML = '<p style="color:#888; font-size:0.9rem;">Loading groups…</p>';
+  list.innerHTML = '<p style="color:var(--color-text-muted); font-size:var(--font-size-sm);">Loading groups…</p>';
 
   fetch(`${API_BASE_URL}/api/my_orgs.php`, { credentials: 'include' })
     .then(r => r.json())
     .then(data => {
       if (!data.orgs || data.orgs.length === 0) {
-        list.innerHTML = '<p style="color:#888; font-size:0.9rem;">No groups found.</p>';
+        list.innerHTML = '<p style="color:var(--color-text-muted); font-size:var(--font-size-sm);">No groups found.</p>';
         return;
       }
-      list.innerHTML = data.orgs.map(org => `
-        <div style="display:flex; align-items:center; justify-content:space-between;
-                    padding:0.6rem 0; border-bottom:1px solid #f0f0f0;">
-          <div style="flex:1;">
-            ${org.is_current
-              ? `<span style="font-size:0.95rem; font-weight:700; color:#1a1a1a;">${org.org_name}</span>`
-              : `<span onclick="switchGroup(${org.org_id})" style="font-size:0.95rem; font-weight:500;
-                   color:#4F2185; cursor:pointer; text-decoration:underline;">${org.org_name}</span>`
-            }
-            <span style="margin-left:0.5rem; font-size:0.78rem; color:#888; text-transform:uppercase;">${org.role}</span>
-            ${org.is_current ? '<span style="margin-left:0.5rem; font-size:0.75rem; background:#4F2185; color:white; border-radius:4px; padding:1px 6px;">Active</span>' : '<span style="margin-left:0.5rem; font-size:0.75rem; color:#4F2185;">(tap to switch)</span>'}
-          </div>
-        </div>
-      `).join('');
+
+      list.innerHTML = data.orgs.map(org => {
+        // Avatar: real image if available, otherwise initials
+        const initial = (org.org_name || '?').charAt(0).toUpperCase();
+        const avatarHtml = org.avatar_url
+          ? `<img src="${org.avatar_url}" alt="${org.org_name}" class="group-avatar">`
+          : `<div class="group-avatar-initials">${initial}</div>`;
+
+        const leaderHtml = org.admin_name
+          ? `<p class="group-card-leader">Led by ${org.admin_name}</p>`
+          : '';
+
+        const badges = `
+          <div class="group-card-badges">
+            <span class="group-badge group-badge-role">${org.role}</span>
+            ${org.is_current ? '<span class="group-badge group-badge-active">Active</span>' : ''}
+          </div>`;
+
+        const chevron = org.is_current ? '' : '<span class="group-card-chevron">›</span>';
+
+        return `
+          <div class="group-card ${org.is_current ? 'is-current' : ''}"
+               data-org-id="${org.org_id}" data-is-current="${org.is_current ? '1' : '0'}">
+            ${avatarHtml}
+            <div class="group-card-body">
+              <p class="group-card-name">${org.org_name}</p>
+              ${leaderHtml}
+              ${badges}
+            </div>
+            ${chevron}
+          </div>`;
+      }).join('');
+
+      // Wire up tap to switch (non-current cards only)
+      list.querySelectorAll('.group-card[data-is-current="0"]').forEach(card => {
+        card.addEventListener('click', () => switchGroup(parseInt(card.dataset.orgId)));
+      });
     })
     .catch(() => {
-      list.innerHTML = '<p style="color:#c0392b; font-size:0.9rem;">Could not load groups.</p>';
+      list.innerHTML = '<p style="color:var(--color-action-danger); font-size:var(--font-size-sm);">Could not load groups.</p>';
     });
 }
 

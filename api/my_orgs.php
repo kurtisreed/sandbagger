@@ -14,10 +14,14 @@ if (empty($_SESSION['user_id'])) {
 $userId = (int) $_SESSION['user_id'];
 
 $stmt = $conn->prepare("
-    SELECT o.org_id, o.name AS org_name, uo.role,
-           (o.org_id = ?) AS is_current
+    SELECT o.org_id, o.name AS org_name, o.avatar_url, uo.role,
+           (o.org_id = ?) AS is_current,
+           admin_u.name AS admin_name
     FROM user_organizations uo
     JOIN organizations o ON o.org_id = uo.org_id
+    LEFT JOIN user_organizations admin_uo
+           ON admin_uo.org_id = o.org_id AND admin_uo.role = 'admin'
+    LEFT JOIN users admin_u ON admin_u.user_id = admin_uo.user_id
     WHERE uo.user_id = ?
     ORDER BY o.name ASC
 ");
@@ -31,8 +35,10 @@ while ($row = $result->fetch_assoc()) {
     $orgs[] = [
         'org_id'     => (int) $row['org_id'],
         'org_name'   => $row['org_name'],
+        'avatar_url' => $row['avatar_url'],
         'role'       => $row['role'],
         'is_current' => (bool) $row['is_current'],
+        'admin_name' => $row['admin_name'],
     ];
 }
 $stmt->close();
