@@ -750,19 +750,21 @@ main {
   max-width: 92vw;
   margin: 0 auto 2rem;
   border-radius: var(--radius-lg);
-  filter: drop-shadow(0 8px 28px rgba(0,0,0,0.45));
+  filter: drop-shadow(0 8px 28px rgba(0,0,0,0.45))
+          drop-shadow(0 0 40px rgba(255,198,47,0.15));
 }
 
 /* ── Auth Card (frosted glass) ────────────────────────────────────────────── */
 .auth-card {
   width: 100%;
   max-width: 420px;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: var(--radius-xl);
   padding: 1.75rem var(--space-6);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.2);
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
@@ -788,7 +790,7 @@ main {
 .auth-card select:focus,
 .auth-card input:focus {
   background: #fff;
-  box-shadow: 0 0 0 3px rgba(255, 198, 47, 0.5);
+  box-shadow: 0 0 0 3px rgba(255, 198, 47, 0.65);
 }
 
 #new-golfer-form {
@@ -811,11 +813,12 @@ main {
   background: var(--color-brand-gold);
   color: var(--color-text-primary);
   transition: background 0.2s, transform 0.1s;
-  box-shadow: 0 4px 16px rgba(255, 198, 47, 0.35);
+  box-shadow: 0 4px 20px rgba(255, 198, 47, 0.45);
 }
 
 .auth-card button[type="submit"]:hover {
   background: #f5b800;
+  box-shadow: 0 6px 24px rgba(255, 198, 47, 0.55);
 }
 
 .auth-card button[type="submit"]:active {
