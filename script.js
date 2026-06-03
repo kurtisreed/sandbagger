@@ -6630,39 +6630,37 @@ function loadUserTournaments(golferId) {
         return;
       }
 
-      let html = '<div style="display: flex; flex-direction: column; gap: 1rem;">';
+      let html = '<div style="display:flex; flex-direction:column; gap:var(--space-4);">';
       data.tournaments.forEach(tournament => {
         const isRyderCupCard = parseInt(tournament.format_id) === 3;
         const teams = tournament.teams || [];
 
-        // Build team vs team subtitle for Ryder Cup
+        // Build team vs team subtitle for Ryder Cup (keep dynamic colors)
         let teamSubtitle = '';
         if (isRyderCupCard && teams.length >= 2) {
           teamSubtitle = `
-            <p style="margin: 0 0 0.5rem 0; font-size: 1rem; font-weight: bold;">
-              <span style="color: ${teams[0].color_hex};">${teams[0].name}</span>
-              <span style="color: #666;"> vs </span>
-              <span style="color: ${teams[1].color_hex};">${teams[1].name}</span>
+            <p style="margin:var(--space-1) 0 var(--space-2); font-size:var(--font-size-sm); font-weight:700;">
+              <span style="color:${teams[0].color_hex};">${teams[0].name}</span>
+              <span style="color:var(--color-text-muted);"> vs </span>
+              <span style="color:${teams[1].color_hex};">${teams[1].name}</span>
             </p>`;
         }
 
         const isAdminCard = currentUser && currentUser.role === 'admin';
         html += `
-          <div style="border: 1px solid #ddd; padding: 1rem; border-radius: 8px; background: white;">
-            <div style="position: relative; margin-bottom: 0.25rem;">
-              <h4 style="margin: 0; padding-right: ${isAdminCard ? '4rem' : '0'};">${tournament.tournament_name}</h4>
+          <div class="tournament-card">
+            <div style="position:relative; margin-bottom:var(--space-1);">
+              <h4 class="tournament-card-title" style="padding-right:${isAdminCard ? '4rem' : '0'};">${tournament.tournament_name}</h4>
               ${isAdminCard ? `
-                <button class="edit-tournament-btn" data-tournament-id="${tournament.tournament_id}" style="position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); padding: 0.25rem 0.75rem; background: #ffc107; color: #333; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: bold;">
-                  Edit
-                </button>
+                <button class="btn-badge btn-badge-edit edit-tournament-btn" data-tournament-id="${tournament.tournament_id}">Edit</button>
               ` : ''}
             </div>
-            ${currentUser && currentUser.org_name ? `<p style="margin: 0 0 0.25rem 0; font-size: 0.8rem; color: #999; font-weight: 500; text-transform: uppercase; letter-spacing: 0.03em;">${currentUser.org_name}</p>` : ''}
+            ${currentUser && currentUser.org_name ? `<p class="tournament-card-meta">${currentUser.org_name}</p>` : ''}
             ${teamSubtitle}
-            <p style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: #666;">${tournament.start_date} to ${tournament.end_date}</p>
+            <p class="tournament-card-dates">${tournament.start_date} — ${tournament.end_date}</p>
         `;
 
-        html += '<div style="margin-top: 0.5rem;">';
+        html += '<div class="tournament-card-rounds">';
 
         if (tournament.rounds && tournament.rounds.length > 0) {
           tournament.rounds.forEach(round => {
@@ -6688,42 +6686,34 @@ function loadUserTournaments(golferId) {
               : '';
 
             html += `
-              <div style="position: relative; margin-bottom: 0.5rem;">
-                <button class="tournament-round-btn" data-tournament-id="${tournament.tournament_id}" data-round-id="${round.round_id}" data-round-name="${round.round_name}" data-format-id="${tournament.format_id || ''}" style="display: block; width: 100%; padding: 0.5rem ${isAdmin && hasEditButton ? '4rem' : '0.5rem'} 0.5rem 0.5rem; background: #4F2185; color: white; border: none; border-radius: 4px; cursor: pointer; text-align: left;">
+              <div style="position:relative;">
+                <button class="tournament-round-btn" data-tournament-id="${tournament.tournament_id}" data-round-id="${round.round_id}" data-round-name="${round.round_name}" data-format-id="${tournament.format_id || ''}" style="padding-right:${isAdmin && hasEditButton ? '4.5rem' : 'var(--space-4)'};">
                   <div>${round.round_name}</div>
-                  ${roundDateDisplay ? `<div style="font-size: 0.8rem; opacity: 0.85; margin-top: 0.1rem;">${roundDateDisplay}</div>` : ''}
-                  <div style="font-size: 0.8rem; opacity: 0.85; margin-top: 0.1rem;">Tee times: ${teeTimesDisplay}</div>
+                  ${roundDateDisplay ? `<div class="round-meta">${roundDateDisplay}</div>` : ''}
+                  <div class="round-meta">Tee times: ${teeTimesDisplay}</div>
                 </button>
                 ${isAdmin && hasEditButton ? (
                   isLocked ? `
-                    <button class="locked-round-btn" style="position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); padding: 0.25rem 0.75rem; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: not-allowed; font-size: 0.85rem; font-weight: bold; opacity: 0.7;">
-                      Locked
-                    </button>
+                    <button class="btn-badge btn-badge-locked locked-round-btn">Locked</button>
                   ` : `
-                    <button class="edit-round-btn" data-tournament-id="${tournament.tournament_id}" data-round-id="${round.round_id}" data-format-id="${tournament.format_id || ''}" style="position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); padding: 0.25rem 0.75rem; background: #ffc107; color: #333; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: bold;">
-                      Edit
-                    </button>
+                    <button class="btn-badge btn-badge-edit edit-round-btn" data-tournament-id="${tournament.tournament_id}" data-round-id="${round.round_id}" data-format-id="${tournament.format_id || ''}">Edit</button>
                   `
                 ) : ''}
               </div>
             `;
           });
         } else {
-          html += '<p style="margin: 0.5rem 0 0.5rem 0; font-size: 0.9rem; color: #999;">No rounds scheduled</p>';
+          html += `<p style="font-size:var(--font-size-sm); color:var(--color-text-muted); margin:var(--space-2) 0;">No rounds scheduled</p>`;
         }
 
-        // Add "+ Add Round" button for administrators
+        // Add Round button for admins
         if (currentUser && currentUser.role === 'admin') {
           html += `
-            <button class="add-round-btn" data-tournament-id="${tournament.tournament_id}" data-format-id="${tournament.format_id || ''}" style="display: block; width: 100%; margin-bottom: 0.5rem; padding: 0.5rem; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; text-align: left;">
-              + Add Round
-            </button>
+            <button class="add-round-btn" data-tournament-id="${tournament.tournament_id}" data-format-id="${tournament.format_id || ''}">+ Add Round</button>
           `;
         }
 
-        html += '</div>';
-
-        html += '</div>';
+        html += '</div></div>';
       });
       html += '</div>';
 
