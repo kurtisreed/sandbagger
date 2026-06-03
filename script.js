@@ -9197,7 +9197,7 @@ function initJoinGroupForm() {
 
   let pendingCode = null;
 
-  joinBtn.addEventListener('click', () => {
+  joinBtn.onclick = () => {
     const code = codeInput.value.trim().toUpperCase();
     if (!code) return;
     preview.style.display    = 'none';
@@ -9235,7 +9235,7 @@ function initJoinGroupForm() {
         message.style.color   = '#c0392b';
         message.style.display = 'block';
       });
-  });
+  }; // end joinBtn.onclick
 
   async function doJoinExisting(code, claimGolferId = null) {
     const body = { code };
@@ -9325,7 +9325,7 @@ function initJoinGroupForm() {
     }
   }
 
-  confirmBtn.addEventListener('click', () => {
+  confirmBtn.onclick = () => {
     if (!pendingCode) return;
     doJoinExisting(pendingCode);
   });
@@ -9353,14 +9353,14 @@ function initCreateGroupModal() {
     modal.style.display = 'none';
   }
 
-  openBtn.addEventListener('click', openModal);
-  closeBtn.addEventListener('click', closeModal);
-  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+  openBtn.onclick  = openModal;
+  closeBtn.onclick = closeModal;
+  modal.onclick    = (e) => { if (e.target === modal) closeModal(); };
 
   // Submit on Enter key
-  nameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitBtn.click(); });
+  nameInput.onkeydown = (e) => { if (e.key === 'Enter') submitBtn.click(); };
 
-  submitBtn.addEventListener('click', async () => {
+  submitBtn.onclick = async () => {
     const name = nameInput.value.trim();
     msgEl.style.display = 'none';
     if (!name) {
