@@ -1,17 +1,99 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+
+/* ── Design Tokens ────────────────────────────────────────────────────────── */
 :root {
-  --primary-team-color: #4F2683; /* Default value */
-  --secondary-team-color: #FFC62F; /* Default value */
-  --primary-text-color: #fff;
+  /* Brand */
+  --color-brand-primary:  #4F2185;
+  --color-brand-gold:     #FFC62F;
+
+  /* Surfaces */
+  --color-bg-page:        #f4f5f7;
+  --color-bg-card:        #ffffff;
+  --color-bg-subtle:      #f8f9fa;
+  --color-bg-muted:       #f0f1f3;
+
+  /* Borders */
+  --color-border:         #e2e4e8;
+  --color-border-strong:  #c8ccd3;
+
+  /* Text */
+  --color-text-primary:   #1a1c23;
+  --color-text-secondary: #5a5f6e;
+  --color-text-muted:     #8a8f9e;
+  --color-text-inverse:   #ffffff;
+
+  /* Actions */
+  --color-action-primary: #4F2185;
+  --color-action-success: #1e8a44;
+  --color-action-warning: #d97706;
+  --color-action-danger:  #c0392b;
+  --color-action-info:    #0077b6;
+  --color-action-neutral: #6b7280;
+
+  /* Score colors */
+  --color-score-birdie: #dbeafe;
+  --color-score-bogey:  #fee2e2;
+  --color-score-eagle:  #a5f3c0;
+  --color-score-par:    #f3f4f6;
+
+  /* Typography */
+  --font-family:    'Nunito', system-ui, -apple-system, sans-serif;
+  --font-size-xs:   0.75rem;
+  --font-size-sm:   0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg:   1.125rem;
+  --font-size-xl:   1.25rem;
+  --font-size-2xl:  1.5rem;
+  --font-size-3xl:  2rem;
+  --font-size-4xl:  2.5rem;
+
+  /* Spacing (4px base) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+
+  /* Border radius */
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   14px;
+  --radius-xl:   20px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-sm: 0 1px 4px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.06);
+
+  /* Line heights */
+  --leading-tight:  1.25;
+  --leading-normal: 1.5;
+
+  /* Team color vars — overridden dynamically from DB/JS */
+  --primary-team-color:   #4F2185;
+  --secondary-team-color: #FFC62F;
+  --primary-text-color:   #fff;
   --secondary-text-color: #000;
 }
 
+/* ── Base ─────────────────────────────────────────────────────────────────── */
 body {
   margin: 0;
   padding-top: calc(env(safe-area-inset-top) + 50px);
-  font-family: sans-serif;
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  line-height: var(--leading-normal);
+  color: var(--color-text-primary);
+  background: var(--color-bg-page);
   display: flex;
   flex-direction: column;
   height: 100vh;
+  -webkit-font-smoothing: antialiased;
 }
 
 body::before {
@@ -21,15 +103,15 @@ body::before {
   left: 0;
   right: 0;
   height: env(safe-area-inset-top);
-  background-color: #4F2185;
+  background-color: var(--color-brand-primary);
   z-index: 9999;
 }
 
-/* Universal User Header Bar */
+/* ── Universal User Header Bar ────────────────────────────────────────────── */
 #user-header-bar {
-  background: #4F2185;
+  background: var(--color-brand-primary);
   color: white;
-  padding: 0.5rem 1rem;
+  padding: var(--space-2) var(--space-4);
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   position: fixed;
   top: env(safe-area-inset-top);
@@ -49,12 +131,12 @@ body::before {
 .user-info {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 
 #user-header-name {
-  font-weight: bold;
-  font-size: 1.1rem;
+  font-weight: 700;
+  font-size: var(--font-size-lg);
   cursor: pointer;
   opacity: 1;
   transition: opacity 0.15s ease;
@@ -64,14 +146,13 @@ body::before {
   opacity: 0.7;
 }
 
-
 #user-header-org {
-  font-size: 0.75rem;
+  font-size: var(--font-size-xs);
   font-weight: 500;
   opacity: 0.65;
   border-left: 1px solid rgba(255,255,255,0.4);
-  padding-left: 0.5rem;
-  margin-left: 0.25rem;
+  padding-left: var(--space-2);
+  margin-left: var(--space-1);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   transition: opacity 0.15s ease;
@@ -85,7 +166,7 @@ body::before {
   opacity: 1;
 }
 
-/* Hamburger Menu */
+/* ── Hamburger Menu ───────────────────────────────────────────────────────── */
 .hamburger-menu-container {
   position: relative;
 }
@@ -94,7 +175,7 @@ body::before {
   background: transparent;
   border: none;
   cursor: pointer;
-  padding: 0.5rem;
+  padding: var(--space-2);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -107,7 +188,7 @@ body::before {
   width: 100%;
   height: 4px;
   background: white;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   transition: all 0.3s;
 }
 
@@ -120,10 +201,10 @@ body::before {
   position: absolute;
   right: 0;
   top: 100%;
-  margin-top: 0.5rem;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  margin-top: var(--space-2);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
   min-width: 160px;
   z-index: 1001;
   overflow: hidden;
@@ -136,15 +217,17 @@ body::before {
 .hamburger-dropdown button {
   display: block;
   width: 100%;
-  padding: 0.75rem 1rem;
+  padding: var(--space-3) var(--space-4);
   border: none;
-  background: white;
-  color: #333;
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
   text-align: left;
-  font-size: 0.95rem;
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  font-weight: 600;
   cursor: pointer;
   transition: background 0.2s;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .hamburger-dropdown button:last-child {
@@ -152,39 +235,30 @@ body::before {
 }
 
 .hamburger-dropdown button:hover {
-  background: #f5f5f5;
+  background: var(--color-bg-subtle);
 }
 
 .hamburger-dropdown button:active {
-  background: #e8e8e8;
+  background: var(--color-bg-muted);
 }
 
 header {
-  /* Keep header background behind scoreboard */
-  background: #2a9d8f;
+  background: var(--color-brand-primary);
   padding: 0;
 }
 
-/*ensure that text is readable on any background
-.auto-contrast {
-    position: relative;
-    color: white;
-    mix-blend-mode: difference;
-      will-change: color, mix-blend-mode;
-}
-
-*/
-
+/* ── Scoreboard ───────────────────────────────────────────────────────────── */
 .scoreboard {
   display: flex;
   width: 100%;
-  border: 1px solid #000;
-  box-sizing: border-box; /* ensures border doesn't affect width */
+  gap: 2px;
+  background: #000;
+  box-sizing: border-box;
 }
 
 .scoreboard > div {
   width: 50%;
-  padding: 0.5rem 0;
+  padding: var(--space-2) 0;
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -193,37 +267,41 @@ header {
 }
 
 .team-name {
-  font-size: 1.2rem;
-  font-weight: bold;
-  margin-bottom: 0.3rem;
+  font-size: var(--font-size-lg);
+  font-weight: 800;
+  margin-bottom: var(--space-1);
   color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .team-score {
-  font-size: 2.5rem;
-  font-weight: bold;
+  font-size: var(--font-size-4xl);
+  font-weight: 800;
   color: #fff;
+  line-height: 1;
 }
 
-
 #teamA {
-  background: #4F2683;
+  background: var(--primary-team-color, var(--color-brand-primary));
 }
 
 #teamB {
-  background: #FFC62F;
+  background: var(--secondary-team-color, var(--color-brand-gold));
 }
 
 .scoreboard span {
-  color: #000; /* numeric score color */
+  color: #000;
 }
 
+/* ── Team Golfer Table ────────────────────────────────────────────────────── */
 .team-golfer-table {
   border-collapse: collapse;
   width: 100%;
   margin: 0;
   background: transparent;
 }
+
 .team-golfer-table td {
   border-top: 1px solid #000;
   border-bottom: 1px solid #000;
@@ -231,12 +309,12 @@ header {
   border-right: none;
   padding: 6px 0;
   text-align: center;
-  font-size: 1.1rem;
+  font-size: var(--font-size-lg);
 }
 
+/* ── Navigation ───────────────────────────────────────────────────────────── */
 nav {
-  background: var(--primary-team-color)
-
+  background: var(--primary-team-color);
 }
 
 .tabs {
@@ -245,22 +323,35 @@ nav {
 
 .tabs button {
   flex: 1;
-  padding: 1rem;
+  padding: var(--space-3) var(--space-2);
   background: transparent;
-  border: 1px solid black;
-  color: var(--primary-text-color);
-  font-size: 1rem;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: rgba(255,255,255,0.65);
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
 }
 
 .tabs button.active {
-  background: var(--secondary-team-color);
-  color: var(--secondary-text-color);
+  background: transparent;
+  color: var(--color-brand-gold);
+  border-bottom-color: var(--color-brand-gold);
 }
 
+.tabs button:hover:not(.active) {
+  color: rgba(255,255,255,0.9);
+}
+
+/* ── Bars ─────────────────────────────────────────────────────────────────── */
 .user-bar {
   padding: 0.7em 1em;
   color: #000;
-  background-color: #FFC62F;
+  background-color: var(--color-brand-gold);
   text-align: center;
   border: 1px solid #000;
   box-sizing: border-box;
@@ -273,35 +364,36 @@ nav {
   background: #fff;
   color: black;
   border: 2px solid black;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   padding: 0.4em 1.1em;
-  font-weight: bold;
+  font-weight: 700;
   cursor: pointer;
   margin-left: 1em;
   transition: background 0.2s, color 0.2s;
 }
+
 #logout-button:hover {
   background: var(--secondary-team-color);
   color: #fff;
 }
 
-
 .tournament-bar {
   background-color: #000;
   color: #fff;
-  padding: 0.3rem;
+  padding: var(--space-1);
   text-align: center;
-  font-weight: bold;
+  font-weight: 700;
   box-sizing: border-box;
-
 }
 
 .round-bar {
-  background-color: var(--primary-team-color, #4F2185);
+  background-color: var(--primary-team-color, var(--color-brand-primary));
   color: #fff;
-  padding: 0.5rem;
+  padding: var(--space-2);
   text-align: center;
-  font-size: 0.95rem;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  letter-spacing: 0.03em;
   box-sizing: border-box;
 }
 
@@ -310,19 +402,20 @@ nav {
   top: 100%;
   left: 0;
   right: 0;
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 0 0 4px 4px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  box-shadow: var(--shadow-md);
   z-index: 100;
 }
 
 .round-dropdown-item {
-  padding: 0.75rem 1rem;
-  color: #333;
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-text-primary);
   cursor: pointer;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--color-border);
   text-align: left;
+  font-size: var(--font-size-sm);
 }
 
 .round-dropdown-item:last-child {
@@ -330,30 +423,36 @@ nav {
 }
 
 .round-dropdown-item:hover {
-  background-color: #f5f5f5;
+  background-color: var(--color-bg-subtle);
 }
 
 .round-dropdown-item.active {
-  background-color: var(--primary-team-color, #4F2185);
+  background-color: var(--primary-team-color, var(--color-brand-primary));
   color: white;
 }
 
-
+/* ── Layout ───────────────────────────────────────────────────────────────── */
 main {
   flex: 1;
   overflow: auto;
-
 }
 
+.container {
+  padding: var(--space-4);
+  max-width: 600px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
 
-
+/* ── Score Dots ───────────────────────────────────────────────────────────── */
 .corner-dot {
   position: absolute;
   top: 3px;
   right: 9px;
   width: 6px;
   height: 6px;
-  background: black; /* or any color you want */
+  background: black;
   border-radius: 50%;
   z-index: 2;
   pointer-events: none;
@@ -365,170 +464,173 @@ main {
 }
 
 .penalty-dot {
-  background: #e53935;
+  background: var(--color-action-danger);
 }
 
-/* for circle and square around scores */
+/* ── Score Colors ─────────────────────────────────────────────────────────── */
 .score-birdie {
-  background-color: #d0e8ff !important; /* light blue */
+  background-color: var(--color-score-birdie) !important;
 }
 .score-bogey {
-  background-color: #ffe0e0 !important; /* light red/pink for bogey */
+  background-color: var(--color-score-bogey) !important;
 }
 .score-par {
-  background-color: #f7f7f7 !important; /* light gray for par, optional */
+  background-color: var(--color-score-par) !important;
 }
 
-/* Guys Trip best ball cells */
 .best-ball-cell {
-  font-weight: bold;
+  font-weight: 700;
   text-align: center;
 }
 
 .winning-score {
-  border: 2px solid #FFD700 !important; /* Gold border for winning score */
-  font-weight: bold;
+  border: 2px solid var(--color-brand-gold) !important;
+  font-weight: 700;
 }
 
+/* ── Score Table ──────────────────────────────────────────────────────────── */
 #score-entry-content {
   overflow-y: auto;
   max-height: 800px;
 }
 
-.no-match-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 2rem 1.5rem 2.5rem;
+.score-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+  margin-top: 10px;
+}
+
+.score-table th,
+.score-table td {
+  border: 1px solid var(--color-border);
+  padding: var(--space-2);
   text-align: center;
 }
 
-.no-match-img {
-  width: 80vw;
-  max-width: 320px;
-  border-radius: 16px;
-  margin-bottom: 1.5rem;
-  filter: drop-shadow(0 6px 20px rgba(0,0,0,0.2));
-}
-
-.no-match-title {
-  font-size: 1.6rem;
-  font-weight: 800;
-  color: #4F2185;
-  margin: 0 0 0.6rem;
+.score-table th {
+  background-color: var(--color-bg-muted);
+  font-weight: 700;
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
   letter-spacing: 0.02em;
-}
-
-.no-match-msg {
-  font-size: 1rem;
-  color: #666;
-  max-width: 280px;
-  line-height: 1.5;
-  margin: 0;
+  color: var(--color-text-secondary);
+  position: sticky;
+  top: 0;
+  z-index: 3;
 }
 
 .score-table td {
   position: relative;
 }
 
-.score-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 1rem;
-  margin-top: 10px;
-}
-
-.score-table th,
-.score-table td {
-  border: 1px solid #ccc;
-  padding: 0.5rem;
-  text-align: center;
-}
-
-.score-table th {
-  background-color: #f0f0f0;
-  font-weight: bold;
-  position: sticky;
-  top: 0;
-  z-index: 3;
-}
-
 .score-table td select {
   width: 100%;
-  padding: 0.5rem;
-  font-size: 1rem;
-  border-radius: 4px;
-  border: 1px solid #aaa;
+  padding: var(--space-2);
+  font-size: var(--font-size-base);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-strong);
 }
 
 .score-table tr:nth-child(even) {
-  background-color: #fafafa;
+  background-color: var(--color-bg-subtle);
 }
 
 .score-table tr:hover {
-  background-color: #f5f5f5;
+  background-color: var(--color-bg-muted);
 }
 
 .subtotal-row {
-  background-color: #f8f9fa !important;
-  border-top: 1px solid #dee2e6;
-  border-bottom: 1px solid #dee2e6;
+  background-color: var(--color-bg-card) !important;
+  border-top: 2px solid var(--color-border-strong);
+  border-bottom: 2px solid var(--color-border-strong);
 }
 
 .subtotal-row td {
-  font-weight: normal;
-  padding: 8px 4px !important;
-  color: #6c757d;
-  font-style: italic;
+  font-weight: 600;
+  padding: var(--space-2) var(--space-1) !important;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
 }
 
+/* ── Finalize Button ──────────────────────────────────────────────────────── */
 #finalize-results-btn {
   display: block;
   width: 100vw;
   max-width: 100%;
   margin: 24px 0 0 0;
-  padding: 1rem 0;
-  font-size: 1.3rem;
-  font-weight: bold;
-  background: linear-gradient(90deg, #1976d2 0%, #42a5f5 100%);
+  padding: var(--space-4) 0;
+  font-family: var(--font-family);
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+  background: linear-gradient(90deg, var(--color-brand-primary) 0%, #6b35a8 100%);
   color: #fff;
   border: none;
   border-radius: 0;
-  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.15);
+  box-shadow: 0 2px 12px rgba(79,33,133,0.3);
   cursor: pointer;
-  letter-spacing: 1px;
+  letter-spacing: 0.05em;
   transition: background 0.2s, box-shadow 0.2s;
-
 }
 
-#finalize-results-btn:hover, #finalize-results-btn:focus {
-  background: linear-gradient(90deg, #1565c0 0%, #1976d2 100%);
-  box-shadow: 0 4px 16px rgba(25, 118, 210, 0.25);
+#finalize-results-btn:hover,
+#finalize-results-btn:focus {
+  background: linear-gradient(90deg, #3d1a6e 0%, var(--color-brand-primary) 100%);
+  box-shadow: 0 4px 20px rgba(79,33,133,0.4);
   outline: none;
 }
 
 @media (max-width: 600px) {
   .score-table {
-    font-size: 0.9rem;
+    font-size: var(--font-size-xs);
   }
 
   .score-table td select {
-    font-size: 1rem;
+    font-size: var(--font-size-base);
     padding: 0.6rem;
   }
 }
 
+/* ── No Match State ───────────────────────────────────────────────────────── */
+.no-match-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-8) var(--space-6) var(--space-10);
+  text-align: center;
+}
 
+.no-match-img {
+  width: 80vw;
+  max-width: 320px;
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-6);
+  filter: drop-shadow(0 6px 20px rgba(0,0,0,0.2));
+}
 
+.no-match-title {
+  font-size: var(--font-size-2xl);
+  font-weight: 800;
+  color: var(--color-brand-primary);
+  margin: 0 0 0.6rem;
+  letter-spacing: 0.02em;
+}
 
+.no-match-msg {
+  font-size: var(--font-size-base);
+  color: var(--color-text-secondary);
+  max-width: 280px;
+  line-height: var(--leading-normal);
+  margin: 0;
+}
 
-/* ── PIN Screen ───────────────────────────────────── */
+/* ── PIN Screen ───────────────────────────────────────────────────────────── */
 #pin-container {
   position: fixed;
   inset: 0;
   overflow-y: auto;
   padding: calc(env(safe-area-inset-top) + 3rem) 1.25rem 3rem;
-  background: linear-gradient(160deg, #2e0d55 0%, #4F2185 55%, #3a1060 100%);
+  background: linear-gradient(160deg, #2e0d55 0%, var(--color-brand-primary) 55%, #3a1060 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -548,7 +650,7 @@ main {
   color: #fff;
   text-align: center;
   width: 100%;
-  font-size: 2rem;
+  font-size: var(--font-size-3xl);
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -558,7 +660,7 @@ main {
 #pin-form .pin-prompt {
   margin: 0;
   color: rgba(255,255,255,0.85);
-  font-size: 0.95rem;
+  font-size: var(--font-size-sm);
   text-align: center;
 }
 
@@ -571,11 +673,11 @@ main {
 #pin-form #pin-error {
   color: #ffcdd2;
   text-align: center;
-  font-size: 0.9rem;
+  font-size: var(--font-size-sm);
   margin: 0;
 }
 
-/* ── Login / Register / Signup / Join / Reset forms inside pin-container ─── */
+/* ── Login / Register / Signup / Join / Reset ─────────────────────────────── */
 #login-form, #register-form, #signup-chooser, #join-form, #reset-form, #org-picker {
   display: flex;
   flex-direction: column;
@@ -585,25 +687,27 @@ main {
   gap: 0;
 }
 
-#login-form h2, #register-form h2, #signup-chooser h2, #join-form h2, #reset-form h2, #org-picker h2 {
+#login-form h2, #register-form h2, #signup-chooser h2,
+#join-form h2, #reset-form h2, #org-picker h2 {
   margin: 0 0 1.75rem;
   color: #fff;
   text-align: center;
   width: 100%;
-  font-size: 2rem;
+  font-family: var(--font-family);
+  font-size: var(--font-size-3xl);
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   text-shadow: 0 2px 12px rgba(0,0,0,0.4);
 }
 
-/* ── Login Screen ─────────────────────────────────── */
+/* ── Auth Container ───────────────────────────────────────────────────────── */
 #auth-container {
   position: fixed;
   inset: 0;
   overflow-y: auto;
   padding: 3rem 1.25rem 3rem;
-  background: linear-gradient(160deg, #2e0d55 0%, #4F2185 55%, #3a1060 100%);
+  background: linear-gradient(160deg, #2e0d55 0%, var(--color-brand-primary) 55%, #3a1060 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -618,37 +722,37 @@ main {
   gap: 0;
 }
 
-/* Title */
 #auth-form h2 {
   margin: 0 0 1.75rem;
   color: #fff;
   text-align: center;
   width: 100%;
-  font-size: 2rem;
+  font-family: var(--font-family);
+  font-size: var(--font-size-3xl);
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   text-shadow: 0 2px 12px rgba(0,0,0,0.4);
 }
 
-/* Logo image */
+/* ── Logo ─────────────────────────────────────────────────────────────────── */
 .form-logo {
   display: block;
   width: 92vw;
   max-width: 92vw;
   margin: 0 auto 2rem;
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   filter: drop-shadow(0 8px 28px rgba(0,0,0,0.45));
 }
 
-/* Frosted glass card */
+/* ── Auth Card (frosted glass) ────────────────────────────────────────────── */
 .auth-card {
   width: 100%;
   max-width: 420px;
   background: rgba(255, 255, 255, 0.12);
   border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 20px;
-  padding: 1.75rem 1.5rem;
+  border-radius: var(--radius-xl);
+  padding: 1.75rem var(--space-6);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   display: flex;
@@ -656,17 +760,17 @@ main {
   gap: 0.85rem;
 }
 
-/* Select + inputs */
 .auth-card select,
 .auth-card input {
   width: 100%;
   box-sizing: border-box;
-  padding: 0.85rem 1rem;
-  font-size: 1rem;
+  padding: 0.85rem var(--space-4);
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.9);
-  color: #1a1a1a;
+  color: var(--color-text-primary);
   outline: none;
   appearance: auto;
   -webkit-appearance: auto;
@@ -679,26 +783,25 @@ main {
   box-shadow: 0 0 0 3px rgba(255, 198, 47, 0.5);
 }
 
-/* New golfer sub-inputs */
 #new-golfer-form {
   display: none;
   flex-direction: column;
   gap: 0.85rem;
 }
 
-/* Continue button */
 .auth-card button[type="submit"] {
   width: 100%;
-  padding: 0.95rem 1rem;
-  margin-top: 0.25rem;
-  font-size: 1.05rem;
-  font-weight: 700;
+  padding: 0.95rem var(--space-4);
+  margin-top: var(--space-1);
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  font-weight: 800;
   letter-spacing: 0.04em;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  background: #FFC62F;
-  color: #1a1a1a;
+  background: var(--color-brand-gold);
+  color: var(--color-text-primary);
   transition: background 0.2s, transform 0.1s;
   box-shadow: 0 4px 16px rgba(255, 198, 47, 0.35);
 }
@@ -711,99 +814,79 @@ main {
   transform: scale(0.98);
 }
 
-/* Auth message */
 #auth-message {
-  margin-top: 1rem;
+  margin-top: var(--space-4);
   color: #ffe0e0;
   text-align: center;
-  font-size: 0.95rem;
+  font-size: var(--font-size-sm);
 }
 
-/* Labels */
 #auth-form label {
-  font-size: 1rem;
+  font-size: var(--font-size-base);
   color: #fff;
   margin-bottom: 0.2rem;
 }
 
-/* Round History back button */
+/* ── Dashboard Buttons ────────────────────────────────────────────────────── */
 .history-back-btn {
-  background-color: lightgray;
-  color: #000;
+  background-color: var(--color-bg-muted);
+  color: var(--color-text-primary);
   border: none;
-  border-radius: 4px;
-  padding: 0.7rem 1rem;
-  font-size: 1rem;
-  font-weight: bold;
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-4);
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  font-weight: 700;
   cursor: pointer;
 }
 
 .history-back-btn:hover {
-  background-color: #d3d3d3;
+  background-color: var(--color-border);
 }
 
-/* User Dashboard buttons */
 #user-dashboard button[type="button"] {
-  background-color: lightgray;
-  color: #000;
+  background-color: var(--color-bg-muted);
+  color: var(--color-text-primary);
   border: none;
-  border-radius: 4px;
-  padding: 0.7rem 1rem;
-  font-size: 1rem;
-  font-weight: bold;
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-4);
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  font-weight: 700;
   cursor: pointer;
   width: 100%;
 }
 
 #user-dashboard button[type="button"]:hover {
-  background-color: #d3d3d3;
+  background-color: var(--color-border);
 }
 
 #change-user-btn {
   width: auto !important;
-  padding: 0.4rem 1rem !important;
-  font-size: 0.9rem !important;
+  padding: 0.4rem var(--space-4) !important;
+  font-size: var(--font-size-sm) !important;
   background-color: #fff !important;
-  border: 2px solid #4F2185 !important;
-  color: #4F2185 !important;
+  border: 2px solid var(--color-brand-primary) !important;
+  color: var(--color-brand-primary) !important;
 }
 
 #change-user-btn:hover {
-  background-color: #f0f0f0 !important;
+  background-color: var(--color-bg-muted) !important;
 }
 
-/* The message below the form for errors or feedback */
-#auth-message {
-  margin-top: 1rem;
-  font-size: 0.95rem;
-  color: red;
-  text-align: center;
-}
-
-#auth-form select,
-#auth-form input[type="password"],
-#auth-form button[type="submit"] {
-  width: 100%;
-  box-sizing: border-box; /* Ensures padding doesn't expand total width */
-}
-
-
-
+/* ── Misc ─────────────────────────────────────────────────────────────────── */
 .handicap-cell {
-  background-color: gray; 
+  background-color: var(--color-bg-muted);
 }
 
-
-
-
-
+/* ── Match Summary & Cards ────────────────────────────────────────────────── */
 .match-summary {
-  border: 1px solid #ccc;
-  margin-bottom: 12px;
-  border-radius: 8px;
-  padding: 8px;
-
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  border: 1px solid var(--color-border);
+  margin-bottom: var(--space-3);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  box-shadow: var(--shadow-xs);
+  background: var(--color-bg-card);
 }
 
 .teams-row {
@@ -815,10 +898,10 @@ main {
 
 .team-box {
   flex: 1;
-  padding: 6px 10px;
-  border-radius: 5px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
   color: #fff;
-  font-weight: bold;
+  font-weight: 700;
   text-align: center;
 }
 
@@ -830,73 +913,83 @@ main {
 .team-box.secondary-team {
   background-color: var(--secondary-team-color);
   color: var(--secondary-text-color);
-
 }
 
 .vs {
-  margin: 0 8px;
-  font-weight: bold;
-  font-size: 1.2rem;
+  margin: 0 var(--space-2);
+  font-weight: 800;
+  font-size: var(--font-size-base);
+  color: var(--color-text-secondary);
 }
 
 .match-status {
   text-align: center;
-  font-weight: bold;
-  font-size: 0.95rem;
+  font-weight: 700;
+  font-size: var(--font-size-sm);
   margin-top: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .match-status.primary-team-status {
   background-color: var(--primary-team-color);
   color: var(--primary-text-color);
-  border-radius: 4px;
-  padding: 4px 8px;
+  padding: var(--space-1) var(--space-3);
 }
 
 .match-status.secondary-team-status {
   background-color: var(--secondary-team-color);
   color: var(--secondary-text-color);
-  border-radius: 4px;
-  padding: 4px 8px;
+  padding: var(--space-1) var(--space-3);
 }
 
 .tied-status,
 .halved-status {
-  background-color: #333;
+  background-color: var(--color-text-primary);
   color: #fff;
-  border-radius: 4px;
-  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-3);
 }
 
+/* ── Shared Table Header (all table types) ────────────────────────────────── */
+.score-table th,
+.skins-table th,
+.leaderboard-table th,
+.handicap-table th,
+.scorecard-table th,
+.matchup-table th {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  background: var(--color-bg-muted);
+}
 
-
+/* ── Skins Table ──────────────────────────────────────────────────────────── */
 .skins-table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 10px;
 }
 
-.skins-table th, .skins-table td {
-  border: 1px solid #ccc;
-  padding: 6px 8px;
+.skins-table th,
+.skins-table td {
+  border: 1px solid var(--color-border);
+  padding: var(--space-2);
   text-align: center;
 }
 
-.skins-table th {
-  background-color: #f2f2f2;
-}
-
-
+/* ── Leaderboards ─────────────────────────────────────────────────────────── */
 .gross-leaderboard {
   margin-top: 10px;
-  border-top: 2px solid #ccc;
-  padding-top: 0px;
+  border-top: 2px solid var(--color-border);
+  padding-top: 0;
 }
 
 .net-leaderboard {
   margin-top: 10px;
-  border-top: 2px solid #ccc;
-  padding-top: 0px;
+  border-top: 2px solid var(--color-border);
+  padding-top: 0;
 }
 
 .leaderboard-table {
@@ -905,109 +998,91 @@ main {
   text-align: center;
 }
 
-.leaderboard-table th, .leaderboard-table td {
-  padding: 8px;
-  border: 1px solid #ccc;
+.leaderboard-table th,
+.leaderboard-table td {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
 }
 
-.leaderboard-table th {
-  background-color: #f2f2f2;
-}
-
+/* ── Matchup Table ────────────────────────────────────────────────────────── */
 .matchup-table {
   table-layout: fixed;
   width: 100%;
 }
 
-.matchup-table th, .matchup-table td {
+.matchup-table th,
+.matchup-table td {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .matchup-table th:nth-child(1),
-.matchup-table td:nth-child(1) {
-  width: 14%;
-}
+.matchup-table td:nth-child(1) { width: 14%; }
 
 .matchup-table th:nth-child(2),
-.matchup-table td:nth-child(2) {
-  width: 39%;
-}
+.matchup-table td:nth-child(2) { width: 39%; }
 
 .matchup-table th:nth-child(3),
-.matchup-table td:nth-child(3) {
-  width: 39%;
-}
+.matchup-table td:nth-child(3) { width: 39%; }
 
 .matchup-table th:nth-child(4),
-.matchup-table td:nth-child(4) {
-  width: 8%;
-}
+.matchup-table td:nth-child(4) { width: 8%; }
 
-
-.form-logo {
-  display: block;
-  margin: 0 auto 1.5rem;
-  width: 92vw;
-  max-width: 92vw;
-}
-
-
+/* ── Handicap Explanation ─────────────────────────────────────────────────── */
 .handicap-explanation {
   margin-top: 1em;
-  padding: 10px;
+  padding: var(--space-3);
   background: #f8f8e0;
   border: 1px solid #e0e0b0;
-  border-radius: 6px;
-  font-size: 1em;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
 }
 
-/* Add to your styles.css */
+/* ── Handicap Table ───────────────────────────────────────────────────────── */
 .handicap-table-container {
   margin-top: 10px;
-  border-top: 2px solid #ccc;
+  border-top: 2px solid var(--color-border);
 }
+
 .handicap-table {
   border-collapse: collapse;
   width: 100%;
-  background: #fff;
-}
-.handicap-table th, .handicap-table td {
-  border: 1px solid #ccc;
-  padding: 0.4em 0.7em;
-  text-align: center;
-}
-.handicap-table th {
-  background: #f2f2f2;
+  background: var(--color-bg-card);
 }
 
+.handicap-table th,
+.handicap-table td {
+  border: 1px solid var(--color-border);
+  padding: var(--space-2);
+  text-align: center;
+}
+
+/* ── Scorecard Table ──────────────────────────────────────────────────────── */
 .scorecard-table {
   width: 100%;
   border-collapse: collapse;
   text-align: center;
 }
 
-.scorecard-table th, .scorecard-table td {
-  padding: 8px;
-  border: 1px solid #ccc;
+.scorecard-table th,
+.scorecard-table td {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
 }
 
-.scorecard-table th {
-  background-color: #f2f2f2;
-}
-
+/* ── Tournament Rounds ────────────────────────────────────────────────────── */
 .tournament-rounds-table-container {
-  margin-top: .2em;
-  border-top: 2px solid #ccc;
-
+  margin-top: 0.2em;
+  border-top: 2px solid var(--color-border);
 }
 
 .tournament-rounds-table-container h4 {
-  padding: 0.1em 0 0.1em 0; /* or just padding: 0; */
-  margin: 0.1em 0 0.1em 0;   /* optional: adjust margin as needed */
+  padding: 0.1em 0;
+  margin: 0.1em 0;
 }
 
+/* ── Utilities ────────────────────────────────────────────────────────────── */
 div:empty {
   display: none;
 }
