@@ -306,91 +306,91 @@ function loadBestBallSetup(preserveSelections = false) {
       const courseOptions = courses.map(c => `<option value="${c.course_id}">${c.name}</option>`).join('');
 
       setupContent.innerHTML = `
-        <div style="max-width: 600px; margin: 2rem auto; padding: 2rem; background: white; border-radius: 8px;">
-          <h2 style="text-align: center; margin-bottom: 2rem;">Best Ball Setup</h2>
+        <div class="setup-wrapper">
+          <h2 class="page-title">Best Ball Setup</h2>
 
-          <div style="margin-bottom: 2rem; padding: 1rem; background: #f0f0f0; border-radius: 8px;">
-            <h3 style="margin-top: 0;">Team 1</h3>
+          <div class="setup-section">
+            <h3 style="margin:0 0 var(--space-3); font-size:var(--font-size-base); font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-secondary);">Team 1</h3>
             <div style="margin-bottom: 1rem;">
-              <label style="display: block; margin-bottom: 0.5rem;">Player 1:</label>
-              <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <select id="team1-player1" class="player-select" style="flex: 1; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc;">
+              <label class="form-label">Player 1:</label>
+              <div class="setup-player-row">
+                <select id="team1-player1" class="player-select form-input" style="flex:1;">
                   <option value="">-- Select Player --</option>
                   ${golferOptions}
                   <option value="new-player">+ New Player</option>
                 </select>
-                <button class="edit-player-btn" data-select="team1-player1" style="padding: 0.5rem 0.75rem; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">✏️</button>
+                <button class="edit-player-btn" data-select="team1-player1" class="btn-edit-player">✏️</button>
               </div>
             </div>
             <div>
-              <label style="display: block; margin-bottom: 0.5rem;">Player 2:</label>
-              <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <select id="team1-player2" class="player-select" style="flex: 1; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc;">
+              <label class="form-label">Player 2:</label>
+              <div class="setup-player-row">
+                <select id="team1-player2" class="player-select form-input" style="flex:1;">
                   <option value="">-- Select Player --</option>
                   ${golferOptions}
                   <option value="new-player">+ New Player</option>
                 </select>
-                <button class="edit-player-btn" data-select="team1-player2" style="padding: 0.5rem 0.75rem; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">✏️</button>
+                <button class="edit-player-btn" data-select="team1-player2" class="btn-edit-player">✏️</button>
               </div>
             </div>
           </div>
 
-          <div style="margin-bottom: 2rem; padding: 1rem; background: #f0f0f0; border-radius: 8px;">
-            <h3 style="margin-top: 0;">Team 2</h3>
+          <div class="setup-section">
+            <h3 style="margin:0 0 var(--space-3); font-size:var(--font-size-base); font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-secondary);">Team 2</h3>
             <div style="margin-bottom: 1rem;">
-              <label style="display: block; margin-bottom: 0.5rem;">Player 1:</label>
-              <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <select id="team2-player1" class="player-select" style="flex: 1; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc;">
+              <label class="form-label">Player 1:</label>
+              <div class="setup-player-row">
+                <select id="team2-player1" class="player-select form-input" style="flex:1;">
                   <option value="">-- Select Player --</option>
                   ${golferOptions}
                   <option value="new-player">+ New Player</option>
                 </select>
-                <button class="edit-player-btn" data-select="team2-player1" style="padding: 0.5rem 0.75rem; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">✏️</button>
+                <button class="edit-player-btn" data-select="team2-player1" class="btn-edit-player">✏️</button>
               </div>
             </div>
             <div>
-              <label style="display: block; margin-bottom: 0.5rem;">Player 2:</label>
-              <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <select id="team2-player2" class="player-select" style="flex: 1; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc;">
+              <label class="form-label">Player 2:</label>
+              <div class="setup-player-row">
+                <select id="team2-player2" class="player-select form-input" style="flex:1;">
                   <option value="">-- Select Player --</option>
                   ${golferOptions}
                   <option value="new-player">+ New Player</option>
                 </select>
-                <button class="edit-player-btn" data-select="team2-player2" style="padding: 0.5rem 0.75rem; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">✏️</button>
+                <button class="edit-player-btn" data-select="team2-player2" class="btn-edit-player">✏️</button>
               </div>
             </div>
           </div>
 
-          <div style="margin-bottom: 2rem; padding: 1rem; background: #f0f0f0; border-radius: 8px;">
-            <h3 style="margin-top: 0;">Course</h3>
+          <div class="setup-section">
+            <h3 style="margin:0 0 var(--space-3); font-size:var(--font-size-base); font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-secondary);">Course</h3>
             <div style="margin-bottom: 1rem;">
-              <label style="display: block; margin-bottom: 0.5rem;">Select Course:</label>
-              <select id="select-course" style="width: 100%; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc;">
+              <label class="form-label">Select Course:</label>
+              <select id="select-course" class="form-input form-select">
                 <option value="">-- Select Course --</option>
                 ${courseOptions}
               </select>
             </div>
             <div id="tee-selection" style="display: none;">
-              <label style="display: block; margin-bottom: 0.5rem;">Select Tees:</label>
-              <select id="select-tee" style="width: 100%; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc;">
+              <label class="form-label">Select Tees:</label>
+              <select id="select-tee" class="form-input form-select">
                 <option value="">-- Select Tees --</option>
               </select>
             </div>
           </div>
 
-          <div style="margin-bottom: 2rem; padding: 1rem; background: #f0f0f0; border-radius: 8px;">
-            <h3 style="margin-top: 0;">Handicap Adjustment</h3>
+          <div class="setup-section">
+            <h3 style="margin:0 0 var(--space-3); font-size:var(--font-size-base); font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-secondary);">Handicap Adjustment</h3>
             <div>
-              <label style="display: block; margin-bottom: 0.5rem;">Handicap Percentage: <span id="handicap-value" style="font-weight: bold;">100%</span></label>
+              <label class="form-label">Handicap Percentage: <span id="handicap-value" style="font-weight: bold;">100%</span></label>
               <input type="range" id="handicap-slider" min="10" max="100" step="10" value="100" style="width: 100%; height: 8px; border-radius: 5px; background: #ddd; outline: none; cursor: pointer;">
             </div>
           </div>
 
-          <div style="text-align: center;">
-            <button id="start-best-ball" style="padding: 1rem 2rem; font-size: 1.2rem; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+          <div style="display:flex; gap:var(--space-3); justify-content:center; flex-wrap:wrap;">
+            <button id="start-best-ball" class="btn btn-success btn-auto">
               Start Round
             </button>
-            <button id="cancel-best-ball" style="padding: 1rem 2rem; font-size: 1rem; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 1rem;">
+            <button id="cancel-best-ball" class="btn btn-neutral btn-auto">
               Cancel
             </button>
           </div>
@@ -398,28 +398,28 @@ function loadBestBallSetup(preserveSelections = false) {
         </div>
 
         <!-- New Player Modal -->
-        <div id="new-player-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
-          <div style="background: white; padding: 2rem; border-radius: 8px; max-width: 400px; width: 90%;">
-            <h3 id="player-modal-title" style="margin-top: 0;">Add New Player</h3>
+        <div id="new-player-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+          <div class="modal-box" style="max-width:400px;">
+            <h3 id="player-modal-title" class="modal-title" style="margin-bottom:var(--space-5);">Add New Player</h3>
             <input type="hidden" id="edit-player-id" value="">
             <div style="margin-bottom: 1rem;">
-              <label style="display: block; margin-bottom: 0.5rem;">First Name:</label>
-              <input type="text" id="new-player-first-name" style="width: 100%; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box;">
+              <label class="form-label">First Name:</label>
+              <input type="text" id="new-player-first-name" class="form-input">
             </div>
             <div style="margin-bottom: 1rem;">
-              <label style="display: block; margin-bottom: 0.5rem;">Last Name:</label>
-              <input type="text" id="new-player-last-name" style="width: 100%; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box;">
+              <label class="form-label">Last Name:</label>
+              <input type="text" id="new-player-last-name" class="form-input">
             </div>
             <div style="margin-bottom: 1rem;">
-              <label style="display: block; margin-bottom: 0.5rem;">Handicap:</label>
-              <input type="number" id="new-player-handicap" step="0.1" style="width: 100%; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box;">
+              <label class="form-label">Handicap:</label>
+              <input type="number" id="new-player-handicap" step="0.1" class="form-input">
             </div>
             <div id="new-player-message" style="margin-bottom: 1rem; color: red; text-align: center;"></div>
             <div style="text-align: center;">
-              <button id="save-new-player" style="padding: 0.7rem 1.5rem; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 0.5rem;">
+              <button id="save-new-player" class="btn btn-success btn-auto">
                 Save
               </button>
-              <button id="cancel-new-player" style="padding: 0.7rem 1.5rem; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer;">
+              <button id="cancel-new-player" class="btn btn-neutral btn-auto">
                 Cancel
               </button>
             </div>
@@ -732,91 +732,91 @@ function loadRabbitSetup(preserveSelections = false) {
     const courseOptions = courses.map(c => `<option value="${c.course_id}">${c.name}</option>`).join('');
 
     setupContent.innerHTML = `
-      <div style="max-width: 600px; margin: 2rem auto; padding: 2rem; background: white; border-radius: 8px;">
-        <h2 style="text-align: center; margin-bottom: 2rem;">Rabbit Setup</h2>
+      <div class="setup-wrapper">
+        <h2 class="page-title">Rabbit Setup</h2>
 
-        <div style="margin-bottom: 2rem; padding: 1rem; background: #f0f0f0; border-radius: 8px;">
-          <h3 style="margin-top: 0;">Players</h3>
+        <div class="setup-section">
+          <h3 style="margin:0 0 var(--space-3); font-size:var(--font-size-base); font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-secondary);">Players</h3>
 
           <div style="margin-bottom: 1rem;">
-            <label style="display: block; margin-bottom: 0.5rem;">Player 1:</label>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <select id="rabbit-player1" class="player-select" style="flex: 1; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc;">
+            <label class="form-label">Player 1:</label>
+            <div class="setup-player-row">
+              <select id="rabbit-player1" class="player-select form-input" style="flex:1;">
                 <option value="">-- Select Player --</option>
                 ${golferOptions}
                 <option value="new-player">+ New Player</option>
               </select>
-              <button class="edit-player-btn" data-select="rabbit-player1" style="padding: 0.5rem 0.75rem; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">✏️</button>
+              <button class="edit-player-btn" data-select="rabbit-player1" class="btn-edit-player">✏️</button>
             </div>
           </div>
 
           <div style="margin-bottom: 1rem;">
-            <label style="display: block; margin-bottom: 0.5rem;">Player 2:</label>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <select id="rabbit-player2" class="player-select" style="flex: 1; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc;">
+            <label class="form-label">Player 2:</label>
+            <div class="setup-player-row">
+              <select id="rabbit-player2" class="player-select form-input" style="flex:1;">
                 <option value="">-- Select Player --</option>
                 ${golferOptions}
                 <option value="new-player">+ New Player</option>
               </select>
-              <button class="edit-player-btn" data-select="rabbit-player2" style="padding: 0.5rem 0.75rem; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">✏️</button>
+              <button class="edit-player-btn" data-select="rabbit-player2" class="btn-edit-player">✏️</button>
             </div>
           </div>
 
           <div style="margin-bottom: 1rem;">
-            <label style="display: block; margin-bottom: 0.5rem;">Player 3:</label>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <select id="rabbit-player3" class="player-select" style="flex: 1; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc;">
+            <label class="form-label">Player 3:</label>
+            <div class="setup-player-row">
+              <select id="rabbit-player3" class="player-select form-input" style="flex:1;">
                 <option value="">-- Select Player --</option>
                 ${golferOptions}
                 <option value="new-player">+ New Player</option>
               </select>
-              <button class="edit-player-btn" data-select="rabbit-player3" style="padding: 0.5rem 0.75rem; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">✏️</button>
+              <button class="edit-player-btn" data-select="rabbit-player3" class="btn-edit-player">✏️</button>
             </div>
           </div>
 
           <div style="margin-bottom: 1rem;">
-            <label style="display: block; margin-bottom: 0.5rem;">Player 4:</label>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <select id="rabbit-player4" class="player-select" style="flex: 1; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc;">
+            <label class="form-label">Player 4:</label>
+            <div class="setup-player-row">
+              <select id="rabbit-player4" class="player-select form-input" style="flex:1;">
                 <option value="">-- Select Player --</option>
                 ${golferOptions}
                 <option value="new-player">+ New Player</option>
               </select>
-              <button class="edit-player-btn" data-select="rabbit-player4" style="padding: 0.5rem 0.75rem; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">✏️</button>
+              <button class="edit-player-btn" data-select="rabbit-player4" class="btn-edit-player">✏️</button>
             </div>
           </div>
         </div>
 
-        <div style="margin-bottom: 2rem; padding: 1rem; background: #f0f0f0; border-radius: 8px;">
-          <h3 style="margin-top: 0;">Course</h3>
+        <div class="setup-section">
+          <h3 style="margin:0 0 var(--space-3); font-size:var(--font-size-base); font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-secondary);">Course</h3>
           <div style="margin-bottom: 1rem;">
-            <label style="display: block; margin-bottom: 0.5rem;">Select Course:</label>
-            <select id="select-course" style="width: 100%; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc;">
+            <label class="form-label">Select Course:</label>
+            <select id="select-course" class="form-input form-select">
               <option value="">-- Select Course --</option>
               ${courseOptions}
             </select>
           </div>
           <div id="tee-selection" style="display: none;">
-            <label style="display: block; margin-bottom: 0.5rem;">Select Tees:</label>
-            <select id="select-tee" style="width: 100%; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc;">
+            <label class="form-label">Select Tees:</label>
+            <select id="select-tee" class="form-input form-select">
               <option value="">-- Select Tees --</option>
             </select>
           </div>
         </div>
 
-        <div style="margin-bottom: 2rem; padding: 1rem; background: #f0f0f0; border-radius: 8px;">
-          <h3 style="margin-top: 0;">Handicap Adjustment</h3>
+        <div class="setup-section">
+          <h3 style="margin:0 0 var(--space-3); font-size:var(--font-size-base); font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-secondary);">Handicap Adjustment</h3>
           <div>
-            <label style="display: block; margin-bottom: 0.5rem;">Handicap Percentage: <span id="handicap-value" style="font-weight: bold;">100%</span></label>
+            <label class="form-label">Handicap Percentage: <span id="handicap-value" style="font-weight: bold;">100%</span></label>
             <input type="range" id="handicap-slider" min="10" max="100" step="10" value="100" style="width: 100%; height: 8px; border-radius: 5px; background: #ddd; outline: none; cursor: pointer;">
           </div>
         </div>
 
-        <div style="text-align: center;">
-          <button id="start-rabbit" style="padding: 1rem 2rem; font-size: 1.2rem; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+        <div style="display:flex; gap:var(--space-3); justify-content:center; flex-wrap:wrap;">
+          <button id="start-rabbit" class="btn btn-success btn-auto">
             Start Round
           </button>
-          <button id="cancel-rabbit" style="padding: 1rem 2rem; font-size: 1rem; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 1rem;">
+          <button id="cancel-rabbit" class="btn btn-neutral btn-auto">
             Cancel
           </button>
         </div>
@@ -824,28 +824,28 @@ function loadRabbitSetup(preserveSelections = false) {
       </div>
 
       <!-- New Player Modal (reused) -->
-      <div id="new-player-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
-        <div style="background: white; padding: 2rem; border-radius: 8px; max-width: 400px; width: 90%;">
-          <h3 id="player-modal-title" style="margin-top: 0;">Add New Player</h3>
+      <div id="new-player-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+        <div class="modal-box" style="max-width:400px;">
+          <h3 id="player-modal-title" class="modal-title" style="margin-bottom:var(--space-5);">Add New Player</h3>
           <input type="hidden" id="edit-player-id" value="">
           <div style="margin-bottom: 1rem;">
-            <label style="display: block; margin-bottom: 0.5rem;">First Name:</label>
-            <input type="text" id="new-player-first-name" style="width: 100%; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box;">
+            <label class="form-label">First Name:</label>
+            <input type="text" id="new-player-first-name" class="form-input">
           </div>
           <div style="margin-bottom: 1rem;">
-            <label style="display: block; margin-bottom: 0.5rem;">Last Name:</label>
-            <input type="text" id="new-player-last-name" style="width: 100%; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box;">
+            <label class="form-label">Last Name:</label>
+            <input type="text" id="new-player-last-name" class="form-input">
           </div>
           <div style="margin-bottom: 1rem;">
-            <label style="display: block; margin-bottom: 0.5rem;">Handicap:</label>
-            <input type="number" id="new-player-handicap" step="0.1" style="width: 100%; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box;">
+            <label class="form-label">Handicap:</label>
+            <input type="number" id="new-player-handicap" step="0.1" class="form-input">
           </div>
           <div id="new-player-message" style="margin-bottom: 1rem; color: red; text-align: center;"></div>
           <div style="text-align: center;">
-            <button id="save-new-player" style="padding: 0.7rem 1.5rem; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 0.5rem;">
+            <button id="save-new-player" class="btn btn-success btn-auto">
               Save
             </button>
-            <button id="cancel-new-player" style="padding: 0.7rem 1.5rem; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            <button id="cancel-new-player" class="btn btn-neutral btn-auto">
               Cancel
             </button>
           </div>
@@ -1017,92 +1017,92 @@ function loadWolfSetup(preserveSelections = false) {
     const courseOptions = courses.map(c => `<option value="${c.course_id}">${c.name}</option>`).join('');
 
     setupContent.innerHTML = `
-      <div style="max-width: 600px; margin: 2rem auto; padding: 2rem; background: white; border-radius: 8px;">
-        <h2 style="text-align: center; margin-bottom: 2rem;">Wolf Setup</h2>
+      <div class="setup-wrapper">
+        <h2 class="page-title">Wolf Setup</h2>
 
-        <div style="margin-bottom: 2rem; padding: 1rem; background: #f0f0f0; border-radius: 8px;">
-          <h3 style="margin-top: 0;">Playing Order (4 Players Required)</h3>
+        <div class="setup-section">
+          <h3 style="margin:0 0 var(--space-3); font-size:var(--font-size-base); font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-secondary);">Playing Order (4 Players Required)</h3>
           <p style="font-size: 0.9rem; color: #666; margin-bottom: 1rem;">The Wolf rotates each hole. Player 4 is the Wolf on Hole 1.</p>
 
           <div style="margin-bottom: 1rem;">
-            <label style="display: block; margin-bottom: 0.5rem;">Player 1: <span style="color: red;">*</span></label>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <select id="wolf-player1" class="player-select" style="flex: 1; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc;">
+            <label class="form-label">Player 1: <span style="color: red;">*</span></label>
+            <div class="setup-player-row">
+              <select id="wolf-player1" class="player-select form-input" style="flex:1;">
                 <option value="">-- Select Player --</option>
                 ${golferOptions}
                 <option value="new-player">+ New Player</option>
               </select>
-              <button class="edit-player-btn" data-select="wolf-player1" style="padding: 0.5rem 0.75rem; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">✏️</button>
+              <button class="edit-player-btn" data-select="wolf-player1" class="btn-edit-player">✏️</button>
             </div>
           </div>
 
           <div style="margin-bottom: 1rem;">
-            <label style="display: block; margin-bottom: 0.5rem;">Player 2: <span style="color: red;">*</span></label>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <select id="wolf-player2" class="player-select" style="flex: 1; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc;">
+            <label class="form-label">Player 2: <span style="color: red;">*</span></label>
+            <div class="setup-player-row">
+              <select id="wolf-player2" class="player-select form-input" style="flex:1;">
                 <option value="">-- Select Player --</option>
                 ${golferOptions}
                 <option value="new-player">+ New Player</option>
               </select>
-              <button class="edit-player-btn" data-select="wolf-player2" style="padding: 0.5rem 0.75rem; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">✏️</button>
+              <button class="edit-player-btn" data-select="wolf-player2" class="btn-edit-player">✏️</button>
             </div>
           </div>
 
           <div style="margin-bottom: 1rem;">
-            <label style="display: block; margin-bottom: 0.5rem;">Player 3: <span style="color: red;">*</span></label>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <select id="wolf-player3" class="player-select" style="flex: 1; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc;">
+            <label class="form-label">Player 3: <span style="color: red;">*</span></label>
+            <div class="setup-player-row">
+              <select id="wolf-player3" class="player-select form-input" style="flex:1;">
                 <option value="">-- Select Player --</option>
                 ${golferOptions}
                 <option value="new-player">+ New Player</option>
               </select>
-              <button class="edit-player-btn" data-select="wolf-player3" style="padding: 0.5rem 0.75rem; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">✏️</button>
+              <button class="edit-player-btn" data-select="wolf-player3" class="btn-edit-player">✏️</button>
             </div>
           </div>
 
           <div style="margin-bottom: 1rem;">
-            <label style="display: block; margin-bottom: 0.5rem;">Player 4 🐺: <span style="color: red;">*</span></label>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <select id="wolf-player4" class="player-select" style="flex: 1; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc;">
+            <label class="form-label">Player 4 🐺: <span style="color: red;">*</span></label>
+            <div class="setup-player-row">
+              <select id="wolf-player4" class="player-select form-input" style="flex:1;">
                 <option value="">-- Select Player --</option>
                 ${golferOptions}
                 <option value="new-player">+ New Player</option>
               </select>
-              <button class="edit-player-btn" data-select="wolf-player4" style="padding: 0.5rem 0.75rem; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">✏️</button>
+              <button class="edit-player-btn" data-select="wolf-player4" class="btn-edit-player">✏️</button>
             </div>
           </div>
         </div>
 
-        <div style="margin-bottom: 2rem; padding: 1rem; background: #f0f0f0; border-radius: 8px;">
-          <h3 style="margin-top: 0;">Course</h3>
+        <div class="setup-section">
+          <h3 style="margin:0 0 var(--space-3); font-size:var(--font-size-base); font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-secondary);">Course</h3>
           <div style="margin-bottom: 1rem;">
-            <label style="display: block; margin-bottom: 0.5rem;">Select Course:</label>
-            <select id="select-course" style="width: 100%; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc;">
+            <label class="form-label">Select Course:</label>
+            <select id="select-course" class="form-input form-select">
               <option value="">-- Select Course --</option>
               ${courseOptions}
             </select>
           </div>
           <div id="tee-selection" style="display: none;">
-            <label style="display: block; margin-bottom: 0.5rem;">Select Tees:</label>
-            <select id="select-tee" style="width: 100%; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc;">
+            <label class="form-label">Select Tees:</label>
+            <select id="select-tee" class="form-input form-select">
               <option value="">-- Select Tees --</option>
             </select>
           </div>
         </div>
 
-        <div style="margin-bottom: 2rem; padding: 1rem; background: #f0f0f0; border-radius: 8px;">
-          <h3 style="margin-top: 0;">Handicap Adjustment</h3>
+        <div class="setup-section">
+          <h3 style="margin:0 0 var(--space-3); font-size:var(--font-size-base); font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-secondary);">Handicap Adjustment</h3>
           <div>
-            <label style="display: block; margin-bottom: 0.5rem;">Handicap Percentage: <span id="handicap-value" style="font-weight: bold;">100%</span></label>
+            <label class="form-label">Handicap Percentage: <span id="handicap-value" style="font-weight: bold;">100%</span></label>
             <input type="range" id="handicap-slider" min="10" max="100" step="10" value="100" style="width: 100%; height: 8px; border-radius: 5px; background: #ddd; outline: none; cursor: pointer;">
           </div>
         </div>
 
-        <div style="text-align: center;">
-          <button id="start-wolf" style="padding: 1rem 2rem; font-size: 1.2rem; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+        <div style="display:flex; gap:var(--space-3); justify-content:center; flex-wrap:wrap;">
+          <button id="start-wolf" class="btn btn-success btn-auto">
             Start Round
           </button>
-          <button id="cancel-wolf" style="padding: 1rem 2rem; font-size: 1rem; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 1rem;">
+          <button id="cancel-wolf" class="btn btn-neutral btn-auto">
             Cancel
           </button>
         </div>
@@ -1110,28 +1110,28 @@ function loadWolfSetup(preserveSelections = false) {
       </div>
 
       <!-- New Player Modal (reused) -->
-      <div id="new-player-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
-        <div style="background: white; padding: 2rem; border-radius: 8px; max-width: 400px; width: 90%;">
-          <h3 id="player-modal-title" style="margin-top: 0;">Add New Player</h3>
+      <div id="new-player-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+        <div class="modal-box" style="max-width:400px;">
+          <h3 id="player-modal-title" class="modal-title" style="margin-bottom:var(--space-5);">Add New Player</h3>
           <input type="hidden" id="edit-player-id" value="">
           <div style="margin-bottom: 1rem;">
-            <label style="display: block; margin-bottom: 0.5rem;">First Name:</label>
-            <input type="text" id="new-player-first-name" style="width: 100%; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box;">
+            <label class="form-label">First Name:</label>
+            <input type="text" id="new-player-first-name" class="form-input">
           </div>
           <div style="margin-bottom: 1rem;">
-            <label style="display: block; margin-bottom: 0.5rem;">Last Name:</label>
-            <input type="text" id="new-player-last-name" style="width: 100%; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box;">
+            <label class="form-label">Last Name:</label>
+            <input type="text" id="new-player-last-name" class="form-input">
           </div>
           <div style="margin-bottom: 1rem;">
-            <label style="display: block; margin-bottom: 0.5rem;">Handicap:</label>
-            <input type="number" id="new-player-handicap" step="0.1" style="width: 100%; padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box;">
+            <label class="form-label">Handicap:</label>
+            <input type="number" id="new-player-handicap" step="0.1" class="form-input">
           </div>
           <div id="new-player-message" style="margin-bottom: 1rem; color: red; text-align: center;"></div>
           <div style="text-align: center;">
-            <button id="save-new-player" style="padding: 0.7rem 1.5rem; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 0.5rem;">
+            <button id="save-new-player" class="btn btn-success btn-auto">
               Save
             </button>
-            <button id="cancel-new-player" style="padding: 0.7rem 1.5rem; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            <button id="cancel-new-player" class="btn btn-neutral btn-auto">
               Cancel
             </button>
           </div>
