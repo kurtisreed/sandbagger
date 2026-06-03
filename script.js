@@ -4399,8 +4399,14 @@ function buildMatchResultsData() {
   });
 }
 
-function calculateBestBallMatchPlayResult() {
-  // Hole-by-hole match play differential using adjusted handicap stroke maps
+function calculateMatchPlayResult(matchType) {
+  // Compute hole-by-hole best-ball match play differential.
+  // Returns { winnerNames, resultString } or { winnerNames: null, resultString: 'All Square' }.
+  // matchType controls how golfers are grouped into two sides:
+  //   'bestball'   – golfer.team === primaryTeamName / secondaryTeamName
+  //   'tournament' – same (real team names from DB)
+  //   'guystrip'   – player_order ≤ 2  vs  player_order > 2
+
   const localMaps = {};
   golfers.forEach(g => {
     localMaps[g.id] = buildStrokeMapForGolfer(g.handicap, holeInfo);
@@ -4414,73 +4420,72 @@ function calculateBestBallMatchPlayResult() {
     const g  = golfers.find(x => x.id == gid);
     if (!g || isNaN(strokes) || strokes <= 0) return;
     const net = strokes - (localMaps[g.id]?.[h] || 0);
-    if (!byHole[h]) byHole[h] = { 1: [], 2: [] };
-    const tid = g.team_id;
-    if (tid === 1 || tid === 2) byHole[h][tid].push(net);
+    if (!byHole[h]) byHole[h] = { g1: [], g2: [] };
+
+    if (matchType === 'guystrip') {
+      const side = g.player_order <= 2 ? 'g1' : 'g2';
+      byHole[h][side].push(net);
+    } else {
+      // bestball & tournament: use golfer.team string
+      if (g.team === primaryTeamName)   byHole[h].g1.push(net);
+      else if (g.team === secondaryTeamName) byHole[h].g2.push(net);
+    }
   });
 
-  let diff = 0; // positive = team 1 leads, negative = team 2 leads
+  let diff = 0; // positive = side 1 leads, negative = side 2 leads
   let endedAt = null;
 
   for (let h = 1; h <= 18; h++) {
     const hole = byHole[h];
-    if (!hole || !hole[1].length || !hole[2].length) continue;
-    const t1 = Math.min(...hole[1]);
-    const t2 = Math.min(...hole[2]);
+    if (!hole || !hole.g1.length || !hole.g2.length) continue;
+    const t1 = Math.min(...hole.g1);
+    const t2 = Math.min(...hole.g2);
     if (!isFinite(t1) || !isFinite(t2)) continue;
     if (t1 < t2) diff++;
     else if (t2 < t1) diff--;
     if (Math.abs(diff) > (18 - h)) { endedAt = h; break; }
   }
 
-  if (diff === 0) return { winnerTeamId: null, resultString: 'All Square' };
-
-  const winnerTeamId  = diff > 0 ? 1 : 2;
-  const holesUp       = Math.abs(diff);
-  const resultString  = endedAt !== null
-    ? `${holesUp}&${18 - endedAt}`
+  const holesUp      = Math.abs(diff);
+  const resultString = diff === 0 ? 'All Square'
+    : endedAt !== null ? `${holesUp}&${18 - endedAt}`
     : `${holesUp} UP`;
 
-  return { winnerTeamId, resultString };
+  if (diff === 0) return { winnerNames: null, resultString };
+
+  // Build winner display name(s)
+  let winnerNames;
+  if (matchType === 'guystrip') {
+    const winners = diff > 0
+      ? golfers.filter(g => g.player_order <= 2)
+      : golfers.filter(g => g.player_order > 2);
+    winnerNames = winners.map(g => g.name).join(' and ');
+  } else if (matchType === 'bestball') {
+    const winnerTeam = diff > 0 ? primaryTeamName : secondaryTeamName;
+    winnerNames = golfers.filter(g => g.team === winnerTeam).map(g => g.name).join(' and ');
+  } else {
+    // tournament (Ryder Cup): use the team name itself
+    winnerNames = diff > 0 ? primaryTeamName : secondaryTeamName;
+  }
+
+  return { winnerNames, resultString };
 }
 
 function showMatchResultsModal(matchType, onDone) {
   const results = buildMatchResultsData();
 
-  // Determine winner headline
+  // Determine winner headline using match play format for all contexts
   let winnerHtml = '';
-
-  if (matchType === 'bestball') {
-    // Best Ball: "Ed and Tim win 3&2" / "All Square"
-    try {
-      const { winnerTeamId, resultString } = calculateBestBallMatchPlayResult();
-      if (winnerTeamId === null) {
-        winnerHtml = `<p class="winner-display">All Square 🤝</p>`;
-      } else {
-        const names = golfers
-          .filter(g => g.team_id === winnerTeamId)
-          .map(g => g.name)
-          .join(' and ');
-        winnerHtml = `<p class="winner-display">${names} win ${resultString}! 🏆</p>`;
-      }
-    } catch (e) { /* skip if data not available */ }
-  } else {
-    // Tournament / Guys Trip: team name wins
-    try {
-      const points = calculateMatchPoints();
-      if (primaryTeamId && secondaryTeamId && points) {
-        const p1 = points[primaryTeamId] ?? 0;
-        const p2 = points[secondaryTeamId] ?? 0;
-        if (p1 > p2) {
-          winnerHtml = `<p class="winner-display">${primaryTeamName} wins! 🏆</p>`;
-        } else if (p2 > p1) {
-          winnerHtml = `<p class="winner-display">${secondaryTeamName} wins! 🏆</p>`;
-        } else {
-          winnerHtml = `<p class="winner-display">It&rsquo;s a tie! 🤝</p>`;
-        }
-      }
-    } catch (e) { /* no teams — skip winner line */ }
-  }
+  try {
+    const { winnerNames, resultString } = calculateMatchPlayResult(matchType);
+    if (winnerNames === null) {
+      winnerHtml = `<p class="winner-display">All Square 🤝</p>`;
+    } else {
+      // "team name wins" (singular) vs "player names win" (plural)
+      const verb = matchType === 'tournament' ? 'wins' : 'win';
+      winnerHtml = `<p class="winner-display">${winnerNames} ${verb} ${resultString}! 🏆</p>`;
+    }
+  } catch (e) { /* skip if data not available */ }
 
   // Score table — sorted by net (ascending), then gross as tiebreaker
   const withScores = results.filter(r => r.gross !== null);
