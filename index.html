@@ -6,20 +6,12 @@
   <title>Sandbagger Scoring</title>
   <link rel="stylesheet" href="style.css"/>
   <link rel="manifest" href="manifest.json">
-  <!-- Capacitor import for native app features -->
   <script type="module" src="https://unpkg.com/@capacitor/core@latest/dist/capacitor.js"></script>
-  <meta name="theme-color" content="#006837">
-  <!-- Tell iOS to run in standalone mode -->
+  <meta name="theme-color" content="#4F2185">
   <meta name="mobile-web-app-capable" content="yes">
-
-  <!-- Status bar style: default, black, or black-translucent -->
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-  <!-- Home-screen icon (180×180 PNG is a good size) -->
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
-    <link rel="icon" 
-        href="favicon.png" 
-        type="image/png">
+  <link rel="icon" href="favicon.png" type="image/png">
 </head>
 <body>
 <button id="btnInstall" style="display:none;">Install Sandbagger App</button>
@@ -39,9 +31,7 @@
     </div>
     <div class="hamburger-menu-container">
       <button id="hamburger-menu-btn" type="button" aria-label="Menu">
-        <span></span>
-        <span></span>
-        <span></span>
+        <span></span><span></span><span></span>
       </button>
       <div id="hamburger-dropdown" class="hamburger-dropdown">
         <button id="menu-dashboard" type="button">Dashboard</button>
@@ -54,10 +44,10 @@
   </div>
 </div>
 
-<!-- Login / Register screen -->
+<!-- ── Auth Screen ─────────────────────────────────────────────────────────── -->
 <div id="pin-container" style="display: none;">
 
-  <!-- LOGIN FORM -->
+  <!-- LOGIN -->
   <form id="login-form">
     <h2>Sandbagger Scoring</h2>
     <img class="form-logo" src="/images/cartoon.png" alt="Sandbagger Logo">
@@ -73,7 +63,7 @@
     </div>
   </form>
 
-  <!-- RESET PASSWORD FORM (shown when admin sends a ?reset=TOKEN link) -->
+  <!-- RESET PASSWORD -->
   <form id="reset-form" style="display:none;">
     <h2>Sandbagger Scoring</h2>
     <img class="form-logo" src="/images/cartoon.png" alt="Sandbagger Logo">
@@ -92,15 +82,15 @@
     <img class="form-logo" src="/images/cartoon.png" alt="Sandbagger Logo">
     <div class="auth-card">
       <p class="pin-prompt">Get started</p>
-      <button id="chooser-create-btn" type="button" style="width:100%; padding:0.85rem; margin-bottom:0.75rem; background:#4F2185; color:white; border:none; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">🏌️ Start a new group</button>
-      <button id="chooser-join-btn" type="button" style="width:100%; padding:0.85rem; background:rgba(255,255,255,0.15); color:white; border:2px solid rgba(255,255,255,0.4); border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">🔗 Join an existing group</button>
+      <button id="chooser-create-btn" type="button" class="btn btn-primary" style="margin-bottom:0.75rem;">🏌️ Start a new group</button>
+      <button id="chooser-join-btn" type="button" class="btn btn-ghost-light">🔗 Join an existing group</button>
       <p style="text-align:center; margin:0.75rem 0 0; color:rgba(255,255,255,0.7); font-size:0.9rem;">
         Already have an account? <a href="#" id="chooser-signin-link" style="color:#FFD700; font-weight:bold;">Sign in</a>
       </p>
     </div>
   </div>
 
-  <!-- REGISTER FORM (hidden by default) -->
+  <!-- REGISTER -->
   <form id="register-form" style="display:none;">
     <h2>Sandbagger Scoring</h2>
     <img class="form-logo" src="/images/cartoon.png" alt="Sandbagger Logo">
@@ -121,7 +111,7 @@
     </div>
   </form>
 
-  <!-- ORG PICKER (shown when user belongs to multiple groups) -->
+  <!-- ORG PICKER -->
   <div id="org-picker" style="display:none;">
     <h2>Sandbagger Scoring</h2>
     <img class="form-logo" src="/images/cartoon.png" alt="Sandbagger Logo">
@@ -131,7 +121,7 @@
     </div>
   </div>
 
-  <!-- JOIN FORM -->
+  <!-- JOIN -->
   <form id="join-form" style="display:none;">
     <h2>Sandbagger Scoring</h2>
     <img class="form-logo" src="/images/cartoon.png" alt="Sandbagger Logo">
@@ -154,7 +144,7 @@
     </div>
   </form>
 
-  <!-- Claim profile step (shown after join form when name doesn't match) -->
+  <!-- CLAIM PROFILE -->
   <div id="claim-profile-form" style="display:none;">
     <h2>Sandbagger Scoring</h2>
     <img class="form-logo" src="/images/cartoon.png" alt="Sandbagger Logo">
@@ -164,9 +154,7 @@
         Your name wasn't found in the group roster. Select your profile below, or create a new one.
       </p>
       <div id="claim-candidates-list" style="margin-bottom:0.75rem;"></div>
-      <button id="claim-none-btn" type="button"
-        style="width:100%; padding:0.65rem; background:transparent; color:rgba(255,255,255,0.7);
-               border:1px solid rgba(255,255,255,0.3); border-radius:8px; font-size:0.9rem; cursor:pointer; margin-top:0.25rem;">
+      <button id="claim-none-btn" type="button" class="btn btn-ghost-light" style="margin-top:var(--space-1); font-size:var(--font-size-sm);">
         I'm not listed — create a new profile
       </button>
       <p id="claim-error" style="display:none; color:#ffcdd2; text-align:center; font-size:0.9rem; margin:0.75rem 0 0;"></p>
@@ -177,391 +165,365 @@
 
 <!-- Invite modal (admin only) -->
 <div id="invite-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:10000; align-items:center; justify-content:center;">
-  <div style="background:#fff; border-radius:12px; padding:1.5rem; max-width:360px; width:90%; margin:auto;">
-    <h3 style="margin:0 0 0.5rem;">Invite Members</h3>
-    <p style="margin:0 0 1rem; color:#555; font-size:0.9rem;">Share this link with anyone you want to join your group. They'll create their own account and be added automatically.</p>
-    <input type="text" id="invite-link-display" readonly style="width:100%; padding:0.6rem; border:1px solid #ccc; border-radius:6px; font-size:0.85rem; box-sizing:border-box; margin-bottom:0.75rem; background:#f5f5f5;">
-    <button id="copy-invite-btn" style="width:100%; padding:0.65rem; background:#4F2185; color:white; border:none; border-radius:6px; font-size:1rem; font-weight:bold; cursor:pointer; margin-bottom:0.5rem;">Copy Link</button>
-    <button id="close-invite-modal-btn" style="width:100%; padding:0.65rem; background:#ccc; color:#333; border:none; border-radius:6px; font-size:1rem; cursor:pointer;">Close</button>
+  <div class="modal-box" style="max-width:360px;">
+    <h3 class="modal-title">Invite Members</h3>
+    <p class="modal-subtitle">Share this link with anyone you want to join your group.</p>
+    <input type="text" id="invite-link-display" readonly class="form-input" style="margin-bottom:0.75rem; background:var(--color-bg-subtle); font-size:var(--font-size-sm);">
+    <button id="copy-invite-btn" class="btn btn-primary">Copy Link</button>
+    <button id="close-invite-modal-btn" class="btn btn-neutral">Close</button>
   </div>
 </div>
 
+<!-- Legacy auth container -->
 <div id="auth-container" class="container" style="display: none;">
-        <form id="auth-form">
-            <h2 class="form-title">Sandbagger Scoring</h2>
-            <img class="form-logo" src="/images/cartoon.png" alt="Sandbagger Logo">
-
-            <div class="auth-card">
-              <select id="selectUser" name="golfer_id" required>
-                <option value="">— Who's playing? —</option>
-                <option value="new">➕ Create New Golfer</option>
-              </select>
-
-              <!-- New Golfer Form -->
-              <div id="new-golfer-form" style="display: none;">
-                <input type="text" id="new-golfer-first-name" placeholder="First Name">
-                <input type="text" id="new-golfer-last-name" placeholder="Last Name">
-                <input type="number" id="new-golfer-handicap" placeholder="Handicap Index" step="0.1">
-                <input type="email" id="new-golfer-email" placeholder="Email (optional)">
-              </div>
-
-              <button type="submit">Let's Play →</button>
-            </div>
-        </form>
-        <div id="auth-message"></div>
+  <form id="auth-form">
+    <h2 class="form-title">Sandbagger Scoring</h2>
+    <img class="form-logo" src="/images/cartoon.png" alt="Sandbagger Logo">
+    <div class="auth-card">
+      <select id="selectUser" name="golfer_id" required>
+        <option value="">— Who's playing? —</option>
+        <option value="new">➕ Create New Golfer</option>
+      </select>
+      <div id="new-golfer-form" style="display: none;">
+        <input type="text" id="new-golfer-first-name" placeholder="First Name">
+        <input type="text" id="new-golfer-last-name" placeholder="Last Name">
+        <input type="number" id="new-golfer-handicap" placeholder="Handicap Index" step="0.1">
+        <input type="email" id="new-golfer-email" placeholder="Email (optional)">
+      </div>
+      <button type="submit">Let's Play →</button>
+    </div>
+  </form>
+  <div id="auth-message"></div>
 </div>
 
+<!-- ── Dashboard ───────────────────────────────────────────────────────────── -->
 <div id="user-dashboard" class="container" style="display: none;">
   <div id="dashboard-content">
-    <!-- Tournaments Section -->
     <div id="tournaments-section" style="margin-bottom: 2rem;">
-      <h3 style="border-bottom: 2px solid #4F2185; padding-bottom: 0.5rem;">Current Matches</h3>
+      <h3 class="section-header">Current Matches</h3>
       <div id="tournaments-list"></div>
     </div>
-
-    <!-- New Tournament Section -->
     <div id="quick-round-section" style="margin-bottom: 2rem;">
-      <h3 style="border-bottom: 2px solid #4F2185; padding-bottom: 0.5rem;">New Matches</h3>
-      <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
-        <button id="create-quick-round-btn" type="button" style="width: 90%; padding: 0.6rem 0.75rem; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; text-align: left; font-size: 0.95rem;">+ New Quick Round</button>
-        <button id="create-tournament-btn" type="button" style="display: none; width: 90%; padding: 0.6rem 0.75rem; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; text-align: left; font-size: 0.95rem;">+ New Tournament</button>
+      <h3 class="section-header">New Matches</h3>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:0.5rem;">
+        <button id="create-quick-round-btn" type="button" class="btn btn-success" style="width:90%; text-align:left;">+ New Quick Round</button>
+        <button id="create-tournament-btn" type="button" class="btn btn-success" style="display:none; width:90%; text-align:left;">+ New Tournament</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- New Tournament: Step 1 — Basic Info -->
+<!-- ── New Tournament: Step 1 ─────────────────────────────────────────────── -->
 <div class="container" id="create-tournament-container" style="display: none;">
-  <button id="create-tournament-back-btn" class="history-back-btn" style="margin-bottom: 1rem;">← Back</button>
-  <h2 style="margin: 0 0 1.25rem 0; color: #333;">New Tournament</h2>
+  <button id="create-tournament-back-btn" class="history-back-btn" style="margin-bottom:1rem;">← Back</button>
+  <h2 class="page-title">New Tournament</h2>
 
-  <div style="background: white; border-radius: 8px; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem;">
-    <div>
-      <label style="display: block; font-weight: 600; margin-bottom: 0.35rem; color: #333;">Tournament Name</label>
-      <input type="text" id="nt-name" placeholder="e.g. Reed Golf Trip 2026" style="width: 100%; padding: 0.6rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; box-sizing: border-box;">
+  <div class="card">
+    <div style="margin-bottom:var(--space-4);">
+      <label class="form-label">Tournament Name</label>
+      <input type="text" id="nt-name" placeholder="e.g. Reed Golf Trip 2026" class="form-input">
     </div>
-    <div style="display: flex; gap: 1rem;">
-      <div style="flex: 1;">
-        <label style="display: block; font-weight: 600; margin-bottom: 0.35rem; color: #333;">Start Date</label>
-        <input type="date" id="nt-start-date" style="width: 100%; padding: 0.6rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; box-sizing: border-box;">
+    <div style="display:flex; gap:1rem; margin-bottom:var(--space-4);">
+      <div style="flex:1;">
+        <label class="form-label">Start Date</label>
+        <input type="date" id="nt-start-date" class="form-input">
       </div>
-      <div style="flex: 1;">
-        <label style="display: block; font-weight: 600; margin-bottom: 0.35rem; color: #333;">End Date</label>
-        <input type="date" id="nt-end-date" style="width: 100%; padding: 0.6rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; box-sizing: border-box;">
+      <div style="flex:1;">
+        <label class="form-label">End Date</label>
+        <input type="date" id="nt-end-date" class="form-input">
       </div>
     </div>
-    <div>
-      <label style="display: block; font-weight: 600; margin-bottom: 0.35rem; color: #333;">Handicap %</label>
-      <input type="number" id="nt-handicap" value="80" min="0" max="100" style="width: 100%; padding: 0.6rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; box-sizing: border-box;">
+    <div style="margin-bottom:var(--space-4);">
+      <label class="form-label">Handicap %</label>
+      <input type="number" id="nt-handicap" value="80" min="0" max="100" class="form-input">
     </div>
     <div>
-      <label style="display: block; font-weight: 600; margin-bottom: 0.35rem; color: #333;">Format</label>
-      <select id="nt-format" style="width: 100%; padding: 0.6rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; box-sizing: border-box;">
+      <label class="form-label">Format</label>
+      <select id="nt-format" class="form-input form-select">
         <option value="">-- Choose Format --</option>
       </select>
     </div>
-    <p id="nt-error" style="display: none; color: red; margin: 0;"></p>
+    <p id="nt-error" style="display:none; color:var(--color-action-danger); margin:var(--space-3) 0 0;"></p>
   </div>
 
-  <button id="nt-continue-btn" type="button" style="margin-top: 1.25rem; width: 100%; padding: 0.75rem; background: #4F2185; color: white; border: none; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer;">Continue</button>
-  <button id="nt-cancel-btn" type="button" style="margin-top: 0.5rem; width: 100%; padding: 0.75rem; background: #ccc; color: #333; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer;">Cancel</button>
+  <button id="nt-continue-btn" type="button" class="btn btn-primary">Continue</button>
+  <button id="nt-cancel-btn" type="button" class="btn btn-neutral">Cancel</button>
 </div>
 
-<!-- New Tournament: Step 2 — Team Setup -->
+<!-- ── New Tournament: Step 2 — Team Setup ────────────────────────────────── -->
 <div class="container" id="create-tournament-step2" style="display: none;">
-  <button id="nt-step2-back-btn" class="history-back-btn" style="margin-bottom: 1rem;">← Back</button>
-  <h2 style="margin: 0 0 0.25rem 0; color: #333;">Team Setup</h2>
-  <p id="nt-step2-subtitle" style="margin: 0 0 1.25rem 0; font-size: 0.85rem; color: #888;"></p>
+  <button id="nt-step2-back-btn" class="history-back-btn" style="margin-bottom:1rem;">← Back</button>
+  <h2 class="page-title">Team Setup</h2>
+  <p id="nt-step2-subtitle" class="page-subtitle" style="text-align:center;"></p>
 
-  <!-- Team 1 -->
-  <div style="background: white; border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem;">
-    <h3 style="margin: 0 0 1rem 0; color: #333; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.05em;">Team 1</h3>
-    <div style="margin-bottom: 1rem;">
-      <label style="display: block; font-weight: 600; margin-bottom: 0.35rem; color: #333;">Team Name</label>
-      <input type="text" id="nt-team1-name" placeholder="e.g. USA" style="width: 100%; padding: 0.6rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; box-sizing: border-box;">
+  <div class="card">
+    <h3 style="margin:0 0 1rem; font-size:1rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-secondary);">Team 1</h3>
+    <div style="margin-bottom:var(--space-4);">
+      <label class="form-label">Team Name</label>
+      <input type="text" id="nt-team1-name" placeholder="e.g. USA" class="form-input">
     </div>
     <div>
-      <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #333;">Team Color</label>
-      <input type="color" id="nt-team1-color" value="#1565C0" style="width: 100%; height: 2.75rem; padding: 0.2rem; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; box-sizing: border-box;">
+      <label class="form-label">Team Color</label>
+      <input type="color" id="nt-team1-color" value="#1565C0" style="width:100%; height:2.75rem; padding:0.2rem; border:1px solid var(--color-border); border-radius:var(--radius-sm); cursor:pointer; box-sizing:border-box;">
     </div>
   </div>
 
-  <!-- Team 2 -->
-  <div style="background: white; border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem;">
-    <h3 style="margin: 0 0 1rem 0; color: #333; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.05em;">Team 2</h3>
-    <div style="margin-bottom: 1rem;">
-      <label style="display: block; font-weight: 600; margin-bottom: 0.35rem; color: #333;">Team Name</label>
-      <input type="text" id="nt-team2-name" placeholder="e.g. Europe" style="width: 100%; padding: 0.6rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; box-sizing: border-box;">
+  <div class="card">
+    <h3 style="margin:0 0 1rem; font-size:1rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-secondary);">Team 2</h3>
+    <div style="margin-bottom:var(--space-4);">
+      <label class="form-label">Team Name</label>
+      <input type="text" id="nt-team2-name" placeholder="e.g. Europe" class="form-input">
     </div>
     <div>
-      <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #333;">Team Color</label>
-      <input type="color" id="nt-team2-color" value="#C62828" style="width: 100%; height: 2.75rem; padding: 0.2rem; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; box-sizing: border-box;">
+      <label class="form-label">Team Color</label>
+      <input type="color" id="nt-team2-color" value="#C62828" style="width:100%; height:2.75rem; padding:0.2rem; border:1px solid var(--color-border); border-radius:var(--radius-sm); cursor:pointer; box-sizing:border-box;">
     </div>
   </div>
 
-  <p id="nt-step2-error" style="display: none; color: red; margin: 0 0 0.75rem 0;"></p>
-  <button id="nt-step2-continue-btn" type="button" style="width: 100%; padding: 0.75rem; background: #4F2185; color: white; border: none; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer;">Continue</button>
-  <button id="nt-step2-cancel-btn" type="button" style="margin-top: 0.5rem; width: 100%; padding: 0.75rem; background: #ccc; color: #333; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer;">Cancel</button>
+  <p id="nt-step2-error" style="display:none; color:var(--color-action-danger); margin:0 0 var(--space-3);"></p>
+  <button id="nt-step2-continue-btn" type="button" class="btn btn-primary">Continue</button>
+  <button id="nt-step2-cancel-btn" type="button" class="btn btn-neutral">Cancel</button>
 </div>
 
-<!-- New Tournament: Step 3 — Assign Players -->
+<!-- ── New Tournament: Step 3 — Assign Players ────────────────────────────── -->
 <div class="container" id="create-tournament-step3" style="display: none;">
-  <button id="nt-step3-back-btn" class="history-back-btn" style="margin-bottom: 1rem;">← Back</button>
-  <h2 style="margin: 0 0 0.25rem 0; color: #333;">Assign Players</h2>
-  <p id="nt-step3-subtitle" style="margin: 0 0 1.25rem 0; font-size: 0.85rem; color: #888;"></p>
+  <button id="nt-step3-back-btn" class="history-back-btn" style="margin-bottom:1rem;">← Back</button>
+  <h2 class="page-title">Assign Players</h2>
+  <p id="nt-step3-subtitle" class="page-subtitle" style="text-align:center;"></p>
   <div id="nt-step3-content"></div>
-  <p id="nt-step3-error" style="display: none; color: red; margin: 0.75rem 0;"></p>
-  <button id="nt-step3-continue-btn" type="button" style="margin-top: 1rem; width: 100%; padding: 0.75rem; background: #28a745; color: white; border: none; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer;">Create Tournament</button>
-  <button id="nt-step3-cancel-btn" type="button" style="margin-top: 0.5rem; width: 100%; padding: 0.75rem; background: #ccc; color: #333; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer;">Cancel</button>
+  <p id="nt-step3-error" style="display:none; color:var(--color-action-danger); margin:var(--space-3) 0;"></p>
+  <button id="nt-step3-continue-btn" type="button" class="btn btn-success">Create Tournament</button>
+  <button id="nt-step3-cancel-btn" type="button" class="btn btn-neutral">Cancel</button>
 </div>
 
-<!-- Guys Trip wizard — Step 2: Choose Players -->
+<!-- ── Guys Trip: Step 2 — Choose Players ─────────────────────────────────── -->
 <div class="container" id="create-tournament-gt-step2" style="display: none;">
-  <button id="nt-gt-back-btn" class="history-back-btn" style="margin-bottom: 1rem;">← Back</button>
-  <h2 style="margin: 0 0 0.25rem 0; color: #333;">Choose Players</h2>
-  <p id="nt-gt-subtitle" style="margin: 0 0 0.5rem; font-size: 0.85rem; color: #888;"></p>
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-    <span id="nt-gt-selected-count" style="font-size:0.9rem; color:#555;"></span>
-    <button id="nt-gt-select-all-btn" type="button"
-      style="padding:0.4rem 0.9rem; background:white; color:#4F2185; border:1px solid #4F2185;
-             border-radius:6px; font-size:0.85rem; font-weight:600; cursor:pointer;">Select All</button>
+  <button id="nt-gt-back-btn" class="history-back-btn" style="margin-bottom:1rem;">← Back</button>
+  <h2 class="page-title">Choose Players</h2>
+  <p id="nt-gt-subtitle" class="page-subtitle" style="text-align:center;"></p>
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--space-4);">
+    <span id="nt-gt-selected-count" style="font-size:var(--font-size-sm); color:var(--color-text-secondary);"></span>
+    <button id="nt-gt-select-all-btn" type="button" class="btn btn-ghost btn-sm btn-auto">Select All</button>
   </div>
   <div id="nt-gt-players-list"></div>
-  <p id="nt-gt-error" style="display:none; color:red; margin:0.75rem 0;"></p>
-  <button id="nt-gt-create-btn" type="button"
-    style="margin-top:1rem; width:100%; padding:0.75rem; background:#28a745; color:white;
-           border:none; border-radius:6px; font-size:1rem; font-weight:bold; cursor:pointer;">Create Tournament</button>
-  <button id="nt-gt-cancel-btn" type="button"
-    style="margin-top:0.5rem; width:100%; padding:0.75rem; background:#ccc; color:#333;
-           border:none; border-radius:6px; font-size:1rem; cursor:pointer;">Cancel</button>
+  <p id="nt-gt-error" style="display:none; color:var(--color-action-danger); margin:var(--space-3) 0;"></p>
+  <button id="nt-gt-create-btn" type="button" class="btn btn-success">Create Tournament</button>
+  <button id="nt-gt-cancel-btn" type="button" class="btn btn-neutral">Cancel</button>
 </div>
 
 <div class="container" id="best-ball-setup" style="display: none;">
   <div id="best-ball-setup-content"></div>
 </div>
 
+<!-- ── Quick Round Type Selector ──────────────────────────────────────────── -->
 <div class="container" id="quick-round-type-selector" style="display: none;">
-  <h2 style="text-align: center; margin-bottom: 1rem;">Select Round Type</h2>
-  <button id="back-from-round-type-btn" class="history-back-btn" style="margin-bottom: 1rem;">Back</button>
-
-  <div style="max-width: 400px; margin: 0 auto;">
-    <label for="round-type-select" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Choose Round Type:</label>
-    <select id="round-type-select" style="width: 100%; padding: 0.75rem; font-size: 1rem; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 1rem;">
+  <h2 class="page-title">Select Round Type</h2>
+  <button id="back-from-round-type-btn" class="history-back-btn" style="margin-bottom:1rem;">Back</button>
+  <div style="max-width:400px; margin:0 auto;">
+    <label for="round-type-select" class="form-label">Choose Round Type</label>
+    <select id="round-type-select" class="form-input form-select" style="margin-bottom:var(--space-4);">
       <option value="">-- Select Round Type --</option>
       <option value="best-ball">Best Ball</option>
       <option value="rabbit">Rabbit</option>
       <option value="wolf">Wolf</option>
     </select>
-    <button id="continue-round-type-btn" type="button" style="width: 100%; padding: 0.75rem; background: #4F2185; color: white; border: none; border-radius: 4px; font-size: 1rem; font-weight: bold; cursor: pointer;">Continue</button>
-    <button id="cancel-round-type-btn" type="button" style="width: 100%; margin-top: 0.5rem; padding: 0.75rem; background: #ccc; color: #333; border: none; border-radius: 4px; font-size: 1rem; cursor: pointer;">Cancel</button>
+    <button id="continue-round-type-btn" type="button" class="btn btn-primary">Continue</button>
+    <button id="cancel-round-type-btn" type="button" class="btn btn-neutral">Cancel</button>
   </div>
 </div>
 
+<!-- ── Add Round ──────────────────────────────────────────────────────────── -->
 <div class="container" id="add-round-container" style="display: none;">
-  <h2 style="text-align: center; margin-bottom: 1rem;">Round Information</h2>
-  <button id="back-from-add-round-btn" class="history-back-btn" style="margin-bottom: 1rem;">Back</button>
-
-  <form id="add-round-form" style="max-width: 400px; margin: 0 auto;">
-    <div style="margin-bottom: 1rem;">
-      <label for="add-round-date" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Round Date *</label>
-      <input type="date" id="add-round-date" required style="width: 100%; padding: 0.75rem; font-size: 1rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+  <h2 class="page-title">Round Information</h2>
+  <button id="back-from-add-round-btn" class="history-back-btn" style="margin-bottom:1rem;">Back</button>
+  <form id="add-round-form" style="max-width:400px; margin:0 auto;">
+    <div style="margin-bottom:var(--space-4);">
+      <label for="add-round-date" class="form-label">Round Date *</label>
+      <input type="date" id="add-round-date" required class="form-input">
     </div>
-
-    <div style="margin-bottom: 1rem;">
-      <label for="add-round-course" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Course *</label>
-      <select id="add-round-course" required style="width: 100%; padding: 0.75rem; font-size: 1rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+    <div style="margin-bottom:var(--space-4);">
+      <label for="add-round-course" class="form-label">Course *</label>
+      <select id="add-round-course" required class="form-input form-select">
         <option value="">-- Select Course --</option>
       </select>
     </div>
-
-    <div style="margin-bottom: 1.5rem;">
-      <label for="add-round-tees" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Tees *</label>
-      <select id="add-round-tees" required style="width: 100%; padding: 0.75rem; font-size: 1rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+    <div style="margin-bottom:var(--space-6);">
+      <label for="add-round-tees" class="form-label">Tees *</label>
+      <select id="add-round-tees" required class="form-input form-select">
         <option value="">-- Select Tees --</option>
       </select>
     </div>
-
-    <button type="submit" style="width: 100%; padding: 0.75rem; background: #4F2185; color: white; border: none; border-radius: 4px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-bottom: 0.5rem;">Continue to Matches</button>
-    <button type="button" id="save-round-only-btn" style="width: 100%; padding: 0.75rem; background: #17a2b8; color: white; border: none; border-radius: 4px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-bottom: 0.5rem;">Save Round (skip matches &amp; tee times)</button>
-    <button type="button" id="cancel-add-round-btn" style="width: 100%; padding: 0.75rem; background: #ccc; color: #333; border: none; border-radius: 4px; font-size: 1rem; cursor: pointer;">Cancel</button>
+    <button type="submit" class="btn btn-primary">Continue to Matches</button>
+    <button type="button" id="save-round-only-btn" class="btn btn-info">Save Round (skip matches &amp; tee times)</button>
+    <button type="button" id="cancel-add-round-btn" class="btn btn-neutral">Cancel</button>
   </form>
 </div>
 
+<!-- ── Add Matches ────────────────────────────────────────────────────────── -->
 <div class="container" id="add-matches-container" style="display: none;">
-  <h2 style="text-align: center; margin-bottom: 1rem;">Matches</h2>
-  <button id="back-from-matches-btn" class="history-back-btn" style="margin-bottom: 1rem;">Back</button>
-
-  <div id="matches-list" style="max-width: 500px; margin: 0 auto;">
-    <!-- Matches will be added here dynamically -->
-  </div>
-
-  <div style="max-width: 500px; margin: 1rem auto;">
-    <button id="add-match-btn" type="button" style="width: 100%; padding: 0.75rem; background: #28a745; color: white; border: none; border-radius: 4px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-bottom: 0.5rem;">+ Add Match</button>
-    <button id="continue-to-tee-times-btn" type="button" style="width: 100%; padding: 0.75rem; background: #4F2185; color: white; border: none; border-radius: 4px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-bottom: 0.5rem;">Continue to Tee Times</button>
-    <button id="save-round-from-matches-btn" type="button" style="width: 100%; padding: 0.75rem; background: #17a2b8; color: white; border: none; border-radius: 4px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-bottom: 0.5rem;">Save Round (skip tee times)</button>
-    <button id="cancel-matches-btn" type="button" style="width: 100%; padding: 0.75rem; background: #ccc; color: #333; border: none; border-radius: 4px; font-size: 1rem; cursor: pointer;">Cancel</button>
+  <h2 class="page-title">Matches</h2>
+  <button id="back-from-matches-btn" class="history-back-btn" style="margin-bottom:1rem;">Back</button>
+  <div id="matches-list" style="max-width:500px; margin:0 auto;"></div>
+  <div style="max-width:500px; margin:var(--space-4) auto;">
+    <button id="add-match-btn" type="button" class="btn btn-success">+ Add Match</button>
+    <button id="continue-to-tee-times-btn" type="button" class="btn btn-primary">Continue to Tee Times</button>
+    <button id="save-round-from-matches-btn" type="button" class="btn btn-info">Save Round (skip tee times)</button>
+    <button id="cancel-matches-btn" type="button" class="btn btn-neutral">Cancel</button>
   </div>
 </div>
 
+<!-- ── Add Tee Times ──────────────────────────────────────────────────────── -->
 <div class="container" id="add-tee-times-container" style="display: none;">
-  <h2 style="text-align: center; margin-bottom: 1rem;">Tee Times</h2>
-  <button id="back-from-tee-times-btn" class="history-back-btn" style="margin-bottom: 1rem;">Back</button>
-
-  <div id="tee-times-list" style="max-width: 500px; margin: 0 auto;">
-    <!-- Tee times will be added here dynamically -->
-  </div>
-
-  <div style="max-width: 500px; margin: 1rem auto;">
-    <button id="add-tee-time-btn" type="button" style="width: 100%; padding: 0.75rem; background: #28a745; color: white; border: none; border-radius: 4px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-bottom: 0.5rem;">+ Add Tee Time</button>
-    <button id="save-all-btn" type="button" style="width: 100%; padding: 0.75rem; background: #4F2185; color: white; border: none; border-radius: 4px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-bottom: 0.5rem;">Save Round</button>
-    <button id="cancel-tee-times-btn" type="button" style="width: 100%; padding: 0.75rem; background: #ccc; color: #333; border: none; border-radius: 4px; font-size: 1rem; cursor: pointer;">Cancel</button>
+  <h2 class="page-title">Tee Times</h2>
+  <button id="back-from-tee-times-btn" class="history-back-btn" style="margin-bottom:1rem;">Back</button>
+  <div id="tee-times-list" style="max-width:500px; margin:0 auto;"></div>
+  <div style="max-width:500px; margin:var(--space-4) auto;">
+    <button id="add-tee-time-btn" type="button" class="btn btn-success">+ Add Tee Time</button>
+    <button id="save-all-btn" type="button" class="btn btn-primary">Save Round</button>
+    <button id="cancel-tee-times-btn" type="button" class="btn btn-neutral">Cancel</button>
   </div>
 </div>
 
-
+<!-- ── Edit Group ─────────────────────────────────────────────────────────── -->
 <div class="container" id="edit-group-container" style="display: none;">
-  <button id="back-from-edit-group-btn" class="history-back-btn" style="margin-bottom: 1rem;">← Back</button>
-  <h2 style="text-align: center; margin-bottom: 1rem;">Edit Group</h2>
-  <div id="edit-group-content" style="max-width: 500px; margin: 0 auto;"></div>
+  <button id="back-from-edit-group-btn" class="history-back-btn" style="margin-bottom:1rem;">← Back</button>
+  <h2 class="page-title">Edit Group</h2>
+  <div id="edit-group-content" style="max-width:500px; margin:0 auto;"></div>
 </div>
 
+<!-- ── Edit Tournament ────────────────────────────────────────────────────── -->
 <div class="container" id="edit-tournament-container" style="display: none;">
-  <h2 style="text-align: center; margin-bottom: 1rem;">Edit Tournament</h2>
-  <button id="back-from-edit-tournament-btn" class="history-back-btn" style="margin-bottom: 1rem;">Back</button>
-  <div id="edit-tournament-content" style="max-width: 500px; margin: 0 auto;"></div>
+  <h2 class="page-title">Edit Tournament</h2>
+  <button id="back-from-edit-tournament-btn" class="history-back-btn" style="margin-bottom:1rem;">Back</button>
+  <div id="edit-tournament-content" style="max-width:500px; margin:0 auto;"></div>
 </div>
 
+<!-- ── Round History ──────────────────────────────────────────────────────── -->
 <div class="container" id="round-history-container" style="display: none;">
-  <h2 style="text-align: center; margin-bottom: 1rem;">Round History</h2>
-  <button id="back-from-history-btn" class="history-back-btn" style="margin-bottom: 1rem;">Back</button>
+  <h2 class="page-title">Round History</h2>
+  <button id="back-from-history-btn" class="history-back-btn" style="margin-bottom:1rem;">Back</button>
   <div id="round-history-content"></div>
 </div>
 
+<!-- ── Tournament History ─────────────────────────────────────────────────── -->
 <div class="container" id="tournament-history-container" style="display: none;">
-  <h2 style="text-align: center; margin-bottom: 1rem;">Tournament History</h2>
-  <button id="back-from-tournament-history-btn" class="history-back-btn" style="margin-bottom: 1rem;">Back</button>
+  <h2 class="page-title">Tournament History</h2>
+  <button id="back-from-tournament-history-btn" class="history-back-btn" style="margin-bottom:1rem;">Back</button>
   <div id="tournament-history-content"></div>
 </div>
 
+<!-- ── My Account ─────────────────────────────────────────────────────────── -->
 <div class="container" id="edit-user-container" style="display: none;">
-  <button id="back-from-edit-user-btn" class="history-back-btn" style="margin-bottom: 1rem;">← Back</button>
-  <h2 style="text-align: center; margin-bottom: 1rem;">My Account</h2>
+  <button id="back-from-edit-user-btn" class="history-back-btn" style="margin-bottom:1rem;">← Back</button>
+  <h2 class="page-title">My Account</h2>
 
-  <div style="max-width: 500px; margin: 0 auto;">
+  <div style="max-width:500px; margin:0 auto;">
 
-    <!-- Profile card (read-only display) -->
-    <div style="background:#fff; border:1px solid #e0e0e0; border-radius:12px; padding:1.25rem; margin-bottom:1rem; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-      <h3 style="margin:0 0 1rem; font-size:1.1rem; color:#1a1a1a;">Profile</h3>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem 1.25rem; margin-bottom:1rem;">
+    <!-- Profile card -->
+    <div class="card">
+      <h3 style="margin:0 0 var(--space-4); font-size:var(--font-size-lg); font-weight:800; color:var(--color-text-primary);">Profile</h3>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-3) var(--space-5); margin-bottom:var(--space-4);">
         <div>
-          <p style="margin:0 0 0.2rem; font-size:0.78rem; color:#888; text-transform:uppercase; letter-spacing:0.04em;">First Name</p>
-          <p id="profile-display-first-name" style="margin:0; font-size:1rem; color:#1a1a1a; font-weight:500;"></p>
+          <p class="meta-label">First Name</p>
+          <p id="profile-display-first-name" class="meta-value"></p>
         </div>
         <div>
-          <p style="margin:0 0 0.2rem; font-size:0.78rem; color:#888; text-transform:uppercase; letter-spacing:0.04em;">Last Name</p>
-          <p id="profile-display-last-name" style="margin:0; font-size:1rem; color:#1a1a1a; font-weight:500;"></p>
+          <p class="meta-label">Last Name</p>
+          <p id="profile-display-last-name" class="meta-value"></p>
         </div>
         <div>
-          <p style="margin:0 0 0.2rem; font-size:0.78rem; color:#888; text-transform:uppercase; letter-spacing:0.04em;">Email</p>
-          <p id="profile-display-email" style="margin:0; font-size:1rem; color:#1a1a1a; font-weight:500; word-break:break-all;"></p>
+          <p class="meta-label">Email</p>
+          <p id="profile-display-email" class="meta-value" style="word-break:break-all;"></p>
         </div>
         <div>
-          <p style="margin:0 0 0.2rem; font-size:0.78rem; color:#888; text-transform:uppercase; letter-spacing:0.04em;">Handicap Index</p>
-          <p id="profile-display-handicap" style="margin:0; font-size:1rem; color:#1a1a1a; font-weight:500;"></p>
+          <p class="meta-label">Handicap Index</p>
+          <p id="profile-display-handicap" class="meta-value"></p>
         </div>
       </div>
-      <div style="display:flex; gap:0.75rem;">
-        <button id="open-edit-profile-btn" style="flex:1; padding:0.65rem; background:#4F2185; color:white; border:none; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Edit Profile</button>
-        <button id="open-change-password-btn" style="flex:1; padding:0.65rem; background:white; color:#4F2185; border:2px solid #4F2185; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Change Password</button>
+      <div style="display:flex; gap:var(--space-3);">
+        <button id="open-edit-profile-btn" class="btn btn-primary" style="flex:1;">Edit Profile</button>
+        <button id="open-change-password-btn" class="btn btn-ghost" style="flex:1;">Change Password</button>
       </div>
     </div>
 
     <!-- My Groups card -->
-    <div style="background:#fff; border:1px solid #e0e0e0; border-radius:12px; padding:1.25rem; margin-bottom:1rem; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-      <h3 style="margin:0 0 1rem; font-size:1.1rem; color:#1a1a1a;">My Groups</h3>
-      <div id="my-groups-list" style="margin-bottom:1rem;">
-        <p style="color:#888; font-size:0.9rem;">Loading groups…</p>
+    <div class="card">
+      <h3 style="margin:0 0 var(--space-4); font-size:var(--font-size-lg); font-weight:800; color:var(--color-text-primary);">My Groups</h3>
+      <div id="my-groups-list" style="margin-bottom:var(--space-4);">
+        <p style="color:var(--color-text-muted); font-size:var(--font-size-sm);">Loading groups…</p>
       </div>
-
-      <!-- Join / Create actions -->
-      <div style="border-top:1px solid #eee; padding-top:1rem;">
-
-        <!-- Join with invite code -->
-        <p style="margin:0 0 0.5rem; font-size:0.9rem; color:#555; font-weight:600;">Join an existing group</p>
-        <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:0.25rem;">
+      <div style="border-top:1px solid var(--color-border); padding-top:var(--space-4);">
+        <p style="margin:0 0 var(--space-2); font-size:var(--font-size-sm); color:var(--color-text-primary); font-weight:700;">Join an existing group</p>
+        <div style="display:flex; gap:var(--space-2); align-items:center; margin-bottom:var(--space-1);">
           <input type="text" id="join-group-code" placeholder="Enter invite code" maxlength="12"
-            style="flex:1; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box; text-transform:uppercase; letter-spacing:0.1em;">
-          <button id="join-group-btn" style="padding:0.6rem 1rem; background:#4F2185; color:white; border:none; border-radius:6px; font-size:0.95rem; font-weight:bold; cursor:pointer; white-space:nowrap;">Join</button>
+            class="form-input" style="flex:1; text-transform:uppercase; letter-spacing:0.1em;">
+          <button id="join-group-btn" class="btn btn-primary btn-auto" style="padding:var(--space-3) var(--space-4); white-space:nowrap;">Join</button>
         </div>
-        <p id="join-group-preview" style="display:none; margin:0.5rem 0 0; font-size:0.9rem; color:#2e7d32; font-weight:500;"></p>
-        <p id="join-group-message" style="display:none; margin:0.5rem 0 0; font-size:0.875rem; text-align:center;"></p>
-        <button id="join-group-confirm-btn" style="display:none; width:100%; margin-top:0.75rem; padding:0.65rem; background:#28a745; color:white; border:none; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Confirm &amp; Join</button>
+        <p id="join-group-preview" style="display:none; margin:var(--space-2) 0 0; font-size:var(--font-size-sm); color:var(--color-action-success); font-weight:600;"></p>
+        <p id="join-group-message" style="display:none; margin:var(--space-2) 0 0; font-size:var(--font-size-sm); text-align:center;"></p>
+        <button id="join-group-confirm-btn" style="display:none;" class="btn btn-success">Confirm &amp; Join</button>
 
-        <!-- Divider -->
-        <div style="display:flex; align-items:center; gap:0.75rem; margin:1rem 0;">
-          <div style="flex:1; height:1px; background:#eee;"></div>
-          <span style="font-size:0.8rem; color:#aaa; white-space:nowrap;">or</span>
-          <div style="flex:1; height:1px; background:#eee;"></div>
+        <div style="display:flex; align-items:center; gap:var(--space-3); margin:var(--space-4) 0;">
+          <div style="flex:1; height:1px; background:var(--color-border);"></div>
+          <span style="font-size:var(--font-size-xs); color:var(--color-text-muted); white-space:nowrap;">or</span>
+          <div style="flex:1; height:1px; background:var(--color-border);"></div>
         </div>
 
-        <!-- Create new group -->
-        <button id="open-create-group-btn"
-          style="width:100%; padding:0.65rem; background:white; color:#28a745; border:2px solid #28a745;
-                 border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">+ Create New Group</button>
+        <button id="open-create-group-btn" class="btn btn-ghost-success">+ Create New Group</button>
       </div>
     </div>
 
     <!-- Delete account -->
-    <div style="margin-bottom:1rem;">
-      <div id="delete-account-confirm" style="display:none; background:#fff3f3; border:1px solid #f5c6c6; border-radius:8px; padding:1rem; margin-bottom:0.75rem;">
-        <p style="margin:0 0 0.5rem; font-weight:bold; color:#c0392b;">Are you sure?</p>
-        <p style="margin:0 0 1rem; font-size:0.9rem; color:#555;">This will deactivate your account. Your scoring history will be preserved.</p>
-        <div style="display:flex; gap:0.75rem;">
-          <button id="delete-account-confirm-btn" style="flex:1; padding:0.65rem; background:#c0392b; color:white; border:none; border-radius:6px; font-size:0.95rem; font-weight:bold; cursor:pointer;">Yes, Delete My Account</button>
-          <button id="delete-account-cancel-btn" style="flex:1; padding:0.65rem; background:#eee; color:#333; border:none; border-radius:6px; font-size:0.95rem; cursor:pointer;">Cancel</button>
+    <div style="margin-bottom:var(--space-4);">
+      <div id="delete-account-confirm" style="display:none; background:#fff3f3; border:1px solid #f5c6c6; border-radius:var(--radius-md); padding:var(--space-4); margin-bottom:var(--space-3);">
+        <p style="margin:0 0 var(--space-2); font-weight:700; color:var(--color-action-danger);">Are you sure?</p>
+        <p style="margin:0 0 var(--space-4); font-size:var(--font-size-sm); color:var(--color-text-secondary);">This will deactivate your account. Your scoring history will be preserved.</p>
+        <div style="display:flex; gap:var(--space-3);">
+          <button id="delete-account-confirm-btn" class="btn btn-danger-solid btn-auto" style="flex:1;">Yes, Delete My Account</button>
+          <button id="delete-account-cancel-btn" class="btn btn-neutral btn-auto" style="flex:1;">Cancel</button>
         </div>
       </div>
-      <button id="delete-account-btn" style="width:100%; padding:0.65rem; background:white; color:#c0392b; border:2px solid #c0392b; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Delete Account</button>
+      <button id="delete-account-btn" class="btn btn-danger">Delete Account</button>
     </div>
 
   </div>
 </div>
 
+<!-- ── Manage Golfers ──────────────────────────────────────────────────────── -->
 <div class="container" id="edit-golfers-container" style="display: none;">
-  <button id="back-from-edit-golfers-btn" class="history-back-btn" style="margin-bottom: 1rem;">Back</button>
-  <h2 style="text-align: center; margin-bottom: 1.25rem;">Manage Golfers</h2>
+  <button id="back-from-edit-golfers-btn" class="history-back-btn" style="margin-bottom:1rem;">Back</button>
+  <h2 class="page-title">Manage Golfers</h2>
   <div id="edit-golfers-list"></div>
-  <div id="edit-golfers-status" style="text-align:center; font-size:0.9rem; margin: 0.5rem 0;"></div>
-  <button id="add-golfer-btn" style="width:100%; padding:0.75rem; background:#4F2185; color:white; border:none; border-radius:4px; font-size:1rem; font-weight:bold; cursor:pointer; margin-top:1rem;">+ Add Golfer</button>
-  <div id="add-golfer-form" style="display:none; margin-top:1rem; background:#f9f6ff; border:1px solid #d0b8f0; border-radius:8px; padding:1rem;">
-    <h3 style="margin:0 0 0.75rem; font-size:1rem;">New Golfer</h3>
-    <input type="text" id="new-golfer-first" placeholder="First Name" style="width:100%; padding:0.6rem; margin-bottom:0.5rem; font-size:1rem; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
-    <input type="text" id="new-golfer-last" placeholder="Last Name" style="width:100%; padding:0.6rem; margin-bottom:0.5rem; font-size:1rem; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
-    <input type="number" id="new-golfer-hcp" placeholder="Handicap" step="0.1" style="width:100%; padding:0.6rem; margin-bottom:0.75rem; font-size:1rem; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
-    <div style="display:flex; gap:0.5rem;">
-      <button id="save-new-golfer-btn" style="flex:1; padding:0.65rem; background:#4F2185; color:white; border:none; border-radius:4px; font-size:0.95rem; font-weight:bold; cursor:pointer;">Save</button>
-      <button id="cancel-new-golfer-btn" style="flex:1; padding:0.65rem; background:#eee; color:#333; border:none; border-radius:4px; font-size:0.95rem; cursor:pointer;">Cancel</button>
+  <div id="edit-golfers-status" style="text-align:center; font-size:var(--font-size-sm); margin:var(--space-2) 0;"></div>
+  <button id="add-golfer-btn" class="btn btn-primary" style="margin-top:var(--space-4);">+ Add Golfer</button>
+  <div id="add-golfer-form" style="display:none; margin-top:var(--space-4); background:var(--color-bg-muted); border:1px solid var(--color-border); border-radius:var(--radius-md); padding:var(--space-4);">
+    <h3 style="margin:0 0 var(--space-3); font-size:var(--font-size-base); font-weight:800;">New Golfer</h3>
+    <input type="text" id="new-golfer-first" placeholder="First Name" class="form-input" style="margin-bottom:var(--space-2);">
+    <input type="text" id="new-golfer-last" placeholder="Last Name" class="form-input" style="margin-bottom:var(--space-2);">
+    <input type="number" id="new-golfer-hcp" placeholder="Handicap" step="0.1" class="form-input" style="margin-bottom:var(--space-3);">
+    <div style="display:flex; gap:var(--space-2);">
+      <button id="save-new-golfer-btn" class="btn btn-primary btn-auto" style="flex:1;">Save</button>
+      <button id="cancel-new-golfer-btn" class="btn btn-neutral btn-auto" style="flex:1;">Cancel</button>
     </div>
   </div>
 </div>
 
+<!-- ── Scoring App ─────────────────────────────────────────────────────────── -->
 <div class="container" id="app-content" style="display: none;">
-
   <header>
-      <div id="tournament-bar" class="tournament-bar">
-          <span id="tournament-name"></span>
-      </div>
-      <div id="user-bar" class="user-bar" style="display: none;">
-        <span id="user-name" class="auto-contrast"></span>
-        <button id="logout-button" class="btn-logout">Change Round</button>
-      </div>
-
+    <div id="tournament-bar" class="tournament-bar">
+      <span id="tournament-name"></span>
+    </div>
+    <div id="user-bar" class="user-bar" style="display: none;">
+      <span id="user-name" class="auto-contrast"></span>
+      <button id="logout-button" class="btn-logout">Change Round</button>
+    </div>
   </header>
 
-  <div id="round-bar" class="round-bar" style="cursor: pointer; position: relative;">
+  <div id="round-bar" class="round-bar" style="cursor:pointer; position:relative;">
     <span id="round-name"></span>
-    <span style="margin-left: 0.5rem;">&#9662;</span>
-    <div id="round-dropdown" class="round-dropdown" style="display: none;"></div>
+    <span style="margin-left:0.5rem;">&#9662;</span>
+    <div id="round-dropdown" class="round-dropdown" style="display:none;"></div>
   </div>
 
   <nav>
@@ -570,110 +532,91 @@
       <button data-page="today">Round</button>
       <button data-page="tournament">Tournament</button>
     </div>
-
   </nav>
 
   <main id="content">
-    <div id="score-entry-content" style="padding-bottom: 2rem;"></div>
+    <div id="score-entry-content" style="padding-bottom:2rem;"></div>
   </main>
-</div>  
-  <!-- Create New Group Modal -->
-  <div id="create-group-modal" style="display:none; position:fixed; inset:0; z-index:1000;
-       background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
-    <div style="background:#fff; border-radius:14px; padding:1.5rem; width:90%; max-width:400px;
-                box-shadow:0 8px 32px rgba(0,0,0,0.18); position:relative;">
-      <button id="close-create-group-modal" style="position:absolute; top:0.75rem; right:1rem;
-              background:none; border:none; font-size:1.5rem; cursor:pointer; color:#888; line-height:1;">&#x2715;</button>
-      <h3 style="margin:0 0 0.25rem; font-size:1.1rem; color:#1a1a1a;">Create New Group</h3>
-      <p style="margin:0 0 1.25rem; font-size:0.85rem; color:#888;">You'll be the admin of this new group.</p>
-      <label for="new-group-name" style="display:block; font-size:0.85rem; color:#555; margin-bottom:0.25rem;">Group Name</label>
-      <input type="text" id="new-group-name" maxlength="100" placeholder="e.g. Smith Golf League"
-        style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:6px;
-               box-sizing:border-box; margin-bottom:1rem;">
-      <p id="create-group-message" style="display:none; font-size:0.875rem; text-align:center; margin:0 0 0.75rem;"></p>
-      <button id="create-group-submit-btn"
-        style="width:100%; padding:0.65rem; background:#28a745; color:white; border:none;
-               border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Create Group</button>
+</div>
+
+<!-- ── Modals ──────────────────────────────────────────────────────────────── -->
+
+<!-- Create New Group -->
+<div id="create-group-modal" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
+  <div class="modal-box">
+    <button id="close-create-group-modal" class="modal-close">&#x2715;</button>
+    <h3 class="modal-title">Create New Group</h3>
+    <p class="modal-subtitle">You'll be the admin of this new group.</p>
+    <label for="new-group-name" class="form-label">Group Name</label>
+    <input type="text" id="new-group-name" maxlength="100" placeholder="e.g. Smith Golf League" class="form-input" style="margin-bottom:var(--space-4);">
+    <p id="create-group-message" style="display:none; font-size:var(--font-size-sm); text-align:center; margin:0 0 var(--space-3);"></p>
+    <button id="create-group-submit-btn" class="btn btn-success">Create Group</button>
+  </div>
+</div>
+
+<!-- Switch Group -->
+<div id="switch-group-modal" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
+  <div class="modal-box" style="max-width:380px;">
+    <button id="close-switch-group-modal" class="modal-close">&#x2715;</button>
+    <h3 class="modal-title">Switch Group</h3>
+    <p class="modal-subtitle">Select a group to switch to</p>
+    <div id="switch-group-list">
+      <p style="color:var(--color-text-muted); font-size:var(--font-size-sm);">Loading…</p>
     </div>
   </div>
+</div>
 
-  <!-- Switch Group Modal -->
-  <div id="switch-group-modal" style="display:none; position:fixed; inset:0; z-index:1000;
-       background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
-    <div style="background:#fff; border-radius:14px; padding:1.5rem; width:88%; max-width:380px;
-                box-shadow:0 8px 32px rgba(0,0,0,0.18); position:relative;">
-      <button id="close-switch-group-modal" style="position:absolute; top:0.75rem; right:1rem;
-              background:none; border:none; font-size:1.5rem; cursor:pointer; color:#888; line-height:1;">&#x2715;</button>
-      <h3 style="margin:0 0 0.25rem; font-size:1.1rem; color:#1a1a1a;">Switch Group</h3>
-      <p style="margin:0 0 1.25rem; font-size:0.85rem; color:#888;">Select a group to switch to</p>
-      <div id="switch-group-list">
-        <p style="color:#888; font-size:0.9rem;">Loading…</p>
+<!-- Edit Profile -->
+<div id="edit-profile-modal" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
+  <div class="modal-box">
+    <button id="close-edit-profile-modal" class="modal-close">&#x2715;</button>
+    <h3 class="modal-title" style="margin-bottom:var(--space-5);">Edit Profile</h3>
+    <div style="display:flex; gap:var(--space-3); margin-bottom:var(--space-3);">
+      <div style="flex:1;">
+        <label for="edit-first-name" class="form-label">First Name</label>
+        <input type="text" id="edit-first-name" required class="form-input">
+      </div>
+      <div style="flex:1;">
+        <label for="edit-last-name" class="form-label">Last Name</label>
+        <input type="text" id="edit-last-name" required class="form-input">
       </div>
     </div>
-  </div>
-
-  <!-- Edit Profile Modal -->
-  <div id="edit-profile-modal" style="display:none; position:fixed; inset:0; z-index:1000;
-       background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
-    <div style="background:#fff; border-radius:14px; padding:1.5rem; width:90%; max-width:420px;
-                box-shadow:0 8px 32px rgba(0,0,0,0.18); position:relative;">
-      <button id="close-edit-profile-modal" style="position:absolute; top:0.75rem; right:1rem;
-              background:none; border:none; font-size:1.5rem; cursor:pointer; color:#888; line-height:1;">&#x2715;</button>
-      <h3 style="margin:0 0 1.25rem; font-size:1.1rem; color:#1a1a1a;">Edit Profile</h3>
-      <div style="display:flex; gap:0.75rem; margin-bottom:0.75rem;">
-        <div style="flex:1;">
-          <label for="edit-first-name" style="display:block; font-size:0.85rem; color:#555; margin-bottom:0.25rem;">First Name</label>
-          <input type="text" id="edit-first-name" required style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
-        </div>
-        <div style="flex:1;">
-          <label for="edit-last-name" style="display:block; font-size:0.85rem; color:#555; margin-bottom:0.25rem;">Last Name</label>
-          <input type="text" id="edit-last-name" required style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
-        </div>
-      </div>
-      <div style="margin-bottom:0.75rem;">
-        <label for="edit-email" style="display:block; font-size:0.85rem; color:#555; margin-bottom:0.25rem;">Email</label>
-        <input type="email" id="edit-email" required style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
-      </div>
-      <div style="margin-bottom:1rem;">
-        <label for="edit-handicap" style="display:block; font-size:0.85rem; color:#555; margin-bottom:0.25rem;">Handicap Index</label>
-        <input type="number" id="edit-handicap" step="0.1" min="0" max="54" style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
-      </div>
-      <p id="edit-user-message" style="display:none; font-size:0.875rem; text-align:center; margin:0 0 0.75rem;"></p>
-      <button id="save-profile-btn" style="width:100%; padding:0.65rem; background:#4F2185; color:white;
-              border:none; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Save Profile</button>
+    <div style="margin-bottom:var(--space-3);">
+      <label for="edit-email" class="form-label">Email</label>
+      <input type="email" id="edit-email" required class="form-input">
     </div>
-  </div>
-
-  <!-- Change Password Modal -->
-  <div id="change-password-modal" style="display:none; position:fixed; inset:0; z-index:1000;
-       background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
-    <div style="background:#fff; border-radius:14px; padding:1.5rem; width:90%; max-width:420px;
-                box-shadow:0 8px 32px rgba(0,0,0,0.18); position:relative;">
-      <button id="close-change-password-modal" style="position:absolute; top:0.75rem; right:1rem;
-              background:none; border:none; font-size:1.5rem; cursor:pointer; color:#888; line-height:1;">&#x2715;</button>
-      <h3 style="margin:0 0 1.25rem; font-size:1.1rem; color:#1a1a1a;">Change Password</h3>
-      <div style="margin-bottom:0.75rem;">
-        <label for="current-password" style="display:block; font-size:0.85rem; color:#555; margin-bottom:0.25rem;">Current Password</label>
-        <input type="password" id="current-password" autocomplete="current-password"
-          style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
-      </div>
-      <div style="margin-bottom:0.75rem;">
-        <label for="new-password" style="display:block; font-size:0.85rem; color:#555; margin-bottom:0.25rem;">New Password</label>
-        <input type="password" id="new-password" autocomplete="new-password"
-          style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
-      </div>
-      <div style="margin-bottom:1rem;">
-        <label for="confirm-new-password" style="display:block; font-size:0.85rem; color:#555; margin-bottom:0.25rem;">Confirm New Password</label>
-        <input type="password" id="confirm-new-password" autocomplete="new-password"
-          style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
-      </div>
-      <p id="change-password-message" style="display:none; font-size:0.875rem; text-align:center; margin:0 0 0.75rem;"></p>
-      <button id="save-password-btn" style="width:100%; padding:0.65rem; background:#4F2185; color:white;
-              border:none; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Change Password</button>
+    <div style="margin-bottom:var(--space-4);">
+      <label for="edit-handicap" class="form-label">Handicap Index</label>
+      <input type="number" id="edit-handicap" step="0.1" min="0" max="54" class="form-input">
     </div>
+    <p id="edit-user-message" style="display:none; font-size:var(--font-size-sm); text-align:center; margin:0 0 var(--space-3);"></p>
+    <button id="save-profile-btn" class="btn btn-primary">Save Profile</button>
   </div>
+</div>
 
-  <script src="offline-sync.js"></script>
-  <script src="script.js"></script>
+<!-- Change Password -->
+<div id="change-password-modal" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
+  <div class="modal-box">
+    <button id="close-change-password-modal" class="modal-close">&#x2715;</button>
+    <h3 class="modal-title" style="margin-bottom:var(--space-5);">Change Password</h3>
+    <div style="margin-bottom:var(--space-3);">
+      <label for="current-password" class="form-label">Current Password</label>
+      <input type="password" id="current-password" autocomplete="current-password" class="form-input">
+    </div>
+    <div style="margin-bottom:var(--space-3);">
+      <label for="new-password" class="form-label">New Password</label>
+      <input type="password" id="new-password" autocomplete="new-password" class="form-input">
+    </div>
+    <div style="margin-bottom:var(--space-4);">
+      <label for="confirm-new-password" class="form-label">Confirm New Password</label>
+      <input type="password" id="confirm-new-password" autocomplete="new-password" class="form-input">
+    </div>
+    <p id="change-password-message" style="display:none; font-size:var(--font-size-sm); text-align:center; margin:0 0 var(--space-3);"></p>
+    <button id="save-password-btn" class="btn btn-primary">Change Password</button>
+  </div>
+</div>
+
+<script src="offline-sync.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
