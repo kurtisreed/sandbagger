@@ -9328,7 +9328,7 @@ function initJoinGroupForm() {
   confirmBtn.onclick = () => {
     if (!pendingCode) return;
     doJoinExisting(pendingCode);
-  });
+  };
 }
 
 function initCreateGroupModal() {
