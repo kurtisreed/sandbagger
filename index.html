@@ -392,6 +392,57 @@
   <div id="edit-group-content" style="max-width:500px; margin:0 auto;"></div>
 </div>
 
+<!-- ── Manage Courses ─────────────────────────────────────────────────────── -->
+<div class="container" id="manage-courses-container" style="display:none;">
+  <button id="courses-back-btn" class="history-back-btn" style="margin-bottom:1rem;">← Edit Group</button>
+  <h2 class="page-title">Courses</h2>
+  <div id="courses-list" style="max-width:500px; margin:0 auto;"></div>
+  <div style="max-width:500px; margin:var(--space-4) auto 0;">
+    <button id="add-course-btn" class="btn btn-success">+ Add New Course</button>
+  </div>
+</div>
+
+<!-- ── Course Form ────────────────────────────────────────────────────────── -->
+<div class="container" id="course-form-container" style="display:none;">
+  <button id="course-form-back-btn" class="history-back-btn" style="margin-bottom:1rem;">← Courses</button>
+  <h2 class="page-title" id="course-form-title">Add Course</h2>
+  <div style="max-width:500px; margin:0 auto;">
+
+    <!-- Course name -->
+    <div class="card">
+      <label class="form-label">Course Name</label>
+      <input type="text" id="cf-name" class="form-input" placeholder="e.g. Pebble Beach Golf Links" maxlength="100">
+    </div>
+
+    <!-- Holes -->
+    <div class="card">
+      <h3 class="section-header" style="margin-bottom:var(--space-4);">Holes</h3>
+      <div style="overflow-x:auto;">
+        <table class="course-holes-table">
+          <thead>
+            <tr>
+              <th>Hole</th>
+              <th>Par</th>
+              <th>HI</th>
+            </tr>
+          </thead>
+          <tbody id="cf-holes-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tees -->
+    <div class="card">
+      <h3 class="section-header" style="margin-bottom:var(--space-4);">Tees</h3>
+      <div id="cf-tees-list"></div>
+      <button id="cf-add-tee-btn" class="btn btn-neutral btn-auto" style="margin-top:var(--space-3);">+ Add Tee</button>
+    </div>
+
+    <p id="cf-error" style="display:none; color:var(--color-action-danger); text-align:center; font-size:var(--font-size-sm);"></p>
+    <button id="cf-save-btn" class="btn btn-primary" style="margin-bottom:var(--space-8);">Save Course</button>
+  </div>
+</div>
+
 <!-- ── Edit Tournament ────────────────────────────────────────────────────── -->
 <div class="container" id="edit-tournament-container" style="display: none;">
   <h2 class="page-title">Edit Tournament</h2>

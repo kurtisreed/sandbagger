@@ -8586,6 +8586,295 @@ async function showGuysTripStep2() {
 }
 
 // ── Edit Group page ───────────────────────────────────────────────────────────
+// ── Course Manager ─────────────────────────────────────────────────────────
+
+async function showCourseManager() {
+  document.getElementById('edit-group-container').style.display    = 'none';
+  document.getElementById('course-form-container').style.display   = 'none';
+  const container = document.getElementById('manage-courses-container');
+  container.style.display = 'block';
+
+  const listEl = document.getElementById('courses-list');
+  listEl.innerHTML = '<p style="color:var(--color-text-muted); text-align:center;">Loading…</p>';
+
+  let courses = [];
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/courses.php`, { credentials: 'include' });
+    courses = await res.json();
+    if (!Array.isArray(courses)) courses = [];
+  } catch (e) {
+    listEl.innerHTML = '<p style="color:var(--color-action-danger);">Failed to load courses.</p>';
+    return;
+  }
+
+  if (courses.length === 0) {
+    listEl.innerHTML = '<p style="color:var(--color-text-muted); text-align:center; font-style:italic;">No courses yet — add one below.</p>';
+  } else {
+    listEl.innerHTML = courses.map(c => `
+      <div class="course-card">
+        <div class="course-card-info">
+          <p class="course-card-name">${c.name}</p>
+        </div>
+        <div class="course-card-actions">
+          <button class="btn btn-neutral btn-sm btn-auto edit-course-btn" data-id="${c.course_id}">Edit</button>
+          <button class="btn btn-danger btn-sm btn-auto delete-course-btn" data-id="${c.course_id}" data-name="${c.name.replace(/"/g,'&quot;')}">Delete</button>
+        </div>
+      </div>`).join('');
+
+    listEl.querySelectorAll('.edit-course-btn').forEach(btn => {
+      btn.addEventListener('click', () => showCourseForm(parseInt(btn.dataset.id)));
+    });
+    listEl.querySelectorAll('.delete-course-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm(`Delete "${btn.dataset.name}"? This cannot be undone.`)) return;
+        await fetch(`${API_BASE_URL}/api/courses.php?course_id=${btn.dataset.id}`, {
+          method: 'DELETE', credentials: 'include'
+        });
+        showCourseManager();
+      });
+    });
+  }
+
+  document.getElementById('courses-back-btn').onclick = () => {
+    container.style.display = 'none';
+    showEditGroupPage();
+  };
+  document.getElementById('add-course-btn').onclick = () => showCourseForm(null);
+}
+
+// _courseTeesData: array of tee objects managed while the form is open
+let _courseTeesData = [];
+
+function _renderCourseTeesUI() {
+  const list = document.getElementById('cf-tees-list');
+  if (_courseTeesData.length === 0) {
+    list.innerHTML = '<p style="color:var(--color-text-muted); font-size:var(--font-size-sm); margin:0 0 var(--space-2);">No tees yet.</p>';
+    return;
+  }
+  list.innerHTML = `
+    <div class="tee-row-header">
+      <span>Name</span><span>Slope</span><span>Rating</span><span>Par</span><span>Yardage</span><span></span>
+    </div>
+    ${_courseTeesData.map((t, i) => `
+      <div class="tee-row" data-tee-index="${i}">
+        <input type="text"   class="tee-name"    value="${t.tee_name || ''}"   placeholder="e.g. Blue"  maxlength="50">
+        <input type="number" class="tee-slope"   value="${t.slope   || ''}"   placeholder="113" min="55" max="155">
+        <input type="number" class="tee-rating"  value="${t.rating  || ''}"   placeholder="72.0" step="0.1" min="60" max="82">
+        <input type="number" class="tee-par"     value="${t.par     || 72}"   placeholder="72"  min="27" max="82">
+        <input type="number" class="tee-yardage" value="${t.yardage || ''}"   placeholder="6500" min="1000" max="9000">
+        <button class="btn-remove-tee" data-index="${i}" title="Remove tee">✕</button>
+      </div>`).join('')}
+  `;
+
+  // Sync changes back to _courseTeesData on input
+  list.querySelectorAll('.tee-row').forEach(row => {
+    const i = parseInt(row.dataset.teeIndex);
+    row.querySelector('.tee-name').oninput    = e => { _courseTeesData[i].tee_name = e.target.value; };
+    row.querySelector('.tee-slope').oninput   = e => { _courseTeesData[i].slope   = e.target.value; };
+    row.querySelector('.tee-rating').oninput  = e => { _courseTeesData[i].rating  = e.target.value; };
+    row.querySelector('.tee-par').oninput     = e => { _courseTeesData[i].par     = e.target.value; };
+    row.querySelector('.tee-yardage').oninput = e => { _courseTeesData[i].yardage = e.target.value; };
+    row.querySelector('.btn-remove-tee').onclick = e => {
+      _courseTeesData.splice(parseInt(e.target.dataset.index), 1);
+      _renderCourseTeesUI();
+    };
+  });
+}
+
+async function showCourseForm(courseId) {
+  document.getElementById('manage-courses-container').style.display = 'none';
+  const container = document.getElementById('course-form-container');
+  container.style.display = 'block';
+
+  document.getElementById('course-form-title').textContent = courseId ? 'Edit Course' : 'Add Course';
+  document.getElementById('cf-name').value = '';
+  document.getElementById('cf-error').style.display = 'none';
+  _courseTeesData = [];
+
+  // Build the 18-hole input grid
+  const tbody = document.getElementById('cf-holes-body');
+  tbody.innerHTML = Array.from({length: 18}, (_, i) => {
+    const h = i + 1;
+    return `
+      <tr>
+        <td class="hole-num">${h}</td>
+        <td>
+          <select class="hole-par-select" data-hole="${h}">
+            <option value="3">3</option>
+            <option value="4" selected>4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+          </select>
+        </td>
+        <td>
+          <input type="number" class="hole-hi-input" data-hole="${h}"
+            placeholder="–" min="1" max="18" style="width:3.2rem;">
+        </td>
+      </tr>`;
+  }).join('');
+
+  _renderCourseTeesUI();
+
+  // Pre-fill if editing
+  if (courseId) {
+    container.dataset.courseId = courseId;
+    try {
+      const [courseRes, teesRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/courses.php?course_id=${courseId}`, { credentials: 'include' }),
+        fetch(`${API_BASE_URL}/api/get_course_tees.php?course_id=${courseId}`, { credentials: 'include' })
+      ]);
+      const courseData = await courseRes.json();
+      const teeData    = await teesRes.json();
+
+      if (courseData && courseData.name) {
+        document.getElementById('cf-name').value = courseData.name;
+      }
+      if (teeData.holes) {
+        teeData.holes.forEach(hole => {
+          const parSel = tbody.querySelector(`select[data-hole="${hole.hole_number}"]`);
+          const hiIn   = tbody.querySelector(`input[data-hole="${hole.hole_number}"]`);
+          if (parSel) parSel.value = hole.par;
+          if (hiIn && hole.handicap_index != null) hiIn.value = hole.handicap_index;
+        });
+      }
+      if (teeData.tees && teeData.tees.length > 0) {
+        _courseTeesData = teeData.tees.map(t => ({ ...t }));
+        _renderCourseTeesUI();
+      }
+    } catch (e) {
+      document.getElementById('cf-error').textContent = 'Failed to load course data.';
+      document.getElementById('cf-error').style.display = 'block';
+    }
+  } else {
+    delete container.dataset.courseId;
+  }
+
+  // Back button
+  document.getElementById('course-form-back-btn').onclick = () => {
+    container.style.display = 'none';
+    showCourseManager();
+  };
+
+  // Add tee
+  document.getElementById('cf-add-tee-btn').onclick = () => {
+    _courseTeesData.push({ tee_id: null, tee_name: '', slope: '', rating: '', par: 72, yardage: '' });
+    _renderCourseTeesUI();
+  };
+
+  // Save
+  document.getElementById('cf-save-btn').onclick = () => saveCourseForm();
+}
+
+async function saveCourseForm() {
+  const errEl    = document.getElementById('cf-error');
+  const saveBtn  = document.getElementById('cf-save-btn');
+  const name     = document.getElementById('cf-name').value.trim();
+  const container = document.getElementById('course-form-container');
+  const existingCourseId = container.dataset.courseId ? parseInt(container.dataset.courseId) : null;
+
+  errEl.style.display = 'none';
+
+  if (!name) {
+    errEl.textContent = 'Please enter a course name.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving…';
+
+  try {
+    // 1. Save / update course name
+    let courseId = existingCourseId;
+    if (courseId) {
+      await fetch(`${API_BASE_URL}/api/courses.php?course_id=${courseId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name })
+      });
+    } else {
+      const res  = await fetch(`${API_BASE_URL}/api/courses.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name })
+      });
+      const data = await res.json();
+      courseId   = data.course_id;
+    }
+
+    // 2. Save holes (batch)
+    const holes = [];
+    document.querySelectorAll('#cf-holes-body tr').forEach(row => {
+      const h  = row.querySelector('.hole-par-select');
+      const hi = row.querySelector('.hole-hi-input');
+      if (!h) return;
+      holes.push({
+        hole_number:    parseInt(h.dataset.hole),
+        par:            parseInt(h.value),
+        handicap_index: hi.value !== '' ? parseInt(hi.value) : null
+      });
+    });
+    await fetch(`${API_BASE_URL}/api/save_course_holes.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ course_id: courseId, holes })
+    });
+
+    // 3. Save tees
+    // Sync any unsaved input values first
+    document.querySelectorAll('#cf-tees-list .tee-row').forEach(row => {
+      const i = parseInt(row.dataset.teeIndex);
+      if (_courseTeesData[i]) {
+        _courseTeesData[i].tee_name = row.querySelector('.tee-name').value;
+        _courseTeesData[i].slope    = row.querySelector('.tee-slope').value;
+        _courseTeesData[i].rating   = row.querySelector('.tee-rating').value;
+        _courseTeesData[i].par      = row.querySelector('.tee-par').value;
+        _courseTeesData[i].yardage  = row.querySelector('.tee-yardage').value;
+      }
+    });
+
+    for (const tee of _courseTeesData) {
+      if (!tee.tee_name.trim()) continue;
+      const payload = {
+        course_id: courseId,
+        tee_name:  tee.tee_name.trim(),
+        slope:     parseInt(tee.slope)   || 0,
+        rating:    parseFloat(tee.rating) || 0,
+        par:       parseInt(tee.par)     || 72,
+        yardage:   parseInt(tee.yardage) || 0
+      };
+      if (tee.tee_id) {
+        await fetch(`${API_BASE_URL}/api/course_tees.php?tee_id=${tee.tee_id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(payload)
+        });
+      } else {
+        await fetch(`${API_BASE_URL}/api/course_tees.php`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(payload)
+        });
+      }
+    }
+
+    container.style.display = 'none';
+    showCourseManager();
+
+  } catch (e) {
+    errEl.textContent = 'Save failed. Please try again.';
+    errEl.style.display = 'block';
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save Course';
+  }
+}
+
 async function showEditGroupPage() {
   // Hide other views
   document.getElementById('user-dashboard').style.display = 'none';
@@ -8593,6 +8882,8 @@ async function showEditGroupPage() {
   document.getElementById('edit-golfers-container').style.display = 'none';
   document.getElementById('round-history-container').style.display = 'none';
   document.getElementById('tournament-history-container').style.display = 'none';
+  document.getElementById('manage-courses-container').style.display = 'none';
+  document.getElementById('course-form-container').style.display = 'none';
 
   const container = document.getElementById('edit-group-container');
   container.dataset.open = 'true';
@@ -8660,6 +8951,13 @@ async function showEditGroupPage() {
       <h3 style="margin:0 0 0.5rem; font-size:1.1rem; color:#1a1a1a;">Golfers</h3>
       <p style="margin:0 0 1rem; font-size:0.9rem; color:#666;">Add, edit, or remove golfers in your group.</p>
       <button id="edit-group-golfers-btn" style="width:100%; padding:0.65rem; background:#4F2185; color:white; border:none; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Edit Golfers</button>
+    </div>
+
+    <!-- Courses card -->
+    <div style="background:#fff; border:1px solid #e0e0e0; border-radius:12px; padding:1.25rem; margin-bottom:1rem; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+      <h3 style="margin:0 0 0.5rem; font-size:1.1rem; color:#1a1a1a;">Courses</h3>
+      <p style="margin:0 0 1rem; font-size:0.9rem; color:#666;">Manage golf courses and tees for your group.</p>
+      <button id="manage-courses-btn" style="width:100%; padding:0.65rem; background:#4F2185; color:white; border:none; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Manage Courses</button>
     </div>
 
     <!-- Invite members card -->
@@ -8763,6 +9061,12 @@ async function showEditGroupPage() {
   document.getElementById('edit-group-golfers-btn').addEventListener('click', () => {
     container.style.display = 'none';
     loadEditGolfersPage();
+  });
+
+  // Manage Courses button
+  document.getElementById('manage-courses-btn').addEventListener('click', () => {
+    container.style.display = 'none';
+    showCourseManager();
   });
 
   // Copy code
@@ -9252,6 +9556,8 @@ function returnToDashboard() {
     'create-tournament-step2',
     'create-tournament-step3',
     'create-tournament-gt-step2',
+    'manage-courses-container',
+    'course-form-container',
   ];
   allPages.forEach(id => {
     const el = document.getElementById(id);

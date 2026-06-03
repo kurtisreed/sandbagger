@@ -43,54 +43,24 @@ switch ($method) {
 
   case 'POST':
     requireAdmin();
-    // create new course for this org
     $data = json_decode(file_get_contents('php://input'), true);
-    $stmt = $conn->prepare("
-      INSERT INTO courses
-        (course_name, par_total, tees, slope, rating, total_yardage, org_id)
-      VALUES (?,?,?,?,?,?,?)
-    ");
-    $stmt->bind_param(
-      'sisidii',
-      $data['name'],
-      $data['par_total'],
-      $data['tees'],
-      $data['slope'],
-      $data['rating'],
-      $data['total_yardage'],
-      $currentOrgId
-    );
+    $name = trim($data['name'] ?? '');
+    if (!$name) { http_response_code(400); echo json_encode(['error' => 'Course name required']); exit; }
+    $stmt = $conn->prepare("INSERT INTO courses (course_name, org_id) VALUES (?, ?)");
+    $stmt->bind_param('si', $name, $currentOrgId);
     $stmt->execute();
-    echo json_encode(['inserted_id' => $stmt->insert_id]);
+    echo json_encode(['course_id' => $stmt->insert_id]);
     break;
 
   case 'PUT':
     requireAdmin();
-    // update existing course — must belong to this org
-    parse_str(file_get_contents('php://input'), $data);
-    $stmt = $conn->prepare("
-      UPDATE courses
-         SET course_name   = ?,
-             par_total     = ?,
-             tees          = ?,
-             slope         = ?,
-             rating        = ?,
-             total_yardage = ?
-       WHERE course_id = ? AND org_id = ?
-    ");
-    $stmt->bind_param(
-      'sisidiii',
-      $data['name'],
-      $data['par_total'],
-      $data['tees'],
-      $data['slope'],
-      $data['rating'],
-      $data['total_yardage'],
-      $id,
-      $currentOrgId
-    );
+    $data = json_decode(file_get_contents('php://input'), true);
+    $name = trim($data['name'] ?? '');
+    if (!$name || !$id) { http_response_code(400); echo json_encode(['error' => 'Missing fields']); exit; }
+    $stmt = $conn->prepare("UPDATE courses SET course_name = ? WHERE course_id = ? AND org_id = ?");
+    $stmt->bind_param('sii', $name, $id, $currentOrgId);
     $stmt->execute();
-    echo json_encode(['affected_rows' => $stmt->affected_rows]);
+    echo json_encode(['success' => true]);
     break;
 
   case 'DELETE':
