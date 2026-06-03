@@ -8919,7 +8919,7 @@ async function showEditGroupPage() {
     return;
   }
 
-  const { org_name, created_at, members } = orgData;
+  const { org_name, avatar_url, created_at, members } = orgData;
   const createdDate = created_at
     ? new Date(created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
     : '—';
@@ -8938,7 +8938,46 @@ async function showEditGroupPage() {
     </div>
   `).join('');
 
+  // Avatar helper — used in both the card preview and the My Groups list
+  const _avatarHtml = (avatarUrl, name, cls) => {
+    const initial = (name || '?').charAt(0).toUpperCase();
+    if (!avatarUrl) return `<div class="${cls}-initials">${initial}</div>`;
+    if (avatarUrl.startsWith('icon:')) return `<div class="${cls}-emoji">${avatarUrl.slice(5)}</div>`;
+    return `<img src="${avatarUrl}" alt="${name}" class="${cls}">`;
+  };
+
+  const AVATAR_ICONS = ['⛳','🏌️','🏆','🎯','🦅','🐦','🌲','🏔️','☀️','🍺','🌊','🏅'];
+
   content.innerHTML = `
+    <!-- Avatar card -->
+    <div style="background:#fff; border:1px solid #e0e0e0; border-radius:12px; padding:1.25rem; margin-bottom:1rem; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+      <h3 style="margin:0 0 1rem; font-size:1.1rem; color:#1a1a1a;">Group Avatar</h3>
+      <div class="avatar-preview-row">
+        <div id="eg-avatar-preview">
+          ${_avatarHtml(avatar_url, org_name, 'avatar-preview')}
+        </div>
+        <div style="flex:1;">
+          <p style="margin:0 0 0.5rem; font-size:0.9rem; color:#555;">Choose a built-in icon or upload your own photo.</p>
+          <button id="eg-change-avatar-btn" style="padding:0.4rem 0.9rem; background:#4F2185; color:white; border:none; border-radius:6px; font-size:0.875rem; font-weight:600; cursor:pointer;">Change Avatar</button>
+        </div>
+      </div>
+      <!-- Picker (hidden until button click) -->
+      <div id="eg-avatar-picker" style="display:none; margin-top:0.75rem;">
+        <p style="margin:0 0 0.5rem; font-size:0.8rem; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:0.05em;">Built-in Icons</p>
+        <div class="avatar-icon-grid" id="eg-icon-grid">
+          ${AVATAR_ICONS.map(icon => `
+            <button class="avatar-icon-btn ${avatar_url === 'icon:' + icon ? 'selected' : ''}"
+              data-icon="${icon}">${icon}</button>`).join('')}
+        </div>
+        <p style="margin:0 0 0.5rem; font-size:0.8rem; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:0.05em;">Upload a Photo</p>
+        <label class="avatar-upload-btn">
+          📷 Choose from library or take a photo
+          <input type="file" id="eg-avatar-file" accept="image/*" style="display:none;">
+        </label>
+        <p id="eg-avatar-status" style="display:none; font-size:0.85rem; text-align:center; margin:0.5rem 0 0;"></p>
+      </div>
+    </div>
+
     <!-- Group info card -->
     <div style="background:#fff; border:1px solid #e0e0e0; border-radius:12px; padding:1.25rem; margin-bottom:1rem; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
       <h3 style="margin:0 0 1rem; font-size:1.2rem; color:#1a1a1a;">${org_name}</h3>
@@ -9072,6 +9111,84 @@ async function showEditGroupPage() {
     }
     btn.disabled    = false;
     btn.textContent = 'Save Name';
+  });
+
+  // ── Avatar picker ──────────────────────────────────────────────────────────
+  let _currentAvatarUrl = avatar_url;
+
+  const _updateAvatarPreview = (url) => {
+    _currentAvatarUrl = url;
+    const preview = document.getElementById('eg-avatar-preview');
+    if (preview) preview.innerHTML = _avatarHtml(url, org_name, 'avatar-preview');
+    // Update selected state on icon buttons
+    document.querySelectorAll('#eg-icon-grid .avatar-icon-btn').forEach(b => {
+      b.classList.toggle('selected', url === 'icon:' + b.dataset.icon);
+    });
+  };
+
+  const _setAvatarStatus = (msg, isError) => {
+    const el = document.getElementById('eg-avatar-status');
+    if (!el) return;
+    el.textContent   = msg;
+    el.style.color   = isError ? 'var(--color-action-danger)' : 'var(--color-action-success)';
+    el.style.display = msg ? 'block' : 'none';
+  };
+
+  document.getElementById('eg-change-avatar-btn').onclick = () => {
+    const picker = document.getElementById('eg-avatar-picker');
+    picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
+  };
+
+  // Icon grid taps
+  document.getElementById('eg-icon-grid').addEventListener('click', async (e) => {
+    const btn = e.target.closest('.avatar-icon-btn');
+    if (!btn) return;
+    const icon = btn.dataset.icon;
+    _setAvatarStatus('Saving…', false);
+    try {
+      const res  = await fetch(`${API_BASE_URL}/api/update_org_avatar.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ icon })
+      });
+      const data = await res.json();
+      if (data.success) {
+        _updateAvatarPreview(data.avatar_url);
+        _setAvatarStatus('✓ Avatar updated!', false);
+      } else {
+        _setAvatarStatus(data.error || 'Failed to save.', true);
+      }
+    } catch {
+      _setAvatarStatus('Connection error.', true);
+    }
+  });
+
+  // Photo upload
+  document.getElementById('eg-avatar-file').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    _setAvatarStatus('Uploading…', false);
+    const form = new FormData();
+    form.append('avatar', file);
+    try {
+      const res  = await fetch(`${API_BASE_URL}/api/update_org_avatar.php`, {
+        method: 'POST',
+        credentials: 'include',
+        body: form
+      });
+      const data = await res.json();
+      if (data.success) {
+        _updateAvatarPreview(data.avatar_url);
+        _setAvatarStatus('✓ Photo uploaded!', false);
+        document.getElementById('eg-avatar-picker').style.display = 'none';
+      } else {
+        _setAvatarStatus(data.error || 'Upload failed.', true);
+      }
+    } catch {
+      _setAvatarStatus('Connection error.', true);
+    }
+    e.target.value = ''; // reset so same file can be re-selected
   });
 
   // Edit Golfers button
@@ -9677,11 +9794,16 @@ function loadMyGroups() {
       }
 
       list.innerHTML = data.orgs.map(org => {
-        // Avatar: real image if available, otherwise initials
+        // Avatar: icon emoji, uploaded image, or initials fallback
         const initial = (org.org_name || '?').charAt(0).toUpperCase();
-        const avatarHtml = org.avatar_url
-          ? `<img src="${org.avatar_url}" alt="${org.org_name}" class="group-avatar">`
-          : `<div class="group-avatar-initials">${initial}</div>`;
+        let avatarHtml;
+        if (!org.avatar_url) {
+          avatarHtml = `<div class="group-avatar-initials">${initial}</div>`;
+        } else if (org.avatar_url.startsWith('icon:')) {
+          avatarHtml = `<div class="group-avatar-initials" style="background:var(--color-bg-muted); font-size:1.75rem;">${org.avatar_url.slice(5)}</div>`;
+        } else {
+          avatarHtml = `<img src="${org.avatar_url}" alt="${org.org_name}" class="group-avatar">`;
+        }
 
         const leaderHtml = org.admin_name
           ? `<p class="group-card-leader">Led by ${org.admin_name}</p>`

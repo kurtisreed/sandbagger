@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 }
 
 // Fetch org info alongside members
-$orgStmt = $conn->prepare("SELECT name, created_at FROM organizations WHERE org_id = ?");
+$orgStmt = $conn->prepare("SELECT name, avatar_url, created_at FROM organizations WHERE org_id = ?");
 $orgStmt->bind_param('i', $currentOrgId);
 $orgStmt->execute();
 $org = $orgStmt->get_result()->fetch_assoc();
@@ -33,6 +33,7 @@ $stmt->close();
 
 echo json_encode([
     'org_name'   => $org['name'],
+    'avatar_url' => $org['avatar_url'],
     'created_at' => $org['created_at'],
     'members'    => $members,
 ]);
