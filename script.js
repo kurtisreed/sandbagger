@@ -431,7 +431,7 @@ function loadBestBallSetup(preserveSelections = false) {
       document.getElementById('start-best-ball').addEventListener('click', startBestBallRound);
       document.getElementById('cancel-best-ball').addEventListener('click', () => {
         setupContainer.style.display = 'none';
-        document.getElementById('auth-container').style.display = 'block';
+        document.getElementById('user-dashboard').style.display = 'block';
       });
 
       // Add listeners for "New Player" option
@@ -871,7 +871,7 @@ function loadRabbitSetup(preserveSelections = false) {
     document.getElementById('start-rabbit').addEventListener('click', startRabbitRound);
     document.getElementById('cancel-rabbit').addEventListener('click', () => {
       setupContainer.style.display = 'none';
-      document.getElementById('auth-container').style.display = 'block';
+      document.getElementById('user-dashboard').style.display = 'block';
     });
 
     // Add listeners for "New Player" option
@@ -1157,7 +1157,7 @@ function loadWolfSetup(preserveSelections = false) {
     document.getElementById('start-wolf').addEventListener('click', startWolfRound);
     document.getElementById('cancel-wolf').addEventListener('click', () => {
       setupContainer.style.display = 'none';
-      document.getElementById('auth-container').style.display = 'block';
+      document.getElementById('user-dashboard').style.display = 'block';
     });
 
     // Add listeners for "New Player" option
@@ -6613,7 +6613,52 @@ function loadUserDashboard(golfer) {
     newTournamentBtn.style.display = golfer.role === 'admin' ? 'block' : 'none';
   }
 
+  loadActiveQuickRounds();
   loadUserTournaments(golfer.golfer_id);
+}
+
+function loadActiveQuickRounds() {
+  const container = document.getElementById('active-quick-rounds');
+  if (!container) return;
+
+  fetch(`${API_BASE_URL}/api/get_active_quick_rounds.php`, { credentials: 'include' })
+    .then(res => res.json())
+    .then(data => {
+      const rounds = data.rounds || [];
+      if (rounds.length === 0) {
+        container.innerHTML = '';
+        return;
+      }
+
+      let html = '<div style="display:flex; flex-direction:column; gap:var(--space-4); margin-bottom:var(--space-4);">';
+      rounds.forEach(round => {
+        const dateDisplay = round.round_date
+          ? new Date(round.round_date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+          : 'Today';
+
+        html += `
+          <div class="tournament-card quick-round-card">
+            <div class="quick-round-header">
+              <div style="flex:1; min-width:0;">
+                <h4 class="tournament-card-title">${round.round_name}</h4>
+                <p class="tournament-card-dates">${round.course_name} · ${dateDisplay}</p>
+                <p class="tournament-card-meta">${round.players}</p>
+              </div>
+              <span class="quick-round-badge">Active</span>
+            </div>
+            <button class="btn btn-success btn-auto"
+              onclick="loadQuickRoundFromTournament(${round.tournament_id}, '${round.round_name}')">
+              Resume Round →
+            </button>
+          </div>`;
+      });
+      html += '</div>';
+      container.innerHTML = html;
+    })
+    .catch(() => {
+      // Silently ignore — don't break the dashboard if this fails
+      container.innerHTML = '';
+    });
 }
 
 function loadUserTournaments(golferId) {
@@ -8338,6 +8383,8 @@ async function showEditGroupPage() {
   document.getElementById('user-dashboard').style.display = 'none';
   document.getElementById('edit-user-container').style.display = 'none';
   document.getElementById('edit-golfers-container').style.display = 'none';
+  document.getElementById('round-history-container').style.display = 'none';
+  document.getElementById('tournament-history-container').style.display = 'none';
 
   const container = document.getElementById('edit-group-container');
   container.dataset.open = 'true';
