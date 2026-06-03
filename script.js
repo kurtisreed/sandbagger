@@ -8760,7 +8760,7 @@ function loadEditGolfersPage() {
   // Reset add-golfer form
   document.getElementById('add-golfer-form').style.display = 'none';
   document.getElementById('add-golfer-btn').style.display = 'block';
-  ['new-golfer-first', 'new-golfer-last', 'new-golfer-handicap'].forEach(id => {
+  ['new-golfer-first', 'new-golfer-last', 'new-golfer-hcp'].forEach(id => {
     document.getElementById(id).value = '';
   });
 
@@ -8931,7 +8931,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (cancelNewBtn) cancelNewBtn.addEventListener('click', () => {
     addForm.style.display = 'none';
     addBtn.style.display = 'block';
-    ['new-golfer-first', 'new-golfer-last', 'new-golfer-handicap'].forEach(id => {
+    ['new-golfer-first', 'new-golfer-last', 'new-golfer-hcp'].forEach(id => {
       document.getElementById(id).value = '';
     });
   });
@@ -8939,7 +8939,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (saveNewBtn) saveNewBtn.addEventListener('click', () => {
     const first = document.getElementById('new-golfer-first').value.trim();
     const last  = document.getElementById('new-golfer-last').value.trim();
-    const hcp   = parseFloat(document.getElementById('new-golfer-handicap').value) || 0;
+    const hcp   = parseFloat(document.getElementById('new-golfer-hcp').value) || 0;
     const status = document.getElementById('edit-golfers-status');
 
     if (!first || !last) {
@@ -8970,7 +8970,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
           addForm.style.display = 'none';
           document.getElementById('add-golfer-btn').style.display = 'block';
-          ['new-golfer-first', 'new-golfer-last', 'new-golfer-handicap'].forEach(id => {
+          ['new-golfer-first', 'new-golfer-last', 'new-golfer-hcp'].forEach(id => {
             document.getElementById(id).value = '';
           });
           status.textContent = `✓ ${first} ${last} added.`;
