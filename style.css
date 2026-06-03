@@ -258,7 +258,7 @@ header {
 
 .scoreboard > div {
   width: 50%;
-  padding: var(--space-2) 0;
+  padding: var(--space-4) 0;
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -898,6 +898,11 @@ main {
   padding: var(--space-3);
   box-shadow: var(--shadow-xs);
   background: var(--color-bg-card);
+  transition: box-shadow 0.15s ease;
+}
+
+.match-summary:hover {
+  box-shadow: var(--shadow-sm);
 }
 
 .teams-row {
@@ -913,7 +918,9 @@ main {
   border-radius: var(--radius-sm);
   color: #fff;
   font-weight: 700;
+  font-size: var(--font-size-sm);
   text-align: center;
+  letter-spacing: 0.02em;
 }
 
 .team-box.primary-team {
@@ -937,8 +944,9 @@ main {
   text-align: center;
   font-weight: 700;
   font-size: var(--font-size-sm);
-  margin-top: 4px;
+  margin-top: var(--space-2);
   border-radius: var(--radius-sm);
+  letter-spacing: 0.02em;
 }
 
 .match-status.primary-team-status {
