@@ -8648,32 +8648,49 @@ let _courseTeesData = [];
 function _renderCourseTeesUI() {
   const list = document.getElementById('cf-tees-list');
   if (_courseTeesData.length === 0) {
-    list.innerHTML = '<p style="color:var(--color-text-muted); font-size:var(--font-size-sm); margin:0 0 var(--space-2);">No tees yet.</p>';
+    list.innerHTML = '<p style="color:var(--color-text-muted); font-size:var(--font-size-sm); margin:0;">No tees yet — add one below.</p>';
     return;
   }
-  list.innerHTML = `
-    <div class="tee-row-header">
-      <span>Name</span><span>Slope</span><span>Rating</span><span>Par</span><span>Yardage</span><span></span>
-    </div>
-    ${_courseTeesData.map((t, i) => `
-      <div class="tee-row" data-tee-index="${i}">
-        <input type="text"   class="tee-name"    value="${t.tee_name || ''}"   placeholder="e.g. Blue"  maxlength="50">
-        <input type="number" class="tee-slope"   value="${t.slope   || ''}"   placeholder="113" min="55" max="155">
-        <input type="number" class="tee-rating"  value="${t.rating  || ''}"   placeholder="72.0" step="0.1" min="60" max="82">
-        <input type="number" class="tee-par"     value="${t.par     || 72}"   placeholder="72"  min="27" max="82">
-        <input type="number" class="tee-yardage" value="${t.yardage || ''}"   placeholder="6500" min="1000" max="9000">
+
+  list.innerHTML = _courseTeesData.map((t, i) => `
+    <div class="tee-card tee-row" data-tee-index="${i}">
+      <div style="display:flex; align-items:center; gap:var(--space-2); margin-bottom:var(--space-3);">
+        <input type="text" class="tee-name form-input" value="${(t.tee_name || '').replace(/"/g,'&quot;')}"
+          placeholder="Tee name (e.g. Blue, White, Red)" maxlength="50" style="flex:1;">
         <button class="btn-remove-tee" data-index="${i}" title="Remove tee">✕</button>
-      </div>`).join('')}
-  `;
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-3);">
+        <div>
+          <label class="form-label">Slope</label>
+          <input type="number" class="tee-slope form-input" value="${t.slope || ''}"
+            placeholder="113" min="55" max="155">
+        </div>
+        <div>
+          <label class="form-label">Rating</label>
+          <input type="number" class="tee-rating form-input" value="${t.rating || ''}"
+            placeholder="72.0" step="0.1" min="60" max="82">
+        </div>
+        <div>
+          <label class="form-label">Par</label>
+          <input type="number" class="tee-par form-input" value="${t.par || 72}"
+            placeholder="72" min="27" max="82">
+        </div>
+        <div>
+          <label class="form-label">Yardage</label>
+          <input type="number" class="tee-yardage form-input" value="${t.yardage || ''}"
+            placeholder="6500" min="1000" max="9000">
+        </div>
+      </div>
+    </div>`).join('');
 
   // Sync changes back to _courseTeesData on input
   list.querySelectorAll('.tee-row').forEach(row => {
     const i = parseInt(row.dataset.teeIndex);
     row.querySelector('.tee-name').oninput    = e => { _courseTeesData[i].tee_name = e.target.value; };
-    row.querySelector('.tee-slope').oninput   = e => { _courseTeesData[i].slope   = e.target.value; };
-    row.querySelector('.tee-rating').oninput  = e => { _courseTeesData[i].rating  = e.target.value; };
-    row.querySelector('.tee-par').oninput     = e => { _courseTeesData[i].par     = e.target.value; };
-    row.querySelector('.tee-yardage').oninput = e => { _courseTeesData[i].yardage = e.target.value; };
+    row.querySelector('.tee-slope').oninput   = e => { _courseTeesData[i].slope    = e.target.value; };
+    row.querySelector('.tee-rating').oninput  = e => { _courseTeesData[i].rating   = e.target.value; };
+    row.querySelector('.tee-par').oninput     = e => { _courseTeesData[i].par      = e.target.value; };
+    row.querySelector('.tee-yardage').oninput = e => { _courseTeesData[i].yardage  = e.target.value; };
     row.querySelector('.btn-remove-tee').onclick = e => {
       _courseTeesData.splice(parseInt(e.target.dataset.index), 1);
       _renderCourseTeesUI();
