@@ -464,10 +464,12 @@
         <p style="color:#888; font-size:0.9rem;">Loading groups…</p>
       </div>
 
-      <!-- Join another group -->
-      <div id="join-group-form" style="border-top:1px solid #eee; padding-top:1rem;">
-        <p style="margin:0 0 0.5rem; font-size:0.9rem; color:#555;">Have an invite code? Join another group:</p>
-        <div style="display:flex; gap:0.5rem; align-items:center;">
+      <!-- Join / Create actions -->
+      <div style="border-top:1px solid #eee; padding-top:1rem;">
+
+        <!-- Join with invite code -->
+        <p style="margin:0 0 0.5rem; font-size:0.9rem; color:#555; font-weight:600;">Join an existing group</p>
+        <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:0.25rem;">
           <input type="text" id="join-group-code" placeholder="Enter invite code" maxlength="12"
             style="flex:1; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box; text-transform:uppercase; letter-spacing:0.1em;">
           <button id="join-group-btn" style="padding:0.6rem 1rem; background:#4F2185; color:white; border:none; border-radius:6px; font-size:0.95rem; font-weight:bold; cursor:pointer; white-space:nowrap;">Join</button>
@@ -475,6 +477,18 @@
         <p id="join-group-preview" style="display:none; margin:0.5rem 0 0; font-size:0.9rem; color:#2e7d32; font-weight:500;"></p>
         <p id="join-group-message" style="display:none; margin:0.5rem 0 0; font-size:0.875rem; text-align:center;"></p>
         <button id="join-group-confirm-btn" style="display:none; width:100%; margin-top:0.75rem; padding:0.65rem; background:#28a745; color:white; border:none; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Confirm &amp; Join</button>
+
+        <!-- Divider -->
+        <div style="display:flex; align-items:center; gap:0.75rem; margin:1rem 0;">
+          <div style="flex:1; height:1px; background:#eee;"></div>
+          <span style="font-size:0.8rem; color:#aaa; white-space:nowrap;">or</span>
+          <div style="flex:1; height:1px; background:#eee;"></div>
+        </div>
+
+        <!-- Create new group -->
+        <button id="open-create-group-btn"
+          style="width:100%; padding:0.65rem; background:white; color:#28a745; border:2px solid #28a745;
+                 border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">+ Create New Group</button>
       </div>
     </div>
 
@@ -544,6 +558,26 @@
     <div id="score-entry-content" style="padding-bottom: 2rem;"></div>
   </main>
 </div>  
+  <!-- Create New Group Modal -->
+  <div id="create-group-modal" style="display:none; position:fixed; inset:0; z-index:1000;
+       background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:14px; padding:1.5rem; width:90%; max-width:400px;
+                box-shadow:0 8px 32px rgba(0,0,0,0.18); position:relative;">
+      <button id="close-create-group-modal" style="position:absolute; top:0.75rem; right:1rem;
+              background:none; border:none; font-size:1.5rem; cursor:pointer; color:#888; line-height:1;">&#x2715;</button>
+      <h3 style="margin:0 0 0.25rem; font-size:1.1rem; color:#1a1a1a;">Create New Group</h3>
+      <p style="margin:0 0 1.25rem; font-size:0.85rem; color:#888;">You'll be the admin of this new group.</p>
+      <label for="new-group-name" style="display:block; font-size:0.85rem; color:#555; margin-bottom:0.25rem;">Group Name</label>
+      <input type="text" id="new-group-name" maxlength="100" placeholder="e.g. Smith Golf League"
+        style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:6px;
+               box-sizing:border-box; margin-bottom:1rem;">
+      <p id="create-group-message" style="display:none; font-size:0.875rem; text-align:center; margin:0 0 0.75rem;"></p>
+      <button id="create-group-submit-btn"
+        style="width:100%; padding:0.65rem; background:#28a745; color:white; border:none;
+               border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Create Group</button>
+    </div>
+  </div>
+
   <!-- Switch Group Modal -->
   <div id="switch-group-modal" style="display:none; position:fixed; inset:0; z-index:1000;
        background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">

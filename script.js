@@ -9089,6 +9089,9 @@ function loadEditUserPage() {
 
   // Wire up join group flow
   initJoinGroupForm();
+
+  // Wire up create new group modal
+  initCreateGroupModal();
 }
 
 function loadMyGroups() {
@@ -9271,6 +9274,81 @@ function initJoinGroupForm() {
         message.style.color   = '#c0392b';
         message.style.display = 'block';
       });
+  });
+}
+
+function initCreateGroupModal() {
+  const modal     = document.getElementById('create-group-modal');
+  const openBtn   = document.getElementById('open-create-group-btn');
+  const closeBtn  = document.getElementById('close-create-group-modal');
+  const submitBtn = document.getElementById('create-group-submit-btn');
+  const nameInput = document.getElementById('new-group-name');
+  const msgEl     = document.getElementById('create-group-message');
+  if (!modal || !openBtn) return;
+
+  function openModal() {
+    nameInput.value       = '';
+    msgEl.style.display   = 'none';
+    submitBtn.disabled    = false;
+    submitBtn.textContent = 'Create Group';
+    modal.style.display   = 'flex';
+    setTimeout(() => nameInput.focus(), 50);
+  }
+
+  function closeModal() {
+    modal.style.display = 'none';
+  }
+
+  openBtn.addEventListener('click', openModal);
+  closeBtn.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+  // Submit on Enter key
+  nameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitBtn.click(); });
+
+  submitBtn.addEventListener('click', async () => {
+    const name = nameInput.value.trim();
+    msgEl.style.display = 'none';
+    if (!name) {
+      msgEl.textContent   = 'Please enter a group name.';
+      msgEl.style.color   = '#c0392b';
+      msgEl.style.display = 'block';
+      return;
+    }
+
+    submitBtn.disabled    = true;
+    submitBtn.textContent = 'Creating…';
+
+    try {
+      const res  = await fetch(`${API_BASE_URL}/api/create_org.php`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        msgEl.textContent   = `✓ "${data.org_name}" created! You can switch to it from the list below.`;
+        msgEl.style.color   = '#2e7d32';
+        msgEl.style.display = 'block';
+        submitBtn.textContent = 'Created!';
+        loadMyGroups(); // refresh the list
+        setTimeout(() => closeModal(), 2000);
+      } else {
+        msgEl.textContent   = data.error || 'Could not create group.';
+        msgEl.style.color   = '#c0392b';
+        msgEl.style.display = 'block';
+        submitBtn.disabled    = false;
+        submitBtn.textContent = 'Create Group';
+      }
+    } catch {
+      msgEl.textContent   = 'Connection error. Please try again.';
+      msgEl.style.color   = '#c0392b';
+      msgEl.style.display = 'block';
+      submitBtn.disabled    = false;
+      submitBtn.textContent = 'Create Group';
+    }
   });
 }
 
