@@ -42,18 +42,15 @@ switch ($method) {
   case 'POST':
     requireAdmin();
     // Create a new golfer scoped to this org
-    $data = json_decode(file_get_contents('php://input'), true);
+    $data      = json_decode(file_get_contents('php://input'), true);
+    $firstName = trim($data['first_name'] ?? '');
+    $lastName  = trim($data['last_name']  ?? '');
+    $handicap  = (float)($data['handicap'] ?? 0);
     $stmt = $conn->prepare("
       INSERT INTO golfers (first_name, last_name, handicap, org_id)
       VALUES (?, ?, ?, ?)
     ");
-    $stmt->bind_param(
-      'ssdi',
-      $data['first_name'],
-      $data['last_name'],
-      $data['handicap'],
-      $currentOrgId
-    );
+    $stmt->bind_param('ssdi', $firstName, $lastName, $handicap, $currentOrgId);
     $stmt->execute();
     echo json_encode(['inserted_id' => $stmt->insert_id]);
     break;
@@ -61,21 +58,17 @@ switch ($method) {
   case 'PUT':
     requireAdmin();
     // Update an existing golfer (must belong to this org)
-    $data = json_decode(file_get_contents('php://input'), true);
+    $data      = json_decode(file_get_contents('php://input'), true);
+    $firstName = trim($data['first_name'] ?? '');
+    $lastName  = trim($data['last_name']  ?? '');
+    $handicap  = (float)($data['handicap'] ?? 0);
     $stmt = $conn->prepare("
       UPDATE golfers
          SET first_name = ?, last_name = ?, handicap = ?
        WHERE golfer_id = ?
          AND org_id = ?
     ");
-    $stmt->bind_param(
-      'ssdii',
-      $data['first_name'],
-      $data['last_name'],
-      $data['handicap'],
-      $id,
-      $currentOrgId
-    );
+    $stmt->bind_param('ssdii', $firstName, $lastName, $handicap, $id, $currentOrgId);
     $stmt->execute();
     echo json_encode(['affected_rows' => $stmt->affected_rows]);
     break;
