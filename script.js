@@ -9402,7 +9402,7 @@ function showMemberDetailPage(member) {
 
   // Back → return to Edit Group (re-render it)
   document.getElementById('back-from-edit-group-btn').onclick = () => {
-    document.querySelector('#edit-group-container h2').textContent = 'Edit Group';
+    document.querySelector('#edit-group-container h2').textContent = 'Administration';
     showEditGroupPage();
   };
 }
