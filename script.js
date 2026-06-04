@@ -6822,6 +6822,122 @@ function loadUserDashboard(golfer) {
 
   loadActiveQuickRounds();
   loadUserTournaments(golfer.golfer_id);
+  if (golfer.role === 'admin') loadAdminChecklist();
+}
+
+function loadAdminChecklist() {
+  const container = document.getElementById('admin-setup-checklist');
+  if (!container) return;
+
+  // If admin has previously dismissed after completing all steps, stay hidden
+  const orgId = currentUser && currentUser.org_id;
+  const dismissKey = `sb_setup_dismissed_${orgId}`;
+  if (localStorage.getItem(dismissKey)) {
+    container.innerHTML = '';
+    return;
+  }
+
+  // Fetch golfer count, course count, and tournament count in parallel
+  Promise.all([
+    fetch(`${API_BASE_URL}/api/golfers.php`, { credentials: 'include' }).then(r => r.json()),
+    fetch(`${API_BASE_URL}/api/courses.php`, { credentials: 'include' }).then(r => r.json()),
+    fetch(`${API_BASE_URL}/api/get_user_tournaments.php?golfer_id=${currentUser.golfer_id}`, { credentials: 'include' }).then(r => r.json())
+  ])
+  .then(([golferData, courseData, tourneyData]) => {
+    const golferCount  = Array.isArray(golferData) ? golferData.length : 0;
+    const courseCount  = Array.isArray(courseData) ? courseData.length : 0;
+    const tourneyCount = (tourneyData.tournaments || []).length;
+
+    const steps = [
+      {
+        label: 'Create your group',
+        hint:  'You\'re here — this one\'s done.',
+        done:  true,
+        action: null
+      },
+      {
+        label: `Add your golfers`,
+        hint:  golferCount > 0 ? `${golferCount} golfer${golferCount !== 1 ? 's' : ''} added` : 'Add everyone who\'ll be scoring',
+        done:  golferCount > 0,
+        action: () => {
+          showEditGroupPage().then(() => {
+            const btn = document.getElementById('edit-group-golfers-btn');
+            if (btn) btn.click();
+          });
+        }
+      },
+      {
+        label: 'Add a course',
+        hint:  courseCount > 0 ? `${courseCount} course${courseCount !== 1 ? 's' : ''} added` : 'Add the course(s) you\'ll be playing',
+        done:  courseCount > 0,
+        action: () => {
+          showEditGroupPage().then(() => {
+            const btn = document.getElementById('manage-courses-btn');
+            if (btn) btn.click();
+          });
+        }
+      },
+      {
+        label: 'Create your first tournament',
+        hint:  tourneyCount > 0 ? `${tourneyCount} tournament${tourneyCount !== 1 ? 's' : ''} set up` : 'Set up a Ryder Cup, Best Ball, or Guys Trip',
+        done:  tourneyCount > 0,
+        action: () => {
+          const btn = document.getElementById('create-tournament-btn');
+          if (btn) btn.click();
+        }
+      }
+    ];
+
+    const doneCount = steps.filter(s => s.done).length;
+    const allDone   = doneCount === steps.length;
+
+    // Don't show at all if everything is done and it was previously dismissed
+    // (We still show it if all done but not dismissed, so they can see the win)
+
+    const pct = Math.round((doneCount / steps.length) * 100);
+
+    const itemsHtml = steps.map((step, i) => `
+      <div class="setup-checklist-item ${step.done ? 'done' : ''}" data-step="${i}">
+        <div class="setup-checklist-check">${step.done ? '✓' : ''}</div>
+        <div class="setup-checklist-item-text">
+          <div class="setup-checklist-item-label">${step.label}</div>
+          <div class="setup-checklist-item-hint">${step.hint}</div>
+        </div>
+        <span class="setup-checklist-arrow">→</span>
+      </div>
+    `).join('');
+
+    container.innerHTML = `
+      <div class="setup-checklist-card">
+        <div class="setup-checklist-header">
+          <h3 class="setup-checklist-title">🏌️ Set up your group</h3>
+          <button class="setup-checklist-dismiss" id="checklist-dismiss-btn" title="Dismiss">✕</button>
+        </div>
+        <p class="setup-checklist-subtitle">${allDone ? 'You\'re all set — go play some golf! 🎉' : 'Complete these steps to get your group ready.'}</p>
+        <div class="setup-checklist-progress">
+          <div class="setup-checklist-progress-bar" style="width:${pct}%"></div>
+        </div>
+        <div class="setup-checklist-items">${itemsHtml}</div>
+      </div>
+    `;
+
+    // Wire up step clicks
+    container.querySelectorAll('.setup-checklist-item:not(.done)').forEach(el => {
+      const idx = parseInt(el.dataset.step);
+      if (steps[idx].action) {
+        el.addEventListener('click', steps[idx].action);
+      }
+    });
+
+    // Dismiss button — hide permanently for this org
+    document.getElementById('checklist-dismiss-btn').addEventListener('click', () => {
+      localStorage.setItem(dismissKey, '1');
+      container.innerHTML = '';
+    });
+  })
+  .catch(() => {
+    container.innerHTML = '';
+  });
 }
 
 function loadActiveQuickRounds() {
