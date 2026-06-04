@@ -1,5 +1,8 @@
-# Serve landing page as the site root; app is at index.html
-DirectoryIndex landing.html index.html
+# Route bare domain root to marketing landing page
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^$ landing.html [L]
+</IfModule>
 
 # BEGIN Newfold Headers
 <IfModule mod_headers.c>
