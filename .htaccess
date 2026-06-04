@@ -1,3 +1,6 @@
+# Serve landing page as the site root; app is at index.html
+DirectoryIndex landing.html index.html
+
 # BEGIN Newfold Headers
 <IfModule mod_headers.c>
 	Header set X-Newfold-Cache-Level "2"
