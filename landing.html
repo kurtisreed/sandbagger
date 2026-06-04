@@ -801,6 +801,18 @@
   </footer>
 
   <script>
+    // If already logged in, skip the landing page
+    (function () {
+      fetch('check_session.php', { credentials: 'include' })
+        .then(r => r.json())
+        .then(data => {
+          if (data.authenticated) {
+            window.location.replace('index.html');
+          }
+        })
+        .catch(() => { /* no session or offline — stay on landing */ });
+    })();
+
     // Sticky nav on scroll
     const nav = document.getElementById('nav');
     window.addEventListener('scroll', () => {
