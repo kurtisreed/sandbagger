@@ -12,12 +12,10 @@ date_default_timezone_set('America/Denver');
 
 $data = json_decode(file_get_contents('php://input'), true);
 
-// Validate required data
+// Validate required data — only first player per team is required
 if (!$data ||
-    !isset($data['team1_player1']) ||
-    !isset($data['team1_player2']) ||
-    !isset($data['team2_player1']) ||
-    !isset($data['team2_player2']) ||
+    empty($data['team1_player1']) ||
+    empty($data['team2_player1']) ||
     !isset($data['course_id']) ||
     !isset($data['tee_id']) ||
     !isset($data['handicap_pct'])) {
@@ -104,8 +102,9 @@ try {
     $stmt->execute();
 
     // 7. Link golfers to tournament with team assignments and handicap snapshot
-    $team1Golfers = [$data['team1_player1'], $data['team1_player2']];
-    $team2Golfers = [$data['team2_player1'], $data['team2_player2']];
+    // Filter out empty/zero slots — second player per team is optional
+    $team1Golfers = array_filter([$data['team1_player1'], $data['team1_player2'] ?? 0], fn($id) => $id > 0);
+    $team2Golfers = array_filter([$data['team2_player1'], $data['team2_player2'] ?? 0], fn($id) => $id > 0);
 
     $stmt = $conn->prepare("
         INSERT INTO tournament_golfers (tournament_id, golfer_id, team_id, handicap_at_assignment, handicap_pct_at_assignment)

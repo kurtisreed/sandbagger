@@ -382,7 +382,7 @@ function loadBestBallSetup(preserveSelections = false) {
             <h3 style="margin:0 0 var(--space-3); font-size:var(--font-size-base); font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-secondary);">Handicap Adjustment</h3>
             <div>
               <label class="form-label">Handicap Percentage: <span id="handicap-value" style="font-weight: bold;">100%</span></label>
-              <input type="range" id="handicap-slider" min="10" max="100" step="10" value="100" style="width: 100%; height: 8px; border-radius: 5px; background: #ddd; outline: none; cursor: pointer;">
+              <input type="range" id="handicap-slider" min="0" max="100" step="10" value="100" style="width: 100%; height: 8px; border-radius: 5px; background: #ddd; outline: none; cursor: pointer;">
             </div>
           </div>
 
@@ -808,7 +808,7 @@ function loadRabbitSetup(preserveSelections = false) {
           <h3 style="margin:0 0 var(--space-3); font-size:var(--font-size-base); font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-secondary);">Handicap Adjustment</h3>
           <div>
             <label class="form-label">Handicap Percentage: <span id="handicap-value" style="font-weight: bold;">100%</span></label>
-            <input type="range" id="handicap-slider" min="10" max="100" step="10" value="100" style="width: 100%; height: 8px; border-radius: 5px; background: #ddd; outline: none; cursor: pointer;">
+            <input type="range" id="handicap-slider" min="0" max="100" step="10" value="100" style="width: 100%; height: 8px; border-radius: 5px; background: #ddd; outline: none; cursor: pointer;">
           </div>
         </div>
 
@@ -1094,7 +1094,7 @@ function loadWolfSetup(preserveSelections = false) {
           <h3 style="margin:0 0 var(--space-3); font-size:var(--font-size-base); font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-secondary);">Handicap Adjustment</h3>
           <div>
             <label class="form-label">Handicap Percentage: <span id="handicap-value" style="font-weight: bold;">100%</span></label>
-            <input type="range" id="handicap-slider" min="10" max="100" step="10" value="100" style="width: 100%; height: 8px; border-radius: 5px; background: #ddd; outline: none; cursor: pointer;">
+            <input type="range" id="handicap-slider" min="0" max="100" step="10" value="100" style="width: 100%; height: 8px; border-radius: 5px; background: #ddd; outline: none; cursor: pointer;">
           </div>
         </div>
 
@@ -2638,9 +2638,9 @@ function startBestBallRound() {
   const handicapPct = document.getElementById('handicap-slider').value;
   const message = document.getElementById('setup-message');
 
-  // Validation
-  if (!team1p1 || !team1p2 || !team2p1 || !team2p2) {
-    message.textContent = 'Please select all players for both teams.';
+  // Validation — at least 1 player per team required, second slot is optional
+  if (!team1p1 || !team2p1) {
+    message.textContent = 'Please select at least one player for each team.';
     return;
   }
 
@@ -2654,10 +2654,9 @@ function startBestBallRound() {
     return;
   }
 
-  // Check for duplicate players
-  const players = [team1p1, team1p2, team2p1, team2p2];
-  const uniquePlayers = new Set(players);
-  if (uniquePlayers.size !== players.length) {
+  // Duplicate check on filled slots only
+  const filledPlayers = [team1p1, team1p2, team2p1, team2p2].filter(Boolean);
+  if (new Set(filledPlayers).size !== filledPlayers.length) {
     message.textContent = 'Each player can only be selected once.';
     return;
   }
