@@ -8938,68 +8938,43 @@ async function showEditGroupPage() {
     </div>
   `).join('');
 
-  // Avatar helper — used in both the card preview and the My Groups list
-  const _avatarHtml = (avatarUrl, name, cls) => {
+  // ── Avatar rendering helper (shared across Edit Group + My Groups) ──────────
+  const renderAvatarHtml = (url, name, size = 52) => {
     const initial = (name || '?').charAt(0).toUpperCase();
-    if (!avatarUrl) return `<div class="${cls}-initials">${initial}</div>`;
-    if (avatarUrl.startsWith('icon:')) return `<div class="${cls}-emoji">${avatarUrl.slice(5)}</div>`;
-    return `<img src="${avatarUrl}" alt="${name}" class="${cls}">`;
+    const radius  = 'var(--radius-md)';
+    const base    = `width:${size}px; height:${size}px; border-radius:${radius}; flex-shrink:0;`;
+    if (!url) {
+      return `<div style="${base} background:linear-gradient(135deg,var(--color-brand-primary) 0%,#6b35a8 100%);
+                color:#fff; font-size:${Math.round(size*0.38)}px; font-weight:800;
+                display:flex; align-items:center; justify-content:center;">${initial}</div>`;
+    }
+    if (url.startsWith('icon:')) {
+      return `<div style="${base} background:var(--color-bg-muted); font-size:${Math.round(size*0.5)}px;
+                display:flex; align-items:center; justify-content:center;">${url.slice(5)}</div>`;
+    }
+    return `<img src="${url}" alt="${name}" style="${base} object-fit:cover;">`;
   };
 
   const AVATAR_ICONS = ['⛳','🏌️','🏆','🎯','🦅','🐦','🌲','🏔️','☀️','🍺','🌊','🏅'];
 
-  content.innerHTML = `
-    <!-- Avatar card -->
-    <div style="background:#fff; border:1px solid #e0e0e0; border-radius:12px; padding:1.25rem; margin-bottom:1rem; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-      <h3 style="margin:0 0 1rem; font-size:1.1rem; color:#1a1a1a;">Group Avatar</h3>
-      <div class="avatar-preview-row">
-        <div id="eg-avatar-preview">
-          ${_avatarHtml(avatar_url, org_name, 'avatar-preview')}
-        </div>
-        <div style="flex:1;">
-          <p style="margin:0 0 0.5rem; font-size:0.9rem; color:#555;">Choose a built-in icon or upload your own photo.</p>
-          <button id="eg-change-avatar-btn" style="padding:0.4rem 0.9rem; background:#4F2185; color:white; border:none; border-radius:6px; font-size:0.875rem; font-weight:600; cursor:pointer;">Change Avatar</button>
-        </div>
-      </div>
-      <!-- Picker (hidden until button click) -->
-      <div id="eg-avatar-picker" style="display:none; margin-top:0.75rem;">
-        <p style="margin:0 0 0.5rem; font-size:0.8rem; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:0.05em;">Built-in Icons</p>
-        <div class="avatar-icon-grid" id="eg-icon-grid">
-          ${AVATAR_ICONS.map(icon => `
-            <button class="avatar-icon-btn ${avatar_url === 'icon:' + icon ? 'selected' : ''}"
-              data-icon="${icon}">${icon}</button>`).join('')}
-        </div>
-        <p style="margin:0 0 0.5rem; font-size:0.8rem; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:0.05em;">Upload a Photo</p>
-        <label class="avatar-upload-btn">
-          📷 Choose from library or take a photo
-          <input type="file" id="eg-avatar-file" accept="image/*" style="display:none;">
-        </label>
-        <p id="eg-avatar-status" style="display:none; font-size:0.85rem; text-align:center; margin:0.5rem 0 0;"></p>
-      </div>
-    </div>
+  // Track current avatar so the card stays in sync after modal saves
+  let _liveAvatarUrl  = avatar_url;
+  let _liveOrgName    = org_name;
 
+  content.innerHTML = `
     <!-- Group info card -->
     <div style="background:#fff; border:1px solid #e0e0e0; border-radius:12px; padding:1.25rem; margin-bottom:1rem; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-      <h3 style="margin:0 0 1rem; font-size:1.2rem; color:#1a1a1a;">${org_name}</h3>
-
-      <div style="margin-bottom:1rem;">
-        <span style="font-size:0.8rem; font-weight:600; color:#888; text-transform:uppercase; letter-spacing:0.05em;">Group created</span>
-        <p style="margin:0.25rem 0 0; font-size:0.95rem; color:#333;">${createdDate}</p>
+      <div style="display:flex; align-items:center; gap:var(--space-4); margin-bottom:var(--space-4);">
+        <div id="eg-header-avatar">${renderAvatarHtml(avatar_url, org_name, 52)}</div>
+        <div style="flex:1; min-width:0;">
+          <h3 id="eg-header-name" style="margin:0 0 var(--space-1); font-size:1.15rem; font-weight:800; color:var(--color-text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${org_name}</h3>
+          <p style="margin:0; font-size:var(--font-size-xs); color:var(--color-text-muted);">Created ${createdDate}</p>
+        </div>
+        <button id="eg-edit-info-btn" class="btn btn-neutral btn-sm btn-auto">Edit</button>
       </div>
 
-      <div>
-        <span style="font-size:0.8rem; font-weight:600; color:#888; text-transform:uppercase; letter-spacing:0.05em;">Members (${(members || []).length})</span>
-        <div style="margin-top:0.25rem;">${memberRows || '<p style="color:#aaa; font-size:0.9rem;">No members found.</p>'}</div>
-      </div>
-    </div>
-
-    <!-- Rename group card -->
-    <div style="background:#fff; border:1px solid #e0e0e0; border-radius:12px; padding:1.25rem; margin-bottom:1rem; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-      <h3 style="margin:0 0 0.5rem; font-size:1.1rem; color:#1a1a1a;">Rename Group</h3>
-      <input type="text" id="rename-group-input" value="${org_name.replace(/"/g, '&quot;')}" maxlength="100"
-        style="width:100%; padding:0.6rem; border:1px solid #ccc; border-radius:6px; font-size:1rem; box-sizing:border-box; margin-bottom:0.75rem;">
-      <p id="rename-group-status" style="display:none; font-size:0.875rem; text-align:center; margin:0 0 0.75rem;"></p>
-      <button id="rename-group-btn" style="width:100%; padding:0.65rem; background:#4F2185; color:white; border:none; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Save Name</button>
+      <span style="font-size:0.8rem; font-weight:600; color:#888; text-transform:uppercase; letter-spacing:0.05em;">Members (${(members || []).length})</span>
+      <div style="margin-top:0.25rem;">${memberRows || '<p style="color:#aaa; font-size:0.9rem;">No members found.</p>'}</div>
     </div>
 
     <!-- Edit Golfers button -->
@@ -9068,128 +9043,131 @@ async function showEditGroupPage() {
   // Load invite link
   _loadGroupInviteLink();
 
-  // Rename group
-  document.getElementById('rename-group-btn').addEventListener('click', async () => {
-    const btn      = document.getElementById('rename-group-btn');
-    const statusEl = document.getElementById('rename-group-status');
-    const newName  = document.getElementById('rename-group-input').value.trim();
+  // ── Edit Group Info modal ──────────────────────────────────────────────────
+  const modal        = document.getElementById('edit-group-info-modal');
+  const closeModalBtn = document.getElementById('close-edit-group-info-modal');
+  const saveBtn      = document.getElementById('egi-save-btn');
+  const statusEl     = document.getElementById('egi-status');
+  const nameInput    = document.getElementById('egi-group-name');
+  const iconGrid     = document.getElementById('egi-icon-grid');
+  const avatarFileIn = document.getElementById('egi-avatar-file');
+  const previewEl    = document.getElementById('egi-avatar-preview');
 
-    statusEl.style.display = 'none';
-    if (!newName) {
-      statusEl.textContent   = 'Group name cannot be empty.';
-      statusEl.style.color   = '#c00';
-      statusEl.style.display = 'block';
-      return;
-    }
+  // Track staged changes in the modal (not committed until Save)
+  let _stagedAvatarUrl  = null;  // null = no icon change staged
+  let _stagedAvatarFile = null;  // File reference for photo upload
 
-    btn.disabled    = true;
-    btn.textContent = 'Saving…';
-    try {
-      const res  = await fetch(`${API_BASE_URL}/api/rename_group.php`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newName }),
-        credentials: 'include',
-      });
-      const data = await res.json();
-      if (data.success) {
-        // Update the group name shown in the card heading
-        const h3 = content.querySelector('h3');
-        if (h3) h3.textContent = data.name;
-        statusEl.textContent   = '✓ Group renamed.';
-        statusEl.style.color   = '#2e7d32';
-        statusEl.style.display = 'block';
-      } else {
-        statusEl.textContent   = data.error || 'Rename failed.';
-        statusEl.style.color   = '#c00';
-        statusEl.style.display = 'block';
-      }
-    } catch {
-      statusEl.textContent   = 'Connection error. Please try again.';
-      statusEl.style.color   = '#c00';
-      statusEl.style.display = 'block';
-    }
-    btn.disabled    = false;
-    btn.textContent = 'Save Name';
-  });
-
-  // ── Avatar picker ──────────────────────────────────────────────────────────
-  let _currentAvatarUrl = avatar_url;
-
-  const _updateAvatarPreview = (url) => {
-    _currentAvatarUrl = url;
-    const preview = document.getElementById('eg-avatar-preview');
-    if (preview) preview.innerHTML = _avatarHtml(url, org_name, 'avatar-preview');
-    // Update selected state on icon buttons
-    document.querySelectorAll('#eg-icon-grid .avatar-icon-btn').forEach(b => {
-      b.classList.toggle('selected', url === 'icon:' + b.dataset.icon);
+  const _refreshModalPreview = () => {
+    const url = _stagedAvatarUrl ?? _liveAvatarUrl;
+    previewEl.innerHTML = renderAvatarHtml(url, nameInput.value || _liveOrgName, 80);
+    iconGrid.querySelectorAll('.avatar-icon-btn').forEach(b => {
+      b.classList.toggle('selected', _stagedAvatarUrl === 'icon:' + b.dataset.icon);
     });
   };
 
-  const _setAvatarStatus = (msg, isError) => {
-    const el = document.getElementById('eg-avatar-status');
-    if (!el) return;
-    el.textContent   = msg;
-    el.style.color   = isError ? 'var(--color-action-danger)' : 'var(--color-action-success)';
-    el.style.display = msg ? 'block' : 'none';
+  const _setModalStatus = (msg, isError) => {
+    statusEl.textContent   = msg;
+    statusEl.style.color   = isError ? 'var(--color-action-danger)' : 'var(--color-action-success)';
+    statusEl.style.display = msg ? 'block' : 'none';
   };
 
-  document.getElementById('eg-change-avatar-btn').onclick = () => {
-    const picker = document.getElementById('eg-avatar-picker');
-    picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
+  // Open modal
+  document.getElementById('eg-edit-info-btn').onclick = () => {
+    _stagedAvatarUrl  = null;
+    _stagedAvatarFile = null;
+    nameInput.value   = _liveOrgName;
+    _setModalStatus('', false);
+
+    // Populate icon grid
+    iconGrid.innerHTML = AVATAR_ICONS.map(icon => `
+      <button class="avatar-icon-btn" data-icon="${icon}">${icon}</button>`).join('');
+    _refreshModalPreview();
+    modal.style.display = 'flex';
   };
 
-  // Icon grid taps
-  document.getElementById('eg-icon-grid').addEventListener('click', async (e) => {
+  closeModalBtn.onclick = () => { modal.style.display = 'none'; };
+  modal.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
+
+  // Icon tap — stage the selection
+  iconGrid.addEventListener('click', e => {
     const btn = e.target.closest('.avatar-icon-btn');
     if (!btn) return;
-    const icon = btn.dataset.icon;
-    _setAvatarStatus('Saving…', false);
-    try {
-      const res  = await fetch(`${API_BASE_URL}/api/update_org_avatar.php`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ icon })
-      });
-      const data = await res.json();
-      if (data.success) {
-        _updateAvatarPreview(data.avatar_url);
-        _setAvatarStatus('✓ Avatar updated!', false);
-      } else {
-        _setAvatarStatus(data.error || 'Failed to save.', true);
-      }
-    } catch {
-      _setAvatarStatus('Connection error.', true);
-    }
+    _stagedAvatarUrl  = 'icon:' + btn.dataset.icon;
+    _stagedAvatarFile = null;
+    _refreshModalPreview();
   });
 
-  // Photo upload
-  document.getElementById('eg-avatar-file').addEventListener('change', async (e) => {
+  // Photo selected — stage the file and show a local preview
+  avatarFileIn.addEventListener('change', e => {
     const file = e.target.files[0];
     if (!file) return;
-    _setAvatarStatus('Uploading…', false);
-    const form = new FormData();
-    form.append('avatar', file);
-    try {
-      const res  = await fetch(`${API_BASE_URL}/api/update_org_avatar.php`, {
-        method: 'POST',
-        credentials: 'include',
-        body: form
-      });
-      const data = await res.json();
-      if (data.success) {
-        _updateAvatarPreview(data.avatar_url);
-        _setAvatarStatus('✓ Photo uploaded!', false);
-        document.getElementById('eg-avatar-picker').style.display = 'none';
-      } else {
-        _setAvatarStatus(data.error || 'Upload failed.', true);
-      }
-    } catch {
-      _setAvatarStatus('Connection error.', true);
-    }
-    e.target.value = ''; // reset so same file can be re-selected
+    _stagedAvatarFile = file;
+    _stagedAvatarUrl  = null; // clear any icon selection
+    // Local preview via object URL
+    const objUrl = URL.createObjectURL(file);
+    const sz = 80, r = 'var(--radius-md)';
+    previewEl.innerHTML = `<img src="${objUrl}" style="width:${sz}px;height:${sz}px;border-radius:${r};object-fit:cover;">`;
+    iconGrid.querySelectorAll('.avatar-icon-btn').forEach(b => b.classList.remove('selected'));
+    e.target.value = '';
   });
+
+  // Save — commit name + avatar together
+  saveBtn.onclick = async () => {
+    const newName = nameInput.value.trim();
+    if (!newName) { _setModalStatus('Group name cannot be empty.', true); return; }
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving…';
+    _setModalStatus('', false);
+
+    try {
+      // 1. Avatar — only if something changed
+      if (_stagedAvatarFile) {
+        const form = new FormData();
+        form.append('avatar', _stagedAvatarFile);
+        const r = await fetch(`${API_BASE_URL}/api/update_org_avatar.php`, {
+          method: 'POST', credentials: 'include', body: form
+        });
+        const d = await r.json();
+        if (!d.success) throw new Error(d.error || 'Avatar upload failed');
+        _liveAvatarUrl = d.avatar_url;
+      } else if (_stagedAvatarUrl !== null) {
+        const icon = _stagedAvatarUrl.slice(5); // strip 'icon:'
+        const r = await fetch(`${API_BASE_URL}/api/update_org_avatar.php`, {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ icon })
+        });
+        const d = await r.json();
+        if (!d.success) throw new Error(d.error || 'Avatar save failed');
+        _liveAvatarUrl = d.avatar_url;
+      }
+
+      // 2. Name — only if changed
+      if (newName !== _liveOrgName) {
+        const r = await fetch(`${API_BASE_URL}/api/rename_group.php`, {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: newName })
+        });
+        const d = await r.json();
+        if (!d.success) throw new Error(d.error || 'Rename failed');
+        _liveOrgName = newName;
+      }
+
+      // Update the group info card header without a full reload
+      document.getElementById('eg-header-avatar').innerHTML = renderAvatarHtml(_liveAvatarUrl, _liveOrgName, 52);
+      document.getElementById('eg-header-name').textContent = _liveOrgName;
+
+      modal.style.display = 'none';
+
+    } catch (err) {
+      _setModalStatus(err.message || 'Save failed. Please try again.', true);
+    } finally {
+      saveBtn.disabled    = false;
+      saveBtn.textContent = 'Save Changes';
+    }
+  };
 
   // Edit Golfers button
   document.getElementById('edit-group-golfers-btn').addEventListener('click', () => {

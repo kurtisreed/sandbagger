@@ -668,6 +668,38 @@
   </div>
 </div>
 
+<!-- Edit Group Info Modal -->
+<div id="edit-group-info-modal" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,0.55); align-items:center; justify-content:center;">
+  <div class="modal-box" style="max-width:420px; width:92%; max-height:88vh; overflow-y:auto;">
+    <button id="close-edit-group-info-modal" class="modal-close">&#x2715;</button>
+    <h3 class="modal-title" style="margin-bottom:var(--space-5);">Edit Group</h3>
+
+    <!-- Avatar preview -->
+    <div style="display:flex; justify-content:center; margin-bottom:var(--space-4);">
+      <div id="egi-avatar-preview" style="width:80px; height:80px;"></div>
+    </div>
+
+    <!-- Icon grid -->
+    <p class="form-label" style="margin-bottom:var(--space-2);">Built-in Icons</p>
+    <div class="avatar-icon-grid" id="egi-icon-grid" style="margin-bottom:var(--space-4);"></div>
+
+    <!-- Photo upload -->
+    <label class="avatar-upload-btn" style="margin-bottom:var(--space-5);">
+      📷 Upload a photo
+      <input type="file" id="egi-avatar-file" accept="image/*" style="display:none;">
+    </label>
+
+    <!-- Group name -->
+    <div style="margin-bottom:var(--space-5);">
+      <label for="egi-group-name" class="form-label">Group Name</label>
+      <input type="text" id="egi-group-name" class="form-input" maxlength="100" placeholder="Group name">
+    </div>
+
+    <p id="egi-status" style="display:none; font-size:var(--font-size-sm); text-align:center; margin:0 0 var(--space-3);"></p>
+    <button id="egi-save-btn" class="btn btn-primary">Save Changes</button>
+  </div>
+</div>
+
 <!-- Match Results Modal -->
 <div id="match-results-modal" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,0.55); align-items:center; justify-content:center;">
   <div class="modal-box" style="max-width:480px; width:92%; max-height:88vh; overflow-y:auto; padding:var(--space-6);">
