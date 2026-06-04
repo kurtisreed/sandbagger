@@ -8881,6 +8881,105 @@ async function showCourseForm(courseId) {
     delete container.dataset.courseId;
   }
 
+  // Show/hide API search card (new course only)
+  const searchCard = document.getElementById('cf-search-card');
+  if (searchCard) searchCard.style.display = courseId ? 'none' : 'block';
+
+  // GolfCourseAPI search
+  const apiSearchInput = document.getElementById('cf-api-search');
+  const apiResults     = document.getElementById('cf-api-results');
+  const apiStatus      = document.getElementById('cf-api-status');
+  if (apiSearchInput) {
+    apiSearchInput.value = '';
+    apiResults.style.display = 'none';
+    apiStatus.textContent = '';
+
+    let _searchTimer = null;
+    apiSearchInput.addEventListener('input', () => {
+      clearTimeout(_searchTimer);
+      const q = apiSearchInput.value.trim();
+      if (q.length < 2) { apiResults.style.display = 'none'; apiStatus.textContent = ''; return; }
+      apiStatus.textContent = 'Searching…';
+      _searchTimer = setTimeout(() => {
+        fetch(`${API_BASE_URL}/api/search_golf_courses.php?q=${encodeURIComponent(q)}`, { credentials: 'include' })
+          .then(r => r.json())
+          .then(data => {
+            if (data.error) { apiStatus.textContent = data.error; apiResults.style.display = 'none'; return; }
+            const courses = data.courses || [];
+            apiStatus.textContent = courses.length ? `${courses.length} result${courses.length !== 1 ? 's' : ''} found` : 'No courses found.';
+            if (!courses.length) { apiResults.style.display = 'none'; return; }
+            apiResults.innerHTML = courses.slice(0, 12).map(c => `
+              <div class="course-api-result-item" data-id="${c.id}">
+                <div class="course-api-result-name">${c.course_name || c.club_name}</div>
+                <div class="course-api-result-club">${c.club_name}${c.location ? ' — ' + [c.location.city, c.location.state, c.location.country].filter(Boolean).join(', ') : ''}</div>
+              </div>`).join('');
+            apiResults.style.display = 'block';
+
+            apiResults.querySelectorAll('.course-api-result-item').forEach(item => {
+              item.addEventListener('click', () => {
+                const courseApiId = item.dataset.id;
+                apiStatus.textContent = 'Loading course data…';
+                apiResults.style.display = 'none';
+                apiSearchInput.value = item.querySelector('.course-api-result-name').textContent;
+
+                fetch(`${API_BASE_URL}/api/get_golf_course.php?id=${courseApiId}`, { credentials: 'include' })
+                  .then(r => r.json())
+                  .then(res => {
+                    const course = res.course || res;
+                    if (!course || res.error) { apiStatus.textContent = res.error || 'Failed to load course.'; return; }
+
+                    // Fill course name
+                    const nameVal = course.course_name || course.club_name || '';
+                    document.getElementById('cf-name').value = nameVal;
+
+                    // Collect all tees (male + female)
+                    const allTees = [
+                      ...(course.tees?.male   || []),
+                      ...(course.tees?.female || [])
+                    ];
+
+                    // Populate holes from first tee that has hole data
+                    const teesWithHoles = allTees.find(t => t.holes && t.holes.length === 18);
+                    if (teesWithHoles) {
+                      teesWithHoles.holes.forEach((hole, idx) => {
+                        const hNum = idx + 1;
+                        const parSel = tbody.querySelector(`select[data-hole="${hNum}"]`);
+                        const hiIn   = tbody.querySelector(`input[data-hole="${hNum}"]`);
+                        if (parSel && hole.par) parSel.value = hole.par;
+                        if (hiIn  && hole.handicap != null) hiIn.value = hole.handicap;
+                      });
+                    }
+
+                    // Populate tees
+                    _courseTeesData = allTees.map(t => ({
+                      tee_id:   null,
+                      tee_name: t.tee_name || '',
+                      slope:    t.slope_rating   || '',
+                      rating:   t.course_rating  || '',
+                      par:      t.par_total       || 72,
+                      yardage:  t.total_yards     || ''
+                    }));
+                    _renderCourseTeesUI();
+
+                    const teeCount = allTees.length;
+                    apiStatus.textContent = `✓ Loaded — ${teeCount} tee${teeCount !== 1 ? 's' : ''} imported. Review and save.`;
+                  })
+                  .catch(() => { apiStatus.textContent = 'Failed to load course data.'; });
+              });
+            });
+          })
+          .catch(() => { apiStatus.textContent = 'Search failed.'; apiResults.style.display = 'none'; });
+      }, 350);
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function _closeApiResults(e) {
+      if (!apiResults.contains(e.target) && e.target !== apiSearchInput) {
+        apiResults.style.display = 'none';
+      }
+    });
+  }
+
   // Back button
   document.getElementById('course-form-back-btn').onclick = () => {
     container.style.display = 'none';

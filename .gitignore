@@ -4,6 +4,10 @@ db_connect.php
 /www/db_connect.php
 /www/api/db_connect.php
 
+# API keys (create api/config.php from api/config.example.php)
+/api/config.php
+/www/api/config.php
+
 # Build output (www is generated from source)
 /www/*
 !/www/.gitkeep

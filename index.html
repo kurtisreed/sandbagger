@@ -409,6 +409,19 @@
   <h2 class="page-title" id="course-form-title">Add Course</h2>
   <div style="max-width:500px; margin:0 auto;">
 
+    <!-- GolfCourseAPI search (new courses only) -->
+    <div class="card" id="cf-search-card">
+      <label class="form-label">🔍 Search GolfCourseAPI</label>
+      <p style="font-size:var(--font-size-xs); color:var(--color-text-muted); font-weight:600; margin-bottom:var(--space-3);">
+        Search to auto-fill tees, slopes, ratings, and hole data — or fill in manually below.
+      </p>
+      <div style="position:relative;">
+        <input type="text" id="cf-api-search" class="form-input" placeholder="Type a course or club name…" autocomplete="off">
+        <div id="cf-api-results" class="course-api-results" style="display:none;"></div>
+      </div>
+      <p id="cf-api-status" style="font-size:var(--font-size-xs); color:var(--color-text-muted); font-weight:600; margin-top:var(--space-2); min-height:1.2em;"></p>
+    </div>
+
     <!-- Course name -->
     <div class="card">
       <label class="form-label">Course Name</label>

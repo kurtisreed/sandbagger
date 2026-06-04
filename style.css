@@ -1805,3 +1805,36 @@ h3 {
 .setup-checklist-item.done .setup-checklist-arrow {
   display: none;
 }
+
+/* ── GolfCourseAPI course search ─────────────────────────────────────────── */
+.course-api-results {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0; right: 0;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 200;
+  max-height: 280px;
+  overflow-y: auto;
+}
+.course-api-result-item {
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+  border-bottom: 1px solid var(--color-border);
+  transition: background 0.12s;
+}
+.course-api-result-item:last-child { border-bottom: none; }
+.course-api-result-item:hover { background: var(--color-bg-muted); }
+.course-api-result-name {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+.course-api-result-club {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-weight: 600;
+  margin-top: 1px;
+}
