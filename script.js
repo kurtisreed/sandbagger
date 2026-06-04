@@ -6857,8 +6857,8 @@ function loadAdminChecklist() {
       },
       {
         label: `Add your golfers`,
-        hint:  golferCount > 0 ? `${golferCount} golfer${golferCount !== 1 ? 's' : ''} added` : 'Add everyone who\'ll be scoring',
-        done:  golferCount > 0,
+        hint:  golferCount > 1 ? `${golferCount} golfers added` : 'Add everyone who\'ll be scoring',
+        done:  golferCount > 1,
         action: () => {
           showEditGroupPage().then(() => {
             const btn = document.getElementById('edit-group-golfers-btn');
