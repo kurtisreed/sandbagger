@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sandbagger — Golf Trip Scoring for Groups</title>
+  <meta name="description" content="The scoring app for your golf crew. Ryder Cup, Best Ball, Skins, Wolf, Rabbit — every format, every hole, live leaderboard. Stop arguing about the score.">
+  <link rel="icon" type="image/png" href="/icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --purple: #4F2185;
+      --purple-dark: #3a1764;
+      --purple-light: #6b35a8;
+      --gold: #FFC62F;
+      --gold-dark: #e6b000;
+      --white: #ffffff;
+      --off-white: #f8f6ff;
+      --text: #1a1c23;
+      --text-muted: #6b7280;
+      --radius: 16px;
+      --font: 'Nunito', system-ui, sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font);
+      color: var(--text);
+      background: var(--white);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ── Nav ──────────────────────────────────────────────────────────────── */
+    .nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background 0.3s, box-shadow 0.3s;
+    }
+    .nav.scrolled {
+      background: var(--purple);
+      box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+    }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      text-decoration: none;
+    }
+    .nav-logo img {
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
+      filter: brightness(0) invert(1);
+    }
+    .nav-logo-text {
+      font-size: 1.25rem;
+      font-weight: 900;
+      color: white;
+      letter-spacing: -0.02em;
+    }
+    .nav-actions {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+    }
+    .btn-nav-ghost {
+      color: white;
+      background: transparent;
+      border: 1.5px solid rgba(255,255,255,0.6);
+      padding: 0.45rem 1.1rem;
+      border-radius: 999px;
+      font-family: var(--font);
+      font-weight: 700;
+      font-size: 0.875rem;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .btn-nav-ghost:hover { background: rgba(255,255,255,0.15); border-color: white; }
+    .btn-nav-cta {
+      background: var(--gold);
+      color: #1a1a1a;
+      border: none;
+      padding: 0.5rem 1.25rem;
+      border-radius: 999px;
+      font-family: var(--font);
+      font-weight: 800;
+      font-size: 0.875rem;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn-nav-cta:hover { background: var(--gold-dark); transform: scale(1.03); }
+
+    /* ── Hero ──────────────────────────────────────────────────────────────── */
+    .hero {
+      position: relative;
+      height: 100vh;
+      min-height: 600px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      overflow: hidden;
+    }
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background-image: url('/images/PXL_20230915_225947523.MP.jpg');
+      background-size: cover;
+      background-position: center 40%;
+      transform: scale(1.05);
+      transition: transform 0.1s linear;
+    }
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to bottom,
+        rgba(30,10,60,0.55) 0%,
+        rgba(20,5,45,0.65) 50%,
+        rgba(10,2,30,0.85) 100%
+      );
+    }
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      padding: 2rem;
+      max-width: 780px;
+    }
+    .hero-eyebrow {
+      display: inline-block;
+      background: rgba(255,198,47,0.2);
+      border: 1px solid rgba(255,198,47,0.5);
+      color: var(--gold);
+      font-size: 0.8rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      padding: 0.35rem 1rem;
+      border-radius: 999px;
+      margin-bottom: 1.25rem;
+    }
+    .hero-title {
+      font-size: clamp(2.5rem, 7vw, 5rem);
+      font-weight: 900;
+      color: white;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+      margin-bottom: 1.25rem;
+    }
+    .hero-title em {
+      font-style: normal;
+      color: var(--gold);
+    }
+    .hero-subtitle {
+      font-size: clamp(1rem, 2.5vw, 1.25rem);
+      color: rgba(255,255,255,0.82);
+      line-height: 1.55;
+      margin-bottom: 2rem;
+      font-weight: 600;
+    }
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn-primary {
+      background: var(--gold);
+      color: #1a1a1a;
+      border: none;
+      padding: 0.9rem 2rem;
+      border-radius: 999px;
+      font-family: var(--font);
+      font-weight: 800;
+      font-size: 1rem;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+      box-shadow: 0 4px 20px rgba(255,198,47,0.4);
+    }
+    .btn-primary:hover { background: var(--gold-dark); transform: translateY(-2px); box-shadow: 0 8px 28px rgba(255,198,47,0.5); }
+    .btn-secondary {
+      background: rgba(255,255,255,0.12);
+      color: white;
+      border: 1.5px solid rgba(255,255,255,0.4);
+      padding: 0.9rem 2rem;
+      border-radius: 999px;
+      font-family: var(--font);
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      transition: background 0.15s;
+      backdrop-filter: blur(8px);
+    }
+    .btn-secondary:hover { background: rgba(255,255,255,0.22); }
+    .hero-scroll-hint {
+      position: absolute;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,255,255,0.5);
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+      animation: bounceDown 2s ease-in-out infinite;
+    }
+    @keyframes bounceDown {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(6px); }
+    }
+
+    /* ── Section commons ───────────────────────────────────────────────────── */
+    section { padding: 6rem 2rem; }
+    .container { max-width: 1100px; margin: 0 auto; }
+    .section-eyebrow {
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--purple);
+      margin-bottom: 0.75rem;
+    }
+    .section-title {
+      font-size: clamp(1.75rem, 4vw, 2.75rem);
+      font-weight: 900;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    .section-subtitle {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      font-weight: 600;
+      max-width: 560px;
+    }
+
+    /* ── Features ──────────────────────────────────────────────────────────── */
+    .features { background: var(--off-white); }
+    .features-header { text-align: center; margin-bottom: 3.5rem; }
+    .features-header .section-subtitle { margin: 0 auto; }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+    }
+    .feature-card {
+      background: white;
+      border: 1px solid #ede9f5;
+      border-radius: var(--radius);
+      padding: 2rem 1.75rem;
+      box-shadow: 0 2px 12px rgba(79,33,133,0.06);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .feature-card:hover { transform: translateY(-4px); box-shadow: 0 8px 28px rgba(79,33,133,0.12); }
+    .feature-icon {
+      font-size: 2.25rem;
+      margin-bottom: 1rem;
+      display: block;
+    }
+    .feature-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }
+    .feature-desc {
+      font-size: 0.925rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      font-weight: 600;
+    }
+
+    /* ── Screenshots ───────────────────────────────────────────────────────── */
+    .screenshots { background: var(--purple); overflow: hidden; }
+    .screenshots-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: center;
+    }
+    .screenshots-copy { color: white; }
+    .screenshots-copy .section-eyebrow { color: var(--gold); }
+    .screenshots-copy .section-title { color: white; }
+    .screenshots-copy .section-subtitle { color: rgba(255,255,255,0.72); }
+    .screenshots-copy ul {
+      list-style: none;
+      margin-top: 1.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+    .screenshots-copy li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      font-size: 0.95rem;
+      color: rgba(255,255,255,0.85);
+      font-weight: 600;
+      line-height: 1.45;
+    }
+    .screenshots-copy li::before {
+      content: '✓';
+      color: var(--gold);
+      font-weight: 900;
+      margin-top: 0.05rem;
+      flex-shrink: 0;
+    }
+    .phones {
+      display: flex;
+      gap: 1.25rem;
+      justify-content: center;
+      align-items: flex-end;
+    }
+    .phone {
+      background: #111;
+      border-radius: 36px;
+      padding: 10px;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08);
+      flex-shrink: 0;
+    }
+    .phone-tall { width: 185px; transform: translateY(-20px); }
+    .phone-short { width: 165px; }
+    .phone-screen {
+      border-radius: 28px;
+      overflow: hidden;
+      display: block;
+    }
+    .phone-screen img { width: 100%; display: block; }
+
+    /* ── Formats ───────────────────────────────────────────────────────────── */
+    .formats { background: white; }
+    .formats-header { text-align: center; margin-bottom: 3.5rem; }
+    .formats-header .section-subtitle { margin: 0 auto; }
+    .formats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 1rem;
+    }
+    .format-card {
+      border: 2px solid #ede9f5;
+      border-radius: var(--radius);
+      padding: 1.75rem 1.5rem;
+      text-align: center;
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+      cursor: default;
+    }
+    .format-card:hover {
+      border-color: var(--purple);
+      transform: translateY(-3px);
+      box-shadow: 0 6px 24px rgba(79,33,133,0.12);
+    }
+    .format-emoji { font-size: 2rem; margin-bottom: 0.75rem; display: block; }
+    .format-name {
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--purple);
+      margin-bottom: 0.4rem;
+    }
+    .format-desc {
+      font-size: 0.83rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      font-weight: 600;
+    }
+
+    /* ── Trip photo full-bleed ─────────────────────────────────────────────── */
+    .trip-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 540px;
+      gap: 0;
+    }
+    .trip-photo {
+      position: relative;
+      overflow: hidden;
+    }
+    .trip-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .trip-copy {
+      background: var(--purple-dark);
+      padding: 5rem 4rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      color: white;
+    }
+    .trip-copy .section-eyebrow { color: var(--gold); }
+    .trip-copy .section-title { color: white; margin-bottom: 1.25rem; }
+    .trip-copy p {
+      font-size: 1rem;
+      color: rgba(255,255,255,0.75);
+      line-height: 1.7;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+    .trip-copy p:last-child { margin-bottom: 0; }
+
+    /* ── Course divider ────────────────────────────────────────────────────── */
+    .course-divider {
+      position: relative;
+      height: 420px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      overflow: hidden;
+    }
+    .course-divider-bg {
+      position: absolute;
+      inset: 0;
+      background-image: url('/images/PXL_20250829_211440322.jpg');
+      background-size: cover;
+      background-position: center;
+    }
+    .course-divider-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(20, 5, 45, 0.7);
+    }
+    .course-divider-content {
+      position: relative;
+      z-index: 2;
+      padding: 2rem;
+    }
+    .course-divider-content blockquote {
+      font-size: clamp(1.5rem, 4vw, 2.5rem);
+      font-weight: 900;
+      color: white;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+      max-width: 700px;
+    }
+    .course-divider-content blockquote em {
+      font-style: normal;
+      color: var(--gold);
+    }
+    .course-divider-content cite {
+      display: block;
+      margin-top: 1rem;
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.55);
+      font-weight: 600;
+      font-style: normal;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    /* ── Bridge section ────────────────────────────────────────────────────── */
+    .bridge-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 480px;
+      gap: 0;
+    }
+    .bridge-copy {
+      background: var(--off-white);
+      padding: 5rem 4rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .bridge-copy .section-title { margin-bottom: 1.25rem; }
+    .bridge-copy p {
+      font-size: 1rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+    .bridge-copy p:last-child { margin-bottom: 0; }
+    .bridge-photo {
+      position: relative;
+      overflow: hidden;
+    }
+    .bridge-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* ── CTA ───────────────────────────────────────────────────────────────── */
+    .cta-section {
+      background: linear-gradient(135deg, var(--purple-dark) 0%, var(--purple) 60%, var(--purple-light) 100%);
+      text-align: center;
+      padding: 7rem 2rem;
+    }
+    .cta-section .section-title { color: white; font-size: clamp(2rem, 5vw, 3.25rem); margin-bottom: 1rem; }
+    .cta-section .section-subtitle { color: rgba(255,255,255,0.72); margin: 0 auto 2.5rem; max-width: 500px; }
+    .cta-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+    .cta-already {
+      font-size: 0.875rem;
+      color: rgba(255,255,255,0.5);
+      font-weight: 600;
+    }
+    .cta-already a {
+      color: rgba(255,255,255,0.8);
+      font-weight: 700;
+      text-decoration: underline;
+    }
+    .cta-already a:hover { color: var(--gold); }
+
+    /* ── Footer ────────────────────────────────────────────────────────────── */
+    .footer {
+      background: #0f0520;
+      padding: 3rem 2rem;
+      text-align: center;
+    }
+    .footer-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      margin-bottom: 0.75rem;
+    }
+    .footer-logo img {
+      width: 28px;
+      height: 28px;
+      object-fit: contain;
+      filter: brightness(0) invert(1);
+      opacity: 0.6;
+    }
+    .footer-logo-text {
+      font-size: 1.1rem;
+      font-weight: 900;
+      color: rgba(255,255,255,0.5);
+      letter-spacing: -0.02em;
+    }
+    .footer-tagline {
+      font-size: 0.82rem;
+      color: rgba(255,255,255,0.3);
+      font-weight: 600;
+    }
+
+    /* ── Scroll reveal ─────────────────────────────────────────────────────── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.65s ease, transform 0.65s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+
+    /* ── Responsive ────────────────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      section { padding: 4rem 1.25rem; }
+      .screenshots-inner { grid-template-columns: 1fr; gap: 2.5rem; }
+      .phones { justify-content: center; }
+      .phone-tall { width: 155px; }
+      .phone-short { width: 138px; }
+      .trip-section { grid-template-columns: 1fr; }
+      .trip-photo { height: 300px; }
+      .trip-copy { padding: 3rem 1.75rem; }
+      .bridge-section { grid-template-columns: 1fr; }
+      .bridge-photo { height: 280px; order: -1; }
+      .bridge-copy { padding: 3rem 1.75rem; }
+      .course-divider { height: 320px; }
+      .nav { padding: 0.85rem 1.25rem; }
+      .nav-logo-text { font-size: 1.1rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Nav ─────────────────────────────────────────────────────────────── -->
+  <nav class="nav" id="nav">
+    <a href="/landing.html" class="nav-logo">
+      <img src="/images/purplegolficon.png" alt="Sandbagger">
+      <span class="nav-logo-text">Sandbagger</span>
+    </a>
+    <div class="nav-actions">
+      <a href="/index.html" class="btn-nav-ghost">Sign In</a>
+      <a href="/index.html" class="btn-nav-cta">Get Started</a>
+    </div>
+  </nav>
+
+  <!-- ── Hero ────────────────────────────────────────────────────────────── -->
+  <section class="hero" id="hero">
+    <div class="hero-bg" id="heroBg"></div>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <span class="hero-eyebrow">⛳ Golf Trip Scorekeeping, Finally Done Right</span>
+      <h1 class="hero-title">Stop arguing<br>about the <em>score.</em></h1>
+      <p class="hero-subtitle">
+        Sandbagger tracks every hole, every net score, and every reason<br>
+        your buddy owes you a beer. For free.
+      </p>
+      <div class="hero-actions">
+        <a href="/index.html" class="btn-primary">Start Your Group</a>
+        <a href="/index.html" class="btn-secondary">Sign In</a>
+      </div>
+    </div>
+    <div class="hero-scroll-hint">
+      <span>Scroll</span>
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M8 3v10M3 8l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ── Features ────────────────────────────────────────────────────────── -->
+  <section class="features">
+    <div class="container">
+      <div class="features-header reveal">
+        <p class="section-eyebrow">Why Sandbagger</p>
+        <h2 class="section-title">Everything your golf trip needs.<br><span style="color:var(--text-muted); font-weight:700;">(Except better weather.)</span></h2>
+        <p class="section-subtitle">One app. Every format. Zero scorekeeping arguments. Your group enters scores from their phones and everyone watches the leaderboard in real time.</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card reveal reveal-delay-1">
+          <span class="feature-icon">🏆</span>
+          <h3 class="feature-title">Multiple Formats</h3>
+          <p class="feature-desc">Ryder Cup. Best Ball. Skins. Wolf. Rabbit. Pick your poison and let Sandbagger sort out the carnage hole by hole.</p>
+        </div>
+        <div class="feature-card reveal reveal-delay-2">
+          <span class="feature-icon">📊</span>
+          <h3 class="feature-title">Live Leaderboard</h3>
+          <p class="feature-desc">See exactly who's up, who's imploding, and who desperately needs a birdie on 18 to cover the Nassau.</p>
+        </div>
+        <div class="feature-card reveal reveal-delay-3">
+          <span class="feature-icon">🧮</span>
+          <h3 class="feature-title">Net &amp; Gross Scores</h3>
+          <p class="feature-desc">Handicaps calculated automatically. Even for the guy who claims to be a 12 but plays like a 22.</p>
+        </div>
+        <div class="feature-card reveal reveal-delay-4">
+          <span class="feature-icon">📱</span>
+          <h3 class="feature-title">Everyone Can Score</h3>
+          <p class="feature-desc">Any player in the group enters scores from their phone. No more waiting for one guy to update the card at the turn.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Screenshots ──────────────────────────────────────────────────────── -->
+  <section class="screenshots">
+    <div class="container">
+      <div class="screenshots-inner">
+        <div class="screenshots-copy reveal">
+          <p class="section-eyebrow">Real scores. Real time.</p>
+          <h2 class="section-title">The scorecard your group actually keeps up with.</h2>
+          <p class="section-subtitle" style="color:rgba(255,255,255,0.72);">Enter scores hole by hole, see the team standings update instantly, and know exactly how the match is playing out — without anyone having to do math in their head.</p>
+          <ul>
+            <li>Hole-by-hole scoring with color-coded results</li>
+            <li>Best ball team scores calculated automatically</li>
+            <li>Net scores adjusted for every player's handicap</li>
+            <li>See who got birdies (and who's buying drinks)</li>
+          </ul>
+        </div>
+        <div class="phones reveal reveal-delay-2">
+          <div class="phone phone-tall">
+            <span class="phone-screen">
+              <img src="/images/4976.png" alt="Sandbagger score entry screen">
+            </span>
+          </div>
+          <div class="phone phone-short">
+            <span class="phone-screen">
+              <img src="/images/4975.png" alt="Sandbagger tournament dashboard">
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Formats ──────────────────────────────────────────────────────────── -->
+  <section class="formats">
+    <div class="container">
+      <div class="formats-header reveal">
+        <p class="section-eyebrow">Game Formats</p>
+        <h2 class="section-title">Pick your format.<br>We'll keep the score.</h2>
+        <p class="section-subtitle">Whether it's a full Ryder Cup-style tournament with teams and points, or a quick best ball before somebody's flight — Sandbagger has you covered.</p>
+      </div>
+      <div class="formats-grid">
+        <div class="format-card reveal reveal-delay-1">
+          <span class="format-emoji">🏆</span>
+          <p class="format-name">Ryder Cup</p>
+          <p class="format-desc">Team vs team, match play format across multiple rounds. Trash talk officially encouraged.</p>
+        </div>
+        <div class="format-card reveal reveal-delay-2">
+          <span class="format-emoji">🤜🤛</span>
+          <p class="format-name">Best Ball</p>
+          <p class="format-desc">Two partnerships go head-to-head. The lowest net score on each hole wins it for the team.</p>
+        </div>
+        <div class="format-card reveal reveal-delay-3">
+          <span class="format-emoji">💰</span>
+          <p class="format-name">Skins</p>
+          <p class="format-desc">Win a hole outright or it carries. By hole 14 the pot is either massive or nobody's won a thing.</p>
+        </div>
+        <div class="format-card reveal reveal-delay-4">
+          <span class="format-emoji">🐺</span>
+          <p class="format-name">Wolf</p>
+          <p class="format-desc">One player picks a partner each hole — or goes lone wolf. High risk, high reward, high chaos.</p>
+        </div>
+        <div class="format-card reveal reveal-delay-4">
+          <span class="format-emoji">🐇</span>
+          <p class="format-name">Rabbit</p>
+          <p class="format-desc">Win a hole and catch the rabbit. Lose it and someone else grabs it. Nobody's ever really sure who's winning.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Trip section ─────────────────────────────────────────────────────── -->
+  <div class="trip-section">
+    <div class="trip-photo reveal">
+      <img src="/images/PXL_20240707_134200416.jpg" alt="Two golfers on a links course with the ocean behind them">
+    </div>
+    <div class="trip-copy">
+      <p class="section-eyebrow">Built for the guys trip</p>
+      <h2 class="section-title">Years of scorekeeping on napkins — over.</h2>
+      <p>You spent months planning this trip. Found the courses, booked the tee times, argued about the format for three group text threads. The last thing you need is someone losing the scorecard after hole 9.</p>
+      <p>Sandbagger keeps the score so you can focus on the important stuff. Like talking trash on the back nine and deciding where you're eating after.</p>
+    </div>
+  </div>
+
+  <!-- ── Course divider ───────────────────────────────────────────────────── -->
+  <div class="course-divider">
+    <div class="course-divider-bg"></div>
+    <div class="course-divider-overlay"></div>
+    <div class="course-divider-content reveal">
+      <blockquote>
+        "Finally, an app that makes your golf trip feel <em>official.</em>"
+      </blockquote>
+      <cite>— Every group that's used it</cite>
+    </div>
+  </div>
+
+  <!-- ── Bridge section ───────────────────────────────────────────────────── -->
+  <div class="bridge-section">
+    <div class="bridge-copy">
+      <p class="section-eyebrow">Group Scoring</p>
+      <h2 class="section-title">Know how the whole team is doing. Always.</h2>
+      <p>No more walking off 9 and realizing nobody knows the score because the one guy keeping track is three holes behind. Everyone in your group enters their scores from their phone in real time.</p>
+      <p>The leaderboard updates instantly. You always know exactly where the match stands — and exactly who needs to step up on the back nine.</p>
+    </div>
+    <div class="bridge-photo reveal">
+      <img src="/images/PXL_20250828_230827808.jpg" alt="Group of golfers walking over a stone bridge">
+    </div>
+  </div>
+
+  <!-- ── CTA ──────────────────────────────────────────────────────────────── -->
+  <section class="cta-section">
+    <div class="container">
+      <p class="section-eyebrow" style="color:var(--gold); text-align:center; margin-bottom:0.75rem;">Free to start</p>
+      <h2 class="section-title reveal">Your crew is waiting.</h2>
+      <p class="section-subtitle reveal reveal-delay-1">Create a group, share the code, and let's get this trip started. Takes about 90 seconds. (Less if nobody argues about the format.)</p>
+      <div class="cta-actions reveal reveal-delay-2">
+        <a href="/index.html" class="btn-primary" style="font-size:1.05rem; padding:1rem 2.25rem;">Create Your Group</a>
+        <a href="/index.html" class="btn-secondary" style="font-size:1.05rem; padding:1rem 2.25rem;">Sign In</a>
+      </div>
+      <p class="cta-already reveal reveal-delay-3">Already have a group code? <a href="/index.html">Join here →</a></p>
+    </div>
+  </section>
+
+  <!-- ── Footer ───────────────────────────────────────────────────────────── -->
+  <footer class="footer">
+    <div class="footer-logo">
+      <img src="/images/purplegolficon.png" alt="Sandbagger">
+      <span class="footer-logo-text">Sandbagger</span>
+    </div>
+    <p class="footer-tagline">Golf trip scoring for groups who take the game seriously. (And those who definitely don't.)</p>
+  </footer>
+
+  <script>
+    // Sticky nav on scroll
+    const nav = document.getElementById('nav');
+    window.addEventListener('scroll', () => {
+      nav.classList.toggle('scrolled', window.scrollY > 60);
+    }, { passive: true });
+
+    // Subtle parallax on hero background
+    const heroBg = document.getElementById('heroBg');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY < window.innerHeight) {
+        heroBg.style.transform = `scale(1.05) translateY(${window.scrollY * 0.25}px)`;
+      }
+    }, { passive: true });
+
+    // Scroll reveal via IntersectionObserver
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+  </script>
+</body>
+</html>
