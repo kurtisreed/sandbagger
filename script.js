@@ -6891,8 +6891,12 @@ function loadAdminChecklist() {
     const doneCount = steps.filter(s => s.done).length;
     const allDone   = doneCount === steps.length;
 
-    // Don't show at all if everything is done and it was previously dismissed
-    // (We still show it if all done but not dismissed, so they can see the win)
+    // If everything is already done, auto-dismiss and never show
+    if (allDone) {
+      localStorage.setItem(dismissKey, '1');
+      container.innerHTML = '';
+      return;
+    }
 
     const pct = Math.round((doneCount / steps.length) * 100);
 
