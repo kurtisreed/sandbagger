@@ -9822,12 +9822,29 @@ function openSwitchGroupModal(orgs) {
   const list  = document.getElementById('switch-group-list');
   const closeBtn = document.getElementById('close-switch-group-modal');
 
+  const _avatarHtml = (url, name, size = 38) => {
+    const initial = (name || '?').charAt(0).toUpperCase();
+    const base = `width:${size}px; height:${size}px; border-radius:var(--radius-md); flex-shrink:0;`;
+    if (!url) {
+      return `<div style="${base} background:linear-gradient(135deg,var(--color-brand-primary) 0%,#6b35a8 100%);
+                color:#fff; font-size:${Math.round(size*0.38)}px; font-weight:800;
+                display:flex; align-items:center; justify-content:center;">${initial}</div>`;
+    }
+    if (url.startsWith('icon:')) {
+      return `<div style="${base} background:var(--color-bg-muted); font-size:${Math.round(size*0.5)}px;
+                display:flex; align-items:center; justify-content:center;">${url.slice(5)}</div>`;
+    }
+    return `<img src="${url}" alt="${name}" style="${base} object-fit:cover;">`;
+  };
+
   list.innerHTML = orgs.map(org => {
+    const avatar = _avatarHtml(org.avatar_url, org.org_name);
     if (org.is_current) {
       return `
-        <div style="display:flex; align-items:center; justify-content:space-between;
+        <div style="display:flex; align-items:center; gap:0.75rem;
                     padding:0.75rem 0; border-bottom:1px solid #f0f0f0;">
-          <div>
+          ${avatar}
+          <div style="flex:1; min-width:0;">
             <span style="font-size:1rem; font-weight:700; color:#1a1a1a;">${org.org_name}</span>
             <span style="margin-left:0.5rem; font-size:0.75rem; background:#4F2185; color:white;
                          border-radius:4px; padding:1px 6px;">Active</span>
@@ -9836,10 +9853,11 @@ function openSwitchGroupModal(orgs) {
     }
     return `
       <div onclick="switchGroup(${org.org_id}); document.getElementById('switch-group-modal').style.display='none';"
-           style="display:flex; align-items:center; justify-content:space-between;
+           style="display:flex; align-items:center; gap:0.75rem;
                   padding:0.75rem 0; border-bottom:1px solid #f0f0f0; cursor:pointer;">
-        <span style="font-size:1rem; color:#4F2185; font-weight:500;">${org.org_name}</span>
-        <span style="font-size:0.8rem; color:#888;">Switch →</span>
+        ${avatar}
+        <span style="flex:1; font-size:1rem; color:#4F2185; font-weight:500; min-width:0;">${org.org_name}</span>
+        <span style="font-size:0.8rem; color:#888; flex-shrink:0;">Switch →</span>
       </div>`;
   }).join('');
 
