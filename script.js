@@ -7072,12 +7072,6 @@ function loadUserTournaments(golferId) {
                   `
                 ) : ''}
               </div>
-              ${isAdmin ? `
-                <button class="delete-round-btn"
-                  data-round-id="${round.round_id}"
-                  data-tournament-id="${tournament.tournament_id}"
-                  data-round-name="${round.round_name}">🗑 Delete round</button>
-              ` : ''}
             `;
           });
         } else {
@@ -7154,13 +7148,6 @@ function loadUserTournaments(golferId) {
         });
       });
 
-      // Add click handlers for "Delete round" buttons
-      document.querySelectorAll('.delete-round-btn').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-          e.stopPropagation();
-          showDeleteRoundModal(this.dataset.roundId, this.dataset.tournamentId, this.dataset.roundName);
-        });
-      });
     })
     .catch(err => {
       console.error('Error loading tournaments:', err);
@@ -7536,6 +7523,15 @@ function showAddRoundForm(tournamentId) {
   document.getElementById('add-round-form').reset();
   document.getElementById('add-round-tees').innerHTML = '<option value="">-- Select Tees --</option>';
 
+  // Hide delete button (new round — nothing to delete yet)
+  const deleteBtn = document.getElementById('delete-round-btn');
+  const deleteDivider = document.getElementById('delete-round-divider');
+  if (deleteBtn) { deleteBtn.style.display = 'none'; deleteDivider.style.display = 'none'; }
+
+  // Reset submit button text
+  const submitBtn = document.querySelector('#add-round-form button[type="submit"]');
+  if (submitBtn) submitBtn.textContent = 'Continue to Matches';
+
   // Load courses
   fetch(`${API_BASE_URL}/api/courses.php`, {
     credentials: 'include'
@@ -7629,6 +7625,21 @@ async function editRound(tournamentId, roundId) {
     // Change button text to "Continue"
     const submitBtn = document.querySelector('#add-round-form button[type="submit"]');
     submitBtn.textContent = 'Continue';
+
+    // Show delete button (editing only)
+    const deleteBtn   = document.getElementById('delete-round-btn');
+    const deleteDivider = document.getElementById('delete-round-divider');
+    if (deleteBtn) {
+      deleteBtn.style.display = 'block';
+      deleteDivider.style.display = 'block';
+      // Remove prior listeners by cloning
+      const fresh = deleteBtn.cloneNode(true);
+      deleteBtn.replaceWith(fresh);
+      fresh.addEventListener('click', () => {
+        const roundName = roundData.round_name || 'this round';
+        showDeleteRoundModal(roundId, tournamentId, roundName);
+      });
+    }
 
   } catch (err) {
     console.error('Error loading round data:', err);
@@ -10084,6 +10095,9 @@ function showDeleteRoundModal(roundId, tournamentId, roundName) {
     .then(data => {
       closeModal();
       if (data.success) {
+        // Return to dashboard and refresh
+        document.getElementById('add-round-container').style.display = 'none';
+        document.getElementById('user-dashboard').style.display = 'block';
         loadUserTournaments(currentUser.golfer_id);
       } else {
         alert(data.error || 'Failed to delete round.');
