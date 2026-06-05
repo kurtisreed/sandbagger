@@ -196,9 +196,10 @@ function loadPage(page) {
     container.id = "today-summary";
     content.appendChild(container);
 
-    // Check if this is a Guys Trip tournament
     const formatId = parseInt(sessionStorage.getItem('selected_format_id'));
-    if (formatId === 4) {
+    if (formatId === 5) {
+      loadSkinsSummary();
+    } else if (formatId === 4) {
       loadGuysTripSummary();
     } else {
       loadTodaySummary();
@@ -5056,6 +5057,114 @@ function loadTodaySummary() {
       console.error("Error loading matches:", err);
     });
 
+}
+
+function loadSkinsSummary() {
+  const roundId      = sessionStorage.getItem('selected_round_id');
+  const tournamentId = sessionStorage.getItem('selected_tournament_id');
+  const golferId     = currentUser?.golfer_id || sessionStorage.getItem('golfer_id');
+  const container    = document.getElementById('today-summary');
+
+  if (!roundId || !tournamentId) {
+    container.innerHTML = '<p>Missing round or tournament information.</p>';
+    return;
+  }
+
+  container.innerHTML = '<p style="color:var(--color-text-muted); text-align:center; padding:2rem;">Loading…</p>';
+
+  // Ensure hole info is available
+  const holesPromise = (holeInfo && holeInfo.length > 0)
+    ? Promise.resolve(holeInfo)
+    : fetch(`${API_BASE_URL}/api/get_match_by_round.php?round_id=${roundId}&tournament_id=${tournamentId}&golfer_id=${golferId}`, { credentials: 'include' })
+        .then(r => r.json()).then(d => { if (d.holes) holeInfo = d.holes; return d.holes || []; }).catch(() => []);
+
+  Promise.all([
+    fetch(`${API_BASE_URL}/api/get_net_leaderboard.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' }).then(r => r.json()),
+    fetch(`${API_BASE_URL}/api/get_gross_leaderboard.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' }).then(r => r.json()),
+    fetch(`${API_BASE_URL}/api/get_individual_skins.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' }).then(r => r.json()),
+    holesPromise
+  ])
+  .then(([netData, grossData, skinsData]) => {
+    container.innerHTML = '';
+
+    // ── Helper ───────────────────────────────────────────────────────────────
+    const section = (title) => {
+      const h = document.createElement('h3');
+      h.className = 'section-header';
+      h.style.marginBottom = 'var(--space-4)';
+      h.textContent = title;
+      return h;
+    };
+
+    const toParStr = (diff) => diff === 0 ? 'E' : (diff > 0 ? `+${diff}` : `${diff}`);
+
+    const thruStr = (holes) => holes >= 18 ? 'F' : (holes || 0);
+
+    // ── Net Leaderboard ───────────────────────────────────────────────────────
+    const netDiv = document.createElement('div');
+    netDiv.style.marginBottom = 'var(--space-6)';
+    netDiv.appendChild(section('Net Leaderboard'));
+
+    const netGolfers = Array.isArray(netData) ? netData : [];
+    if (netGolfers.length === 0) {
+      netDiv.innerHTML += '<p style="color:var(--color-text-muted); font-size:var(--font-size-sm);">No scores entered yet.</p>';
+    } else {
+      netGolfers.sort((a, b) => (a.net_strokes - a.par) - (b.net_strokes - b.par));
+      const t = document.createElement('table');
+      t.classList.add('leaderboard-table');
+      t.innerHTML = '<tr><th>Rank</th><th>Player</th><th>Net</th><th>Thru</th></tr>';
+      netGolfers.forEach((g, i) => {
+        const diff = g.net_strokes - g.par;
+        t.innerHTML += `<tr><td>${i + 1}</td><td>${g.name}</td><td>${toParStr(diff)}</td><td>${thruStr(g.holes_played)}</td></tr>`;
+      });
+      netDiv.appendChild(t);
+    }
+    container.appendChild(netDiv);
+
+    // ── Gross Leaderboard ─────────────────────────────────────────────────────
+    const grossDiv = document.createElement('div');
+    grossDiv.style.marginBottom = 'var(--space-6)';
+    grossDiv.appendChild(section('Gross Leaderboard'));
+
+    const grossGolfers = Array.isArray(grossData) ? grossData : [];
+    if (grossGolfers.length === 0) {
+      grossDiv.innerHTML += '<p style="color:var(--color-text-muted); font-size:var(--font-size-sm);">No scores entered yet.</p>';
+    } else {
+      grossGolfers.sort((a, b) => (a.strokes - a.par) - (b.strokes - b.par));
+      const t = document.createElement('table');
+      t.classList.add('leaderboard-table');
+      t.innerHTML = '<tr><th>Rank</th><th>Player</th><th>Gross</th><th>Thru</th></tr>';
+      grossGolfers.forEach((g, i) => {
+        const diff = g.strokes - g.par;
+        t.innerHTML += `<tr><td>${i + 1}</td><td>${g.name}</td><td>${toParStr(diff)}</td><td>${thruStr(g.holes_played)}</td></tr>`;
+      });
+      grossDiv.appendChild(t);
+    }
+    container.appendChild(grossDiv);
+
+    // ── Skins ─────────────────────────────────────────────────────────────────
+    const skinsDiv = document.createElement('div');
+    skinsDiv.style.marginBottom = 'var(--space-6)';
+    skinsDiv.appendChild(section('Skins'));
+
+    const skins = Array.isArray(skinsData) ? skinsData : (skinsData.skins || []);
+    if (skins.length === 0) {
+      skinsDiv.innerHTML += '<p style="color:var(--color-text-muted); font-size:var(--font-size-sm);">No skins won yet.</p>';
+    } else {
+      const t = document.createElement('table');
+      t.classList.add('skins-table');
+      t.innerHTML = '<tr><th>Hole</th><th>Player</th><th>Net</th></tr>';
+      skins.forEach(s => {
+        t.innerHTML += `<tr><td>${s.hole}</td><td>${s.golfer_name}</td><td>${s.net_score}</td></tr>`;
+      });
+      skinsDiv.appendChild(t);
+    }
+    container.appendChild(skinsDiv);
+  })
+  .catch(err => {
+    console.error('Error loading Skins summary:', err);
+    container.innerHTML = '<p style="color:var(--color-action-danger);">Error loading round data.</p>';
+  });
 }
 
 function loadGuysTripSummary() {
