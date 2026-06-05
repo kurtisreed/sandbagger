@@ -5058,6 +5058,135 @@ function loadTodaySummary() {
 
 }
 
+function loadSkinsGroupScorecard(matchId) {
+  const container    = document.getElementById('today-summary');
+  const tournamentId = sessionStorage.getItem('selected_tournament_id');
+
+  container.innerHTML = '<p style="color:var(--color-text-muted); text-align:center; padding:2rem;">Loading scorecard…</p>';
+
+  // Back button
+  const backBtn = document.createElement('button');
+  backBtn.className = 'history-back-btn';
+  backBtn.textContent = '← Back to Round';
+  backBtn.style.marginBottom = 'var(--space-4)';
+  backBtn.addEventListener('click', () => loadSkinsSummary());
+
+  fetch(`${API_BASE_URL}/api/get_match_by_id.php?match_id=${matchId}&tournament_id=${tournamentId}`, { credentials: 'include' })
+    .then(r => r.json())
+    .then(data => {
+      const matchGolfers = data.match;
+      holeInfo = data.holes || holeInfo;
+
+      container.innerHTML = '';
+      container.appendChild(backBtn);
+
+      if (!matchGolfers || matchGolfers.length === 0) {
+        container.innerHTML += '<p>No scorecard data available.</p>';
+        return;
+      }
+
+      // Build golfer list — straight playing handicaps, no adjustment
+      const localGolfers = matchGolfers
+        .filter((row, idx, arr) => arr.findIndex(r => r.golfer_id === row.golfer_id) === idx)
+        .sort((a, b) => a.player_order - b.player_order)
+        .map(row => ({
+          id:       row.golfer_id,
+          name:     row.first_name,
+          handicap: calculatePlayingHandicap(parseFloat(row.handicap))
+        }));
+
+      const localStrokeMaps = {};
+      localGolfers.forEach(g => {
+        localStrokeMaps[g.id] = buildStrokeMapForGolfer(g.handicap, holeInfo);
+      });
+
+      const frontPar = holeInfo.filter(h => h.hole_number <= 9).reduce((s, h) => s + (h.par || 0), 0);
+      const backPar  = holeInfo.filter(h => h.hole_number >= 10).reduce((s, h) => s + (h.par || 0), 0);
+
+      // Group name heading
+      const groupNames = localGolfers.map(g => g.name).join(', ');
+      const heading = document.createElement('h3');
+      heading.className = 'section-header';
+      heading.style.marginBottom = 'var(--space-4)';
+      heading.textContent = groupNames;
+      container.appendChild(heading);
+
+      // Table — no match-result column
+      const table = document.createElement('table');
+      table.classList.add('score-table');
+
+      // Header
+      const header = document.createElement('tr');
+      header.innerHTML = `<th>#</th><th>P</th><th>HI</th>` + localGolfers.map(g =>
+        `<th style="background:var(--color-brand-primary); color:#fff;">${g.name} (${parseFloat(g.handicap).toFixed(1)})</th>`
+      ).join('');
+      table.appendChild(header);
+
+      for (let i = 1; i <= 18; i++) {
+        const par = holeInfo.find(h => h.hole_number === i)?.par || '-';
+        const hi  = holeInfo.find(h => h.hole_number === i)?.handicap_index || '-';
+
+        const row = document.createElement('tr');
+        row.innerHTML = `<td>${i}</td><td>${par}</td><td>${hi}</td>` + localGolfers.map(g => {
+          const dots = strokeDots(localStrokeMaps[g.id]?.[i] || 0);
+          return `<td class="readonly-score-cell" data-hole="${i}" data-golfer="${g.id}" style="position:relative;">${dots}</td>`;
+        }).join('');
+        table.appendChild(row);
+
+        if (i === 9) {
+          const outRow = document.createElement('tr');
+          outRow.classList.add('subtotal-row');
+          outRow.innerHTML = `<td>Out</td><td>${frontPar}</td><td></td>` +
+            localGolfers.map(g => `<td class="out-subtotal-cell-readonly" data-golfer="${g.id}">–</td>`).join('');
+          table.appendChild(outRow);
+        }
+        if (i === 18) {
+          const inRow = document.createElement('tr');
+          inRow.classList.add('subtotal-row');
+          inRow.innerHTML = `<td>In</td><td>${backPar}</td><td></td>` +
+            localGolfers.map(g => `<td class="in-subtotal-cell-readonly" data-golfer="${g.id}">–</td>`).join('');
+          table.appendChild(inRow);
+        }
+      }
+
+      // Total row
+      const totalRow = document.createElement('tr');
+      totalRow.innerHTML = `<td colspan="3" style="font-weight:700; text-align:left; padding-left:0.5rem;">Total</td>` +
+        localGolfers.map(g => `<td class="totals-cell" data-golfer="${g.id}">–</td>`).join('');
+      table.appendChild(totalRow);
+
+      container.appendChild(table);
+
+      // Load and populate scores
+      fetch(`${API_BASE_URL}/api/get_scores.php?match_id=${matchId}`, { credentials: 'include' })
+        .then(r => r.json())
+        .then(scores => {
+          scores.forEach(score => {
+            const cell = container.querySelector(`td.readonly-score-cell[data-hole="${score.hole_number}"][data-golfer="${score.golfer_id}"]`);
+            if (cell) {
+              const par     = holeInfo.find(h => h.hole_number == score.hole_number)?.par;
+              const strokes = parseInt(score.strokes);
+              cell.classList.remove('score-birdie', 'score-bogey', 'score-par', 'score-eagle');
+              if (!isNaN(par) && !isNaN(strokes)) {
+                if (strokes <= par - 2)      cell.classList.add('score-eagle');
+                else if (strokes === par - 1) cell.classList.add('score-birdie');
+                else if (strokes === par)     cell.classList.add('score-par');
+                else                          cell.classList.add('score-bogey');
+              }
+              const dots = strokeDots(localStrokeMaps[score.golfer_id]?.[score.hole_number] || 0);
+              cell.innerHTML = `${dots}${strokes}`;
+            }
+          });
+          updateTotalScoresReadOnly(localGolfers, holeInfo);
+        })
+        .catch(err => console.error('Error loading scorecard scores:', err));
+    })
+    .catch(err => {
+      console.error('Error loading Skins scorecard:', err);
+      container.innerHTML = '<p>Error loading scorecard.</p>';
+    });
+}
+
 function loadSkinsSummary() {
   const roundId      = sessionStorage.getItem('selected_round_id');
   const tournamentId = sessionStorage.getItem('selected_tournament_id');
@@ -5081,9 +5210,10 @@ function loadSkinsSummary() {
     fetch(`${API_BASE_URL}/api/get_net_leaderboard.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' }).then(r => r.json()),
     fetch(`${API_BASE_URL}/api/get_gross_leaderboard.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' }).then(r => r.json()),
     fetch(`${API_BASE_URL}/api/get_individual_skins.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' }).then(r => r.json()),
+    fetch(`${API_BASE_URL}/api/get_round_matches.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' }).then(r => r.json()),
     holesPromise
   ])
-  .then(([netData, grossData, skinsData]) => {
+  .then(([netData, grossData, skinsData, roundMatches]) => {
     container.innerHTML = '';
 
     // ── Helper ───────────────────────────────────────────────────────────────
@@ -5096,8 +5226,38 @@ function loadSkinsSummary() {
     };
 
     const toParStr = (diff) => diff === 0 ? 'E' : (diff > 0 ? `+${diff}` : `${diff}`);
+    const thruStr  = (holes) => holes >= 18 ? 'F' : (holes || 0);
 
-    const thruStr = (holes) => holes >= 18 ? 'F' : (holes || 0);
+    // ── Groups in this round ─────────────────────────────────────────────────
+    const groupsDiv = document.createElement('div');
+    groupsDiv.style.marginBottom = 'var(--space-6)';
+    groupsDiv.appendChild(section('Groups'));
+
+    const matches = Array.isArray(roundMatches) ? roundMatches : [];
+    if (matches.length === 0) {
+      groupsDiv.innerHTML += '<p style="color:var(--color-text-muted); font-size:var(--font-size-sm);">No groups assigned yet.</p>';
+    } else {
+      matches.forEach((match, idx) => {
+        const names = (match.golfers || [])
+          .sort((a, b) => a.player_order - b.player_order)
+          .map(g => g.first_name || g.name)
+          .join(', ');
+
+        const card = document.createElement('div');
+        card.className = 'match-summary';
+        card.style.cssText = 'cursor:pointer; display:flex; justify-content:space-between; align-items:center;';
+        card.innerHTML = `
+          <div>
+            <div style="font-weight:700; font-size:var(--font-size-base);">Group ${idx + 1}</div>
+            <div style="font-size:var(--font-size-sm); color:var(--color-text-secondary); margin-top:2px;">${names}</div>
+          </div>
+          <span style="font-size:var(--font-size-sm); color:var(--color-brand-primary); font-weight:700;">Scorecard →</span>
+        `;
+        card.addEventListener('click', () => loadSkinsGroupScorecard(match.match_id));
+        groupsDiv.appendChild(card);
+      });
+    }
+    container.appendChild(groupsDiv);
 
     // ── Net Leaderboard ───────────────────────────────────────────────────────
     const netDiv = document.createElement('div');
