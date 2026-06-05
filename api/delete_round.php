@@ -50,10 +50,7 @@ try {
         // 2. Delete hole scores
         $conn->query("DELETE FROM hole_scores WHERE match_id IN ($idList)");
 
-        // 3. Delete wolf bids (if table exists)
-        $conn->query("DELETE FROM wolf_bids WHERE match_id IN ($idList)");
-
-        // 4. Delete match golfers
+        // 3. Delete match golfers
         $conn->query("DELETE FROM match_golfers WHERE match_id IN ($idList)");
 
         // 5. Delete matches
