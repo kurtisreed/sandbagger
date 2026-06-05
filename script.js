@@ -209,9 +209,10 @@ function loadPage(page) {
       container.id = "tournament";
       content.appendChild(container);
 
-      // Check if this is a Guys Trip tournament
       const formatId = parseInt(sessionStorage.getItem('selected_format_id'));
-      if (formatId === 4) {
+      if (formatId === 5) {
+        loadSkinsTournamentPage(container);
+      } else if (formatId === 4) {
         loadGuysTripTournamentPage(container);
       } else {
         loadTournamentPage(container);
@@ -6380,6 +6381,131 @@ async function loadTournamentPage(container) {
         container.innerHTML = '<h2>A critical error occurred while loading the page.</h2>';
         console.error("Fatal error in loadTournamentPage:", error);
     }
+}
+
+function renderSkinsRoundsAndGroups(parentContainer, rounds) {
+  if (!Array.isArray(rounds) || rounds.length === 0) return;
+  const { container } = createWidgetContainer('Rounds & Groups', 'tournament-rounds-table-container');
+
+  const roundsDiv = document.createElement('div');
+  roundsDiv.className = 'tournament-rounds-table-container';
+
+  rounds.forEach(round => {
+    const heading = document.createElement('h4');
+    const [year, month, day] = round.round_date.split('-');
+    const dateObj  = new Date(year, month - 1, day);
+    const monthDay = dateObj.toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
+    heading.innerHTML = `${round.round_name}<br>${monthDay}`;
+    heading.style.textAlign = 'center';
+    roundsDiv.appendChild(heading);
+
+    const table = document.createElement('table');
+    table.className = 'leaderboard-table matchup-table';
+
+    if (!round.tee_times || round.tee_times.length === 0) {
+      table.innerHTML = '<tr><td colspan="2" style="text-align:center;">No tee times</td></tr>';
+    } else {
+      round.tee_times.forEach(teeTime => {
+        if (!teeTime.matches || teeTime.matches.length === 0) {
+          const row = document.createElement('tr');
+          row.innerHTML = `<td>${formatTeeTime(teeTime.time)}</td><td style="text-align:center;">Groups not yet assigned</td>`;
+          table.appendChild(row);
+        } else {
+          teeTime.matches.forEach((match, idx) => {
+            // All golfers are individual — just list names
+            const names = match.golfers
+              .sort((a, b) => a.player_order - b.player_order)
+              .map(g => g.name).join(', ');
+
+            const row = document.createElement('tr');
+            if (match.match_id) {
+              row.style.cursor = 'pointer';
+              row.title = 'Click to view scorecard';
+              row.addEventListener('click', () => {
+                parentContainer.innerHTML = '<p>Loading scorecard…</p>';
+                loadMatchScorecard(match.match_id, parentContainer.id);
+              });
+            }
+
+            if (idx === 0) {
+              row.innerHTML = `<td rowspan="${teeTime.matches.length}">${formatTeeTime(teeTime.time)}</td><td>${names}</td>`;
+            } else {
+              row.innerHTML = `<td>${names}</td>`;
+            }
+            table.appendChild(row);
+          });
+        }
+      });
+    }
+
+    roundsDiv.appendChild(table);
+  });
+
+  container.appendChild(roundsDiv);
+  parentContainer.appendChild(container);
+}
+
+async function loadSkinsTournamentPage(container) {
+  container.innerHTML = '<p style="color:var(--color-text-muted); text-align:center; padding:2rem;">Loading…</p>';
+
+  const tournamentId = sessionStorage.getItem('selected_tournament_id');
+  if (!tournamentId) {
+    container.innerHTML = '<p>Error: No tournament selected.</p>';
+    return;
+  }
+
+  try {
+    const results = await Promise.allSettled([
+      fetch(`${API_BASE_URL}/api/get_gross_leaderboard_all.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(r => r.json()),
+      fetch(`${API_BASE_URL}/api/get_net_leaderboard_all.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(r => r.json()),
+      fetch(`${API_BASE_URL}/api/get_tournament_rounds.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(r => r.json()),
+      Promise.all([
+        fetch(`${API_BASE_URL}/api/get_tournament_courses.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(r => r.json()),
+        fetch(`${API_BASE_URL}/api/get_tournament_golfers.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(r => r.json())
+      ])
+    ]);
+
+    container.innerHTML = '';
+
+    const [grossResult, netResult, roundsResult, handicapResult] = results;
+
+    // Net Leaderboard (most important for skins — show first)
+    if (netResult.status === 'fulfilled') {
+      renderGuysTripNetLeaderboard(container, netResult.value);
+    } else {
+      renderErrorWidget(container, 'Net Leaderboard');
+    }
+
+    // Gross Leaderboard
+    if (grossResult.status === 'fulfilled') {
+      renderGuysTripGrossLeaderboard(container, grossResult.value);
+    } else {
+      renderErrorWidget(container, 'Gross Leaderboard');
+    }
+
+    // Rounds & Groups
+    if (roundsResult.status === 'fulfilled') {
+      renderSkinsRoundsAndGroups(container, roundsResult.value);
+    } else {
+      renderErrorWidget(container, 'Rounds & Groups');
+    }
+
+    // Playing Handicaps
+    if (handicapResult.status === 'fulfilled') {
+      const [courses, golfers] = handicapResult.value;
+      if (Array.isArray(courses) && courses.length > 0 && courses[0].handicap_pct != null) {
+        tournamentHandicapPct = parseFloat(courses[0].handicap_pct);
+      }
+      renderHandicapTable(container, courses, golfers);
+      renderCoursePDFLinks(container, courses);
+    } else {
+      renderErrorWidget(container, 'Handicap Table');
+    }
+
+  } catch (err) {
+    container.innerHTML = '<p>A critical error occurred while loading the tournament.</p>';
+    console.error('Fatal error in loadSkinsTournamentPage:', err);
+  }
 }
 
 async function loadGuysTripTournamentPage(container) {
