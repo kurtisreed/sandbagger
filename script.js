@@ -5200,23 +5200,38 @@ function loadSkinsSummary() {
 
   container.innerHTML = '<p style="color:var(--color-text-muted); text-align:center; padding:2rem;">Loading…</p>';
 
-  // Ensure hole info is available
-  const holesPromise = (holeInfo && holeInfo.length > 0)
-    ? Promise.resolve(holeInfo)
-    : fetch(`${API_BASE_URL}/api/get_match_by_round.php?round_id=${roundId}&tournament_id=${tournamentId}&golfer_id=${golferId}`, { credentials: 'include' })
-        .then(r => r.json()).then(d => { if (d.holes) holeInfo = d.holes; return d.holes || []; }).catch(() => []);
+  // Always fetch match data so we have course info (slope/rating/pct) for handicap calc
+  const matchDataPromise = fetch(
+    `${API_BASE_URL}/api/get_match_by_round.php?round_id=${roundId}&tournament_id=${tournamentId}&golfer_id=${golferId}`,
+    { credentials: 'include' }
+  ).then(r => r.json()).then(d => {
+    if (d.holes) holeInfo = d.holes;
+    // Capture course globals needed by calculatePlayingHandicap
+    if (d.match && d.match[0]) {
+      courses = {
+        course_name: d.match[0].course_name,
+        slope:       d.match[0].slope,
+        rating:      d.match[0].rating,
+        par:         d.match[0].par
+      };
+    }
+    if (d.tournament_handicap_pct != null) {
+      tournamentHandicapPct = parseFloat(d.tournament_handicap_pct);
+    }
+    return d;
+  }).catch(() => ({}));
 
   Promise.all([
     fetch(`${API_BASE_URL}/api/get_net_leaderboard.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' }).then(r => r.json()),
     fetch(`${API_BASE_URL}/api/get_gross_leaderboard.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' }).then(r => r.json()),
     fetch(`${API_BASE_URL}/api/get_individual_skins.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' }).then(r => r.json()),
     fetch(`${API_BASE_URL}/api/get_round_matches.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' }).then(r => r.json()),
-    holesPromise
+    matchDataPromise
   ])
   .then(([netData, grossData, skinsData, roundMatches]) => {
     container.innerHTML = '';
 
-    // ── Helper ───────────────────────────────────────────────────────────────
+    // ── Helpers ───────────────────────────────────────────────────────────────
     const section = (title) => {
       const h = document.createElement('h3');
       h.className = 'section-header';
@@ -5228,6 +5243,55 @@ function loadSkinsSummary() {
     const toParStr = (diff) => diff === 0 ? 'E' : (diff > 0 ? `+${diff}` : `${diff}`);
     const thruStr  = (holes) => holes >= 18 ? 'F' : (holes || 0);
 
+    // ── Net best-ball calculator for a group ────────────────────────────────
+    // Returns { toPar, holesPlayed } using straight playing handicaps
+    const calcGroupBestBall = (golfers, scores) => {
+      if (!courses || !courses.slope || !holeInfo || holeInfo.length === 0) return null;
+
+      const slope  = parseFloat(courses.slope);
+      const rating = parseFloat(courses.rating);
+      const pct    = parseFloat(tournamentHandicapPct || 100);
+
+      // Playing handicap + stroke map per golfer
+      const localStrokeMaps = {};
+      golfers.forEach(g => {
+        const courseHcp  = (parseFloat(g.handicap) * (slope / 113)) + (rating - 72);
+        const playingHcp = Math.round(courseHcp * pct / 100 * 10) / 10;
+        localStrokeMaps[g.golfer_id] = buildStrokeMapForGolfer(playingHcp, holeInfo);
+      });
+
+      // Group scores by hole
+      const byHole = {};
+      scores.forEach(s => {
+        if (!byHole[s.hole_number]) byHole[s.hole_number] = [];
+        byHole[s.hole_number].push(s);
+      });
+
+      let bestBallTotal = 0;
+      let parTotal      = 0;
+      let holesPlayed   = 0;
+
+      holeInfo.forEach(hole => {
+        const holeScores = byHole[hole.hole_number] || [];
+        if (holeScores.length === 0) return;
+        let bestNet = Infinity;
+        holeScores.forEach(s => {
+          const strokes = parseInt(s.strokes);
+          if (isNaN(strokes)) return;
+          const strokeAdj = localStrokeMaps[s.golfer_id]?.[hole.hole_number] || 0;
+          const net = strokes - strokeAdj;
+          if (net < bestNet) bestNet = net;
+        });
+        if (isFinite(bestNet)) {
+          bestBallTotal += bestNet;
+          parTotal      += (hole.par || 0);
+          holesPlayed++;
+        }
+      });
+
+      return holesPlayed === 0 ? null : { toPar: bestBallTotal - parTotal, holesPlayed };
+    };
+
     // ── Groups in this round ─────────────────────────────────────────────────
     const groupsDiv = document.createElement('div');
     groupsDiv.style.marginBottom = 'var(--space-6)';
@@ -5238,20 +5302,26 @@ function loadSkinsSummary() {
       groupsDiv.innerHTML += '<p style="color:var(--color-text-muted); font-size:var(--font-size-sm);">No groups assigned yet.</p>';
     } else {
       matches.forEach((match, idx) => {
-        const names = (match.golfers || [])
-          .sort((a, b) => a.player_order - b.player_order)
-          .map(g => g.first_name || g.name)
-          .join(', ');
+        const sortedGolfers = (match.golfers || []).sort((a, b) => a.player_order - b.player_order);
+        const names = sortedGolfers.map(g => g.first_name || g.name).join(', ');
+
+        const bb = calcGroupBestBall(sortedGolfers, match.scores || []);
+        const bbLabel = bb
+          ? `<span style="font-size:var(--font-size-xs); font-weight:700; color:${bb.toPar <= 0 ? 'var(--color-action-success)' : 'var(--color-action-danger)'};">
+               Best Ball: ${toParStr(bb.toPar)} thru ${bb.holesPlayed}
+             </span>`
+          : `<span style="font-size:var(--font-size-xs); color:var(--color-text-muted);">No scores yet</span>`;
 
         const card = document.createElement('div');
         card.className = 'match-summary';
-        card.style.cssText = 'cursor:pointer; display:flex; justify-content:space-between; align-items:center;';
+        card.style.cssText = 'cursor:pointer; display:flex; justify-content:space-between; align-items:center; gap:0.5rem;';
         card.innerHTML = `
-          <div>
+          <div style="flex:1; min-width:0;">
             <div style="font-weight:700; font-size:var(--font-size-base);">Group ${idx + 1}</div>
-            <div style="font-size:var(--font-size-sm); color:var(--color-text-secondary); margin-top:2px;">${names}</div>
+            <div style="font-size:var(--font-size-sm); color:var(--color-text-secondary); margin-top:1px;">${names}</div>
+            <div style="margin-top:4px;">${bbLabel}</div>
           </div>
-          <span style="font-size:var(--font-size-sm); color:var(--color-brand-primary); font-weight:700;">Scorecard →</span>
+          <span style="font-size:var(--font-size-sm); color:var(--color-brand-primary); font-weight:700; flex-shrink:0;">Scorecard →</span>
         `;
         card.addEventListener('click', () => loadSkinsGroupScorecard(match.match_id));
         groupsDiv.appendChild(card);
