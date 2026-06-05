@@ -7534,9 +7534,11 @@ function showAddRoundForm(tournamentId) {
   const deleteDivider = document.getElementById('delete-round-divider');
   if (deleteBtn) { deleteBtn.style.display = 'none'; deleteDivider.style.display = 'none'; }
 
-  // Reset submit button text
+  // Reset submit and save-only buttons to clean state
   const submitBtn = document.querySelector('#add-round-form button[type="submit"]');
   if (submitBtn) submitBtn.textContent = 'Continue to Matches';
+  const saveOnlyBtn = document.getElementById('save-round-only-btn');
+  if (saveOnlyBtn) { saveOnlyBtn.disabled = false; saveOnlyBtn.textContent = 'Save Round (skip matches & tee times)'; saveOnlyBtn.style.background = ''; saveOnlyBtn.style.opacity = '1'; }
 
   // Load courses
   fetch(`${API_BASE_URL}/api/courses.php`, {
@@ -7712,6 +7714,11 @@ async function showMatchesScreen(tournamentId) {
   const isRyderCup = formatId === 3;
 
   document.getElementById('add-matches-container').style.display = 'block';
+
+  // Reset save buttons to clean state
+  const saveFromMatchesBtn = document.getElementById('save-round-from-matches-btn');
+  if (saveFromMatchesBtn) { saveFromMatchesBtn.disabled = false; saveFromMatchesBtn.textContent = 'Save Round (skip tee times)'; saveFromMatchesBtn.style.background = ''; saveFromMatchesBtn.style.opacity = '1'; }
+
   matchesData = [];
   tournamentTeams = [];
 
@@ -7896,6 +7903,10 @@ async function loadExistingTeeTimes() {
 
 function showTeeTimesScreen() {
   document.getElementById('add-tee-times-container').style.display = 'block';
+
+  // Reset save button to clean state
+  const saveAllBtn = document.getElementById('save-all-btn');
+  if (saveAllBtn) { saveAllBtn.disabled = false; saveAllBtn.textContent = 'Save All'; saveAllBtn.style.background = ''; saveAllBtn.style.opacity = '1'; }
 
   // Reset tee times data
   teeTimesData = [];
@@ -10076,6 +10087,10 @@ function showDeleteTournamentModal(tournamentId, tournamentName) {
   bodyEl.textContent = `"${tournamentName}" and all its rounds, matches, and scores will be permanently removed. This cannot be undone.`;
   modal.style.display = 'flex';
 
+  // Reset state before cloning so the clone always starts clean
+  confirmBtn.textContent = 'Yes, delete this tournament';
+  confirmBtn.disabled = false;
+
   const newConfirm = confirmBtn.cloneNode(true);
   const newCancel  = cancelBtn.cloneNode(true);
   confirmBtn.replaceWith(newConfirm);
@@ -10122,6 +10137,10 @@ function showDeleteRoundModal(roundId, tournamentId, roundName) {
 
   bodyEl.textContent = `"${roundName}" and all its matches, scores, and tee times will be permanently removed. This cannot be undone.`;
   modal.style.display = 'flex';
+
+  // Reset state before cloning so the clone always starts clean
+  confirmBtn.textContent = 'Yes, delete this round';
+  confirmBtn.disabled = false;
 
   // Clone buttons to remove any prior listeners
   const newConfirm = confirmBtn.cloneNode(true);
