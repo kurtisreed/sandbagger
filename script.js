@@ -8258,9 +8258,10 @@ async function editRound(tournamentId, roundId) {
 
 async function loadExistingMatches(tournamentId, roundId) {
   try {
-    const formatId = parseInt(sessionStorage.getItem('add_round_format_id'));
+    const formatId   = parseInt(sessionStorage.getItem('add_round_format_id'));
     const isRyderCup = formatId === 3;
-    tournamentTeams = [];
+    const isSkins    = formatId === 5;
+    tournamentTeams  = [];
 
     // Load tournament players and (for Ryder Cup) teams in parallel with existing matches
     const fetches = [
@@ -8280,23 +8281,36 @@ async function loadExistingMatches(tournamentId, roundId) {
 
     if (existingMatches && existingMatches.length > 0) {
       existingMatches.forEach(match => {
-        const golfers = match.golfers || [];
+        const golfers = (match.golfers || []).sort((a, b) => a.team_position - b.team_position);
 
-        // Find golfers by team_position
-        const team1player1 = golfers.find(g => g.team_position === 1);
-        const team1player2 = golfers.find(g => g.team_position === 2);
-        const team2player1 = golfers.find(g => g.team_position === 3);
-        const team2player2 = golfers.find(g => g.team_position === 4);
-
-        matchesData.push({
-          match_id: match.match_id,
-          team1_player1: team1player1 ? team1player1.golfer_id : '',
-          team1_player2: team1player2 ? team1player2.golfer_id : '',
-          team2_player1: team2player1 ? team2player1.golfer_id : '',
-          team2_player2: team2player2 ? team2player2.golfer_id : ''
-        });
+        if (isSkins) {
+          // Skins: restore as players[] array ordered by team_position
+          matchesData.push({
+            match_id: match.match_id,
+            players:  golfers.map(g => g.golfer_id)
+          });
+        } else {
+          // Standard team-based formats
+          const p1 = golfers.find(g => g.team_position === 1);
+          const p2 = golfers.find(g => g.team_position === 2);
+          const p3 = golfers.find(g => g.team_position === 3);
+          const p4 = golfers.find(g => g.team_position === 4);
+          matchesData.push({
+            match_id:      match.match_id,
+            team1_player1: p1 ? p1.golfer_id : '',
+            team1_player2: p2 ? p2.golfer_id : '',
+            team2_player1: p3 ? p3.golfer_id : '',
+            team2_player2: p4 ? p4.golfer_id : ''
+          });
+        }
       });
     }
+
+    // Apply Skins-specific labels (same as showMatchesScreen)
+    const matchesTitle = document.querySelector('#add-matches-container h2');
+    const addMatchBtn  = document.getElementById('add-match-btn');
+    if (matchesTitle) matchesTitle.textContent = isSkins ? 'Groups' : 'Matches';
+    if (addMatchBtn)  addMatchBtn.textContent  = isSkins ? '+ Add Group' : '+ Add Match';
 
     // Show matches screen
     document.getElementById('add-matches-container').style.display = 'block';
