@@ -622,6 +622,19 @@
   </div>
 </div>
 
+<!-- Delete Tournament Confirm -->
+<div id="delete-tournament-modal" style="display:none; position:fixed; inset:0; z-index:1100; background:rgba(0,0,0,0.55); align-items:center; justify-content:center;">
+  <div class="modal-box" style="max-width:360px;">
+    <div style="text-align:center; font-size:2.5rem; margin-bottom:var(--space-3);">🗑️</div>
+    <h3 class="modal-title" style="color:var(--color-action-danger);">Delete Tournament?</h3>
+    <p id="delete-tournament-modal-body" style="text-align:center; font-size:var(--font-size-sm); color:var(--color-text-secondary); font-weight:600; margin:var(--space-3) 0 var(--space-5);"></p>
+    <div style="display:flex; flex-direction:column; gap:var(--space-3);">
+      <button id="delete-tournament-confirm-btn" class="btn btn-danger-solid">Yes, delete this tournament</button>
+      <button id="delete-tournament-cancel-btn" class="btn btn-neutral">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- Delete Round Confirm -->
 <div id="delete-round-modal" style="display:none; position:fixed; inset:0; z-index:1100; background:rgba(0,0,0,0.55); align-items:center; justify-content:center;">
   <div class="modal-box" style="max-width:360px;">

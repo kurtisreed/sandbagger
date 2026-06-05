@@ -7296,6 +7296,8 @@ async function showEditTournamentForm(tournament) {
       Lock Handicaps for Tournament
     </button>
     <div id="edit-tournament-status" style="margin-top:0.5rem; font-size:0.9rem; text-align:center;"></div>
+    <hr style="border:none; border-top:1px solid var(--color-border); margin:var(--space-5) 0;">
+    <button id="delete-tournament-btn" class="btn btn-danger">🗑 Delete This Tournament</button>
   `;
 
   // Checkbox toggles row dim + team dropdown visibility
@@ -7316,6 +7318,10 @@ async function showEditTournamentForm(tournament) {
 
   document.getElementById('lock-handicaps-btn').addEventListener('click', () => {
     showLockHandicapsScreen(tournament);
+  });
+
+  document.getElementById('delete-tournament-btn').addEventListener('click', () => {
+    showDeleteTournamentModal(tournament.tournament_id, tournament.tournament_name);
   });
 }
 
@@ -10059,6 +10065,53 @@ function loadMyGroups() {
     .catch(() => {
       list.innerHTML = '<p style="color:var(--color-action-danger); font-size:var(--font-size-sm);">Could not load groups.</p>';
     });
+}
+
+function showDeleteTournamentModal(tournamentId, tournamentName) {
+  const modal      = document.getElementById('delete-tournament-modal');
+  const bodyEl     = document.getElementById('delete-tournament-modal-body');
+  const confirmBtn = document.getElementById('delete-tournament-confirm-btn');
+  const cancelBtn  = document.getElementById('delete-tournament-cancel-btn');
+
+  bodyEl.textContent = `"${tournamentName}" and all its rounds, matches, and scores will be permanently removed. This cannot be undone.`;
+  modal.style.display = 'flex';
+
+  const newConfirm = confirmBtn.cloneNode(true);
+  const newCancel  = cancelBtn.cloneNode(true);
+  confirmBtn.replaceWith(newConfirm);
+  cancelBtn.replaceWith(newCancel);
+
+  const closeModal = () => { modal.style.display = 'none'; };
+
+  newCancel.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+  newConfirm.addEventListener('click', () => {
+    newConfirm.textContent = 'Deleting…';
+    newConfirm.disabled = true;
+
+    fetch(`${API_BASE_URL}/api/delete_tournament.php`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tournament_id: parseInt(tournamentId) })
+    })
+    .then(r => r.json())
+    .then(data => {
+      closeModal();
+      if (data.success) {
+        document.getElementById('edit-tournament-container').style.display = 'none';
+        document.getElementById('user-dashboard').style.display = 'block';
+        loadUserTournaments(currentUser.golfer_id);
+      } else {
+        alert(data.error || 'Failed to delete tournament.');
+      }
+    })
+    .catch(() => {
+      closeModal();
+      alert('Network error — tournament was not deleted.');
+    });
+  });
 }
 
 function showDeleteRoundModal(roundId, tournamentId, roundName) {
