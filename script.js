@@ -3741,15 +3741,13 @@ function loadSkinsMatch() {
 
       currentMatchId = firstMatch.match_id;
 
-      // All players are individual — no partnerships
-      golfers = adjustHandicapsForMatch(
-        matchGolfers.map((row, idx) => ({
-          id:           row.golfer_id,
-          name:         row.first_name,
-          handicap:     calculatePlayingHandicap(row.handicap),
-          player_order: idx + 1
-        }))
-      );
+      // All players play their full calculated handicap — no lowest-handicap adjustment
+      golfers = matchGolfers.map((row, idx) => ({
+        id:           row.golfer_id,
+        name:         row.first_name,
+        handicap:     calculatePlayingHandicap(row.handicap),
+        player_order: idx + 1
+      }));
 
       strokeMaps = {};
       golfers.forEach(g => {
@@ -8987,6 +8985,12 @@ function loadGuysTripTournamentRound(roundId, tournamentId, roundName = '', form
 
   // Show the app content
   document.getElementById('app-content').style.display = 'block';
+
+  // Rename "My Match" tab to "My Group" for Skins
+  const myMatchTabBtn = document.querySelector('button[data-page="my-match"]');
+  if (myMatchTabBtn) {
+    myMatchTabBtn.textContent = formatId === 5 ? 'My Group' : 'My Match';
+  }
 
   // Default to My Match, but fall back to Tournament tab if no matchups assigned yet
   loadDefaultMatchTab(roundId, tournamentId, currentUser.golfer_id);
