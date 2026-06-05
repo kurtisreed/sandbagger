@@ -7041,7 +7041,8 @@ function loadUserTournaments(golferId) {
             const isAdmin = currentUser && currentUser.role === 'admin';
             const isGuysTrip = tournament.format_id === 4;
             const isRyderCup = tournament.format_id === 3;
-            const hasEditButton = isGuysTrip || isRyderCup;
+            const isSkins    = tournament.format_id === 5;
+            const hasEditButton = isGuysTrip || isRyderCup || isSkins;
             const hasScores = round.has_scores || false;
             const isLocked = hasScores;
 
@@ -7112,6 +7113,9 @@ function loadUserTournaments(golferId) {
             loadQuickRoundFromTournament(tournamentId, roundName);
           } else if (formatId === 4) {
             // Guys Trip tournament
+            loadGuysTripTournamentRound(roundId, tournamentId, roundName, formatId);
+          } else if (formatId === 5) {
+            // Skins tournament — round view coming soon
             loadGuysTripTournamentRound(roundId, tournamentId, roundName, formatId);
           } else {
             // Load regular tournament round
@@ -11385,6 +11389,9 @@ document.addEventListener('DOMContentLoaded', () => {
       showNewTournamentStep2();
     } else if (fId === 4) {
       // Guys Trip → Player Selection → Create
+      showGuysTripStep2();
+    } else if (fId === 5) {
+      // Skins → Player Selection → Create (same UI as Guys Trip, no teams)
       showGuysTripStep2();
     } else {
       errorEl.textContent = `Setup for "${formatName}" tournaments is coming soon.`;
