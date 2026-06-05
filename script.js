@@ -7716,10 +7716,17 @@ async function loadExistingMatches(tournamentId, roundId) {
 }
 
 async function showMatchesScreen(tournamentId) {
-  const formatId = parseInt(sessionStorage.getItem('add_round_format_id'));
+  const formatId   = parseInt(sessionStorage.getItem('add_round_format_id'));
   const isRyderCup = formatId === 3;
+  const isSkins    = formatId === 5;
 
   document.getElementById('add-matches-container').style.display = 'block';
+
+  // Adjust labels for Skins
+  const matchesTitle = document.querySelector('#add-matches-container h2');
+  const addMatchBtn  = document.getElementById('add-match-btn');
+  if (matchesTitle) matchesTitle.textContent = isSkins ? 'Groups' : 'Matches';
+  if (addMatchBtn)  addMatchBtn.textContent  = isSkins ? '+ Add Group' : '+ Add Match';
 
   // Reset save buttons to clean state
   const saveFromMatchesBtn = document.getElementById('save-round-from-matches-btn');
@@ -7746,21 +7753,104 @@ async function showMatchesScreen(tournamentId) {
 }
 
 function addNewMatch() {
+  const formatId  = parseInt(sessionStorage.getItem('add_round_format_id'));
   const matchIndex = matchesData.length;
-  const matchId = `new-${Date.now()}-${matchIndex}`;
+  const matchId   = `new-${Date.now()}-${matchIndex}`;
 
-  matchesData.push({
-    match_id: matchId,
-    team1_player1: '',
-    team1_player2: '',
-    team2_player1: '',
-    team2_player2: ''
-  });
-
+  if (formatId === 5) {
+    // Skins: individual players, no teams — start with 4 empty slots
+    matchesData.push({ match_id: matchId, players: ['', '', '', ''] });
+  } else {
+    matchesData.push({
+      match_id: matchId,
+      team1_player1: '', team1_player2: '',
+      team2_player1: '', team2_player2: ''
+    });
+  }
   renderMatches();
 }
 
+function renderSkinsMatches() {
+  const matchesList = document.getElementById('matches-list');
+  matchesList.innerHTML = '';
+
+  // All golfer IDs already assigned across all groups
+  const assignedSet = new Set();
+  matchesData.forEach(m => (m.players || []).forEach(id => { if (id) assignedSet.add(String(id)); }));
+
+  matchesData.forEach((match, groupIdx) => {
+    const players = match.players || ['', '', '', ''];
+    const groupDiv = document.createElement('div');
+    groupDiv.style.cssText = 'border:1px solid #ddd; padding:1rem; border-radius:8px; margin-bottom:1rem; background:white;';
+
+    const playerRows = players.map((pid, slotIdx) => {
+      const opts = tournamentPlayers.map(p => {
+        const taken = assignedSet.has(String(p.golfer_id)) && String(p.golfer_id) !== String(pid);
+        const hcp   = parseFloat(p.handicap) % 1 === 0 ? parseInt(p.handicap) : parseFloat(p.handicap).toFixed(1);
+        return `<option value="${p.golfer_id}" ${String(p.golfer_id) === String(pid) ? 'selected' : ''} ${taken ? 'disabled' : ''}>${p.first_name} ${p.last_name} (HCP ${hcp})${taken ? ' — assigned' : ''}</option>`;
+      }).join('');
+      return `
+        <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:0.5rem;">
+          <select class="skins-player-select" data-group="${groupIdx}" data-slot="${slotIdx}"
+            style="flex:1; padding:0.5rem; font-size:0.95rem; border:1px solid #ccc; border-radius:4px;">
+            <option value="">-- Player ${slotIdx + 1} --</option>
+            ${opts}
+          </select>
+          ${players.length > 1 ? `<button class="skins-remove-slot-btn" data-group="${groupIdx}" data-slot="${slotIdx}"
+            style="background:#dc3545; color:white; border:none; padding:0.35rem 0.6rem; border-radius:4px; cursor:pointer; font-size:0.85rem; flex-shrink:0;">✕</button>` : ''}
+        </div>`;
+    }).join('');
+
+    groupDiv.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+        <h3 style="margin:0; font-size:1.1rem;">Group ${groupIdx + 1}</h3>
+        <button class="skins-remove-group-btn" data-group="${groupIdx}"
+          style="background:#dc3545; color:white; border:none; padding:0.25rem 0.75rem; border-radius:4px; cursor:pointer; font-size:0.9rem;">Remove</button>
+      </div>
+      ${playerRows}
+      <button class="skins-add-slot-btn" data-group="${groupIdx}"
+        style="width:100%; padding:0.4rem; background:#e8e8e8; color:#333; border:1px dashed #aaa; border-radius:4px; cursor:pointer; font-size:0.9rem; margin-top:0.25rem;">+ Add Player</button>
+    `;
+    matchesList.appendChild(groupDiv);
+  });
+
+  // Player select changes
+  matchesList.querySelectorAll('.skins-player-select').forEach(sel => {
+    sel.addEventListener('change', function() {
+      matchesData[+this.dataset.group].players[+this.dataset.slot] = this.value;
+      renderSkinsMatches();
+    });
+  });
+
+  // Remove player slot
+  matchesList.querySelectorAll('.skins-remove-slot-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      matchesData[+this.dataset.group].players.splice(+this.dataset.slot, 1);
+      renderSkinsMatches();
+    });
+  });
+
+  // Add player slot
+  matchesList.querySelectorAll('.skins-add-slot-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      matchesData[+this.dataset.group].players.push('');
+      renderSkinsMatches();
+    });
+  });
+
+  // Remove whole group
+  matchesList.querySelectorAll('.skins-remove-group-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      matchesData.splice(+this.dataset.group, 1);
+      renderSkinsMatches();
+    });
+  });
+}
+
 function renderMatches() {
+  const formatId = parseInt(sessionStorage.getItem('add_round_format_id'));
+  if (formatId === 5) { renderSkinsMatches(); return; }
+
   const matchesList = document.getElementById('matches-list');
   matchesList.innerHTML = '';
 
@@ -11870,16 +11960,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const continueToTeeTimesBtn = document.getElementById('continue-to-tee-times-btn');
   if (continueToTeeTimesBtn) {
     continueToTeeTimesBtn.addEventListener('click', async () => {
-      // Check for duplicate players across all matches (ignoring empty slots)
+      // Check for duplicate players across all matches/groups (ignoring empty slots)
+      const _checkFormatId = parseInt(sessionStorage.getItem('add_round_format_id'));
       const allPlayers = [];
       matchesData.forEach(match => {
-        [match.team1_player1, match.team1_player2, match.team2_player1, match.team2_player2]
-          .filter(p => p)
-          .forEach(p => allPlayers.push(p));
+        const slots = _checkFormatId === 5
+          ? (match.players || [])
+          : [match.team1_player1, match.team1_player2, match.team2_player1, match.team2_player2];
+        slots.filter(p => p).forEach(p => allPlayers.push(p));
       });
       const uniquePlayers = new Set(allPlayers);
       if (uniquePlayers.size !== allPlayers.length) {
-        alert('A player cannot be in multiple matches. Please check your selections.');
+        alert('A player cannot be in multiple groups. Please check your selections.');
         return;
       }
 
@@ -11973,15 +12065,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Step 2: Save matches (always call when editing so removed matches get deleted)
     if (isEditingRound || matchesData.length > 0) {
+      const saveFormatId = parseInt(sessionStorage.getItem('add_round_format_id'));
+      const isSkinsSave  = saveFormatId === 5;
+
       const matchesPayload = matchesData.map((match, index) => ({
         match_id: match.match_id || null,
-        match_name: `Match ${index + 1} in ${roundData.round_name}`,
-        golfers: [
-          { golfer_id: parseInt(match.team1_player1), team_position: 1 },
-          { golfer_id: parseInt(match.team1_player2), team_position: 2 },
-          { golfer_id: parseInt(match.team2_player1), team_position: 3 },
-          { golfer_id: parseInt(match.team2_player2), team_position: 4 }
-        ].filter(g => !isNaN(g.golfer_id) && g.golfer_id > 0)
+        match_name: isSkinsSave ? `Group ${index + 1}` : `Match ${index + 1} in ${roundData.round_name}`,
+        golfers: isSkinsSave
+          ? (match.players || [])
+              .map((id, i) => ({ golfer_id: parseInt(id), team_position: i + 1 }))
+              .filter(g => !isNaN(g.golfer_id) && g.golfer_id > 0)
+          : [
+              { golfer_id: parseInt(match.team1_player1), team_position: 1 },
+              { golfer_id: parseInt(match.team1_player2), team_position: 2 },
+              { golfer_id: parseInt(match.team2_player1), team_position: 3 },
+              { golfer_id: parseInt(match.team2_player2), team_position: 4 }
+            ].filter(g => !isNaN(g.golfer_id) && g.golfer_id > 0)
       }));
 
       const matchesResponse = await fetch(`${API_BASE_URL}/api/save_guys_trip_matches.php`, {
@@ -12095,13 +12194,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const saveRoundFromMatchesBtn = document.getElementById('save-round-from-matches-btn');
   if (saveRoundFromMatchesBtn) {
     saveRoundFromMatchesBtn.addEventListener('click', async () => {
-      // Check for duplicate players across matches (ignoring empty slots)
+      // Check for duplicate players across matches/groups (ignoring empty slots)
       if (matchesData.length > 1) {
+        const _fmt = parseInt(sessionStorage.getItem('add_round_format_id'));
         const allPlayers = matchesData.flatMap(m =>
-          [m.team1_player1, m.team1_player2, m.team2_player1, m.team2_player2].filter(p => p)
+          _fmt === 5
+            ? (m.players || []).filter(p => p)
+            : [m.team1_player1, m.team1_player2, m.team2_player1, m.team2_player2].filter(p => p)
         );
         if (new Set(allPlayers).size !== allPlayers.length) {
-          alert('A player cannot be in multiple matches. Please check your selections.');
+          alert('A player cannot be in multiple groups. Please check your selections.');
           return;
         }
       }
