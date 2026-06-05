@@ -182,9 +182,11 @@ function loadPage(page) {
     container.id = "score-entry-content";
     content.appendChild(container);
 
-    // Check if this is a Guys Trip tournament
+    // Branch on format
     const formatId = parseInt(sessionStorage.getItem('selected_format_id'));
-    if (formatId === 4) {
+    if (formatId === 5) {
+      loadSkinsMatch();
+    } else if (formatId === 4) {
       loadGuysTripMatch();
     } else {
       loadTodaysMatch();
@@ -3689,6 +3691,204 @@ function loadTodaysMatch() {
     .catch(err => {
       console.error("Error loading match:", err);
     });
+}
+
+function loadSkinsMatch() {
+  const roundId      = sessionStorage.getItem('selected_round_id');
+  const tournamentId = sessionStorage.getItem('selected_tournament_id');
+  const golferId     = currentUser?.golfer_id || sessionStorage.getItem('golfer_id');
+  const container    = document.getElementById('score-entry-content');
+
+  if (!roundId || !tournamentId || !golferId) {
+    container.innerHTML = '<p>Missing round, tournament, or golfer information.</p>';
+    return;
+  }
+
+  const url = `${API_BASE_URL}/api/get_match_by_round.php?round_id=${roundId}&tournament_id=${tournamentId}&golfer_id=${golferId}`;
+
+  fetch(url, { credentials: 'include' })
+    .then(res => res.json())
+    .then(data => {
+      const matchGolfers = data.match;
+      holeInfo = data.holes;
+
+      if (data.error || !matchGolfers || matchGolfers.length === 0) {
+        container.innerHTML = `
+          <div class="no-match-card">
+            <img src="/images/cartoon.png" alt="Sandbagger" class="no-match-img">
+            <h2 class="no-match-title">No Group Yet</h2>
+            <p class="no-match-msg">You haven't been assigned to a group for this round yet. Check back soon!</p>
+          </div>`;
+        return;
+      }
+
+      const firstMatch = matchGolfers[0];
+      courses = {
+        course_name: firstMatch.course_name,
+        slope:       firstMatch.slope,
+        rating:      firstMatch.rating,
+        par:         firstMatch.par
+      };
+      tournamentHandicapPct = parseFloat(data.tournament_handicap_pct || 100);
+
+      // If already finalized, show scorecard
+      if (firstMatch.finalized && parseInt(firstMatch.finalized) === 1) {
+        loadMatchScorecard(firstMatch.match_id, 'score-entry-content');
+        return;
+      }
+
+      currentMatchId = firstMatch.match_id;
+
+      // All players are individual — no partnerships
+      golfers = adjustHandicapsForMatch(
+        matchGolfers.map((row, idx) => ({
+          id:           row.golfer_id,
+          name:         row.first_name,
+          handicap:     calculatePlayingHandicap(row.handicap),
+          player_order: idx + 1
+        }))
+      );
+
+      strokeMaps = {};
+      golfers.forEach(g => {
+        strokeMaps[g.id] = buildStrokeMapForGolfer(g.handicap, holeInfo);
+      });
+
+      // ── Build table ──────────────────────────────────────────────────────────
+      const table = document.createElement('table');
+      table.classList.add('score-table');
+
+      // Header: # | P | HI | Golfer1 | Golfer2 | …
+      const header = document.createElement('tr');
+      header.innerHTML = `<th>#</th><th>P</th><th>HI</th>` + golfers.map(g =>
+        `<th style="background:var(--color-brand-primary); color:#fff;">${g.name} (${parseFloat(g.handicap).toFixed(1)})</th>`
+      ).join('');
+      table.appendChild(header);
+
+      const frontPar = holeInfo.filter(h => h.hole_number <= 9).reduce((s, h) => s + (h.par || 0), 0);
+      const backPar  = holeInfo.filter(h => h.hole_number >= 10).reduce((s, h) => s + (h.par || 0), 0);
+
+      for (let i = 1; i <= 18; i++) {
+        const par = holeInfo.find(h => h.hole_number === i)?.par || '-';
+        const hi  = holeInfo.find(h => h.hole_number === i)?.handicap_index || '-';
+
+        const row = document.createElement('tr');
+        row.innerHTML = `<td>${i}</td><td>${par}</td><td>${hi}</td>` + golfers.map(g => {
+          const dots   = strokeDots(strokeMaps[g.id]?.[i] || 0);
+          const select = `<select data-hole="${i}" data-golfer="${g.id}">
+            <option value="">–</option>
+            ${[...Array(12).keys()].map(n => `<option value="${n+1}">${n+1}</option>`).join('')}
+          </select>`;
+          return `<td>${dots}${select}</td>`;
+        }).join('');
+        table.appendChild(row);
+
+        // Out subtotal after hole 9
+        if (i === 9) {
+          const outRow = document.createElement('tr');
+          outRow.classList.add('subtotal-row');
+          outRow.innerHTML = `<td>Out</td><td>${frontPar}</td><td></td>` +
+            golfers.map(g => `<td class="out-subtotal-cell" data-golfer="${g.id}">–</td>`).join('');
+          table.appendChild(outRow);
+        }
+
+        // In subtotal after hole 18
+        if (i === 18) {
+          const inRow = document.createElement('tr');
+          inRow.classList.add('subtotal-row');
+          inRow.innerHTML = `<td>In</td><td>${backPar}</td><td></td>` +
+            golfers.map(g => `<td class="in-subtotal-cell" data-golfer="${g.id}">–</td>`).join('');
+          table.appendChild(inRow);
+        }
+      }
+
+      // Total row
+      const totalRow = document.createElement('tr');
+      totalRow.id = 'totals-row';
+      totalRow.innerHTML = `<td colspan="3" style="font-weight:700; text-align:left; padding-left:0.5rem;">Total</td>` +
+        golfers.map(g => `<td class="totals-cell" data-golfer="${g.id}">–</td>`).join('');
+      table.appendChild(totalRow);
+
+      container.appendChild(table);
+
+      // Finalize button
+      let finalizeButton = document.getElementById('finalize-results-btn');
+      if (!finalizeButton) {
+        finalizeButton = document.createElement('button');
+        finalizeButton.id = 'finalize-results-btn';
+        finalizeButton.textContent = 'Finalize Round';
+        finalizeButton.style.display = 'none';
+        container.appendChild(finalizeButton);
+      }
+      finalizeButton.onclick = function() {
+        fetch(`${API_BASE_URL}/api/finalize_match_result.php`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ match_id: currentMatchId, points: [] })
+        })
+        .then(res => res.json())
+        .then(result => {
+          if (result.success) {
+            finalizeButton.style.display = 'none';
+            loadSkinsMatch();
+          } else {
+            alert('Error finalizing: ' + (result.error || 'Unknown error'));
+          }
+        });
+      };
+
+      // Load existing scores
+      fetch(`${API_BASE_URL}/api/get_scores.php?match_id=${currentMatchId}`, { credentials: 'include' })
+        .then(res => res.json())
+        .then(scores => {
+          scores.forEach(score => {
+            const sel = document.querySelector(`select[data-hole="${score.hole_number}"][data-golfer="${score.golfer_id}"]`);
+            if (sel) {
+              sel.value = score.strokes;
+              const cell = sel.closest('td');
+              if (cell) {
+                const par = holeInfo.find(h => h.hole_number == score.hole_number)?.par;
+                const strokes = parseInt(score.strokes);
+                cell.classList.remove('score-birdie', 'score-bogey', 'score-par', 'score-eagle');
+                if (!isNaN(par) && !isNaN(strokes)) {
+                  if (strokes <= par - 2) cell.classList.add('score-eagle');
+                  else if (strokes === par - 1) cell.classList.add('score-birdie');
+                  else if (strokes === par) cell.classList.add('score-par');
+                  else cell.classList.add('score-bogey');
+                }
+              }
+            }
+          });
+          applyPendingScores(currentMatchId);
+          updateTotalScores();
+          updateFinalizeButtonVisibility();
+        })
+        .catch(err => console.error('Error loading scores:', err));
+
+      // Change listeners
+      table.querySelectorAll('select').forEach(select => {
+        select.addEventListener('change', function() {
+          const strokes   = this.value;
+          const hole      = this.dataset.hole;
+          const golfer_id = this.dataset.golfer;
+          if (!strokes || !golfer_id || !hole) return;
+
+          saveScore({
+            match_id:  currentMatchId,
+            golfer_id: parseInt(golfer_id),
+            hole:      parseInt(hole),
+            strokes:   parseInt(strokes)
+          }, () => {
+            refreshScores();
+            updateTotalScores();
+            updateFinalizeButtonVisibility();
+            updateScoreCellClasses();
+          });
+        });
+      });
+    })
+    .catch(err => console.error('Error loading Skins match:', err));
 }
 
 function loadGuysTripMatch() {
