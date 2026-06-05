@@ -24,31 +24,62 @@ if (!isset($conn) || $conn->connect_error) {
   }
 }
 
-// Get tournaments the golfer is enrolled in (scoped to org)
-// Include future tournaments and those within the past 2 weeks
-$sql = "
-SELECT DISTINCT
-  t.tournament_id,
-  t.name AS tournament_name,
-  t.start_date,
-  t.end_date,
-  t.format_id,
-  t.handicap_pct,
-  r.round_id,
-  r.round_name,
-  r.round_date,
-  c.course_name
-FROM tournament_golfers tg
-JOIN tournaments t ON tg.tournament_id = t.tournament_id AND t.org_id = ?
-LEFT JOIN rounds r ON t.tournament_id = r.tournament_id
-LEFT JOIN courses c ON r.course_id = c.course_id
-WHERE tg.golfer_id = ?
-  AND t.end_date >= DATE_SUB(CURDATE(), INTERVAL 2 WEEK)
-ORDER BY t.start_date DESC, r.round_date ASC, r.round_id ASC
-";
+// Admins see ALL org tournaments; regular users see only those they're enrolled in.
+// Both cases include a `is_member` flag so the frontend can badge non-member tournaments.
+$isAdmin = ($currentRole === 'admin');
 
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("ii", $currentOrgId, $golferId);
+if ($isAdmin) {
+  // All org tournaments + membership flag via LEFT JOIN
+  $sql = "
+  SELECT DISTINCT
+    t.tournament_id,
+    t.name AS tournament_name,
+    t.start_date,
+    t.end_date,
+    t.format_id,
+    t.handicap_pct,
+    r.round_id,
+    r.round_name,
+    r.round_date,
+    c.course_name,
+    CASE WHEN tg.golfer_id IS NOT NULL THEN 1 ELSE 0 END AS is_member
+  FROM tournaments t
+  LEFT JOIN tournament_golfers tg ON tg.tournament_id = t.tournament_id AND tg.golfer_id = ?
+  LEFT JOIN rounds r ON t.tournament_id = r.tournament_id
+  LEFT JOIN courses c ON r.course_id = c.course_id
+  WHERE t.org_id = ?
+    AND t.end_date >= DATE_SUB(CURDATE(), INTERVAL 2 WEEK)
+  ORDER BY t.start_date DESC, r.round_date ASC, r.round_id ASC
+  ";
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param("ii", $golferId, $currentOrgId);
+} else {
+  // Regular user — only enrolled tournaments
+  $sql = "
+  SELECT DISTINCT
+    t.tournament_id,
+    t.name AS tournament_name,
+    t.start_date,
+    t.end_date,
+    t.format_id,
+    t.handicap_pct,
+    r.round_id,
+    r.round_name,
+    r.round_date,
+    c.course_name,
+    1 AS is_member
+  FROM tournament_golfers tg
+  JOIN tournaments t ON tg.tournament_id = t.tournament_id AND t.org_id = ?
+  LEFT JOIN rounds r ON t.tournament_id = r.tournament_id
+  LEFT JOIN courses c ON r.course_id = c.course_id
+  WHERE tg.golfer_id = ?
+    AND t.end_date >= DATE_SUB(CURDATE(), INTERVAL 2 WEEK)
+  ORDER BY t.start_date DESC, r.round_date ASC, r.round_id ASC
+  ";
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param("ii", $currentOrgId, $golferId);
+}
+
 $stmt->execute();
 $result = $stmt->get_result();
 
@@ -65,6 +96,7 @@ while ($row = $result->fetch_assoc()) {
       'end_date' => $row['end_date'],
       'format_id' => $row['format_id'],
       'handicap_pct' => $row['handicap_pct'],
+      'is_member' => (bool) $row['is_member'],
       'rounds' => []
     ];
   }

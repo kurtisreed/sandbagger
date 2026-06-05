@@ -7019,14 +7019,16 @@ function loadUserTournaments(golferId) {
         }
 
         const isAdminCard = currentUser && currentUser.role === 'admin';
+        const isMember    = tournament.is_member !== false; // true for all non-admin; false when admin not enrolled
         html += `
-          <div class="tournament-card">
+          <div class="tournament-card${isMember ? '' : ' tournament-card-observer'}">
             <div style="position:relative; margin-bottom:var(--space-1);">
               <h4 class="tournament-card-title" style="padding-right:${isAdminCard ? '4rem' : '0'};">${tournament.tournament_name}</h4>
               ${isAdminCard ? `
                 <button class="btn-badge btn-badge-edit edit-tournament-btn" data-tournament-id="${tournament.tournament_id}">Edit</button>
               ` : ''}
             </div>
+            ${!isMember ? `<p class="tournament-not-enrolled-badge">👀 Admin view — not enrolled</p>` : ''}
             ${currentUser && currentUser.org_name ? `<p class="tournament-card-meta">${currentUser.org_name}</p>` : ''}
             ${teamSubtitle}
             <p class="tournament-card-dates">${tournament.start_date} — ${tournament.end_date}</p>
