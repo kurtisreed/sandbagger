@@ -7072,6 +7072,12 @@ function loadUserTournaments(golferId) {
                   `
                 ) : ''}
               </div>
+              ${isAdmin ? `
+                <button class="delete-round-btn"
+                  data-round-id="${round.round_id}"
+                  data-tournament-id="${tournament.tournament_id}"
+                  data-round-name="${round.round_name}">🗑 Delete round</button>
+              ` : ''}
             `;
           });
         } else {
@@ -7145,6 +7151,14 @@ function loadUserTournaments(golferId) {
           const roundId = this.dataset.roundId;
           sessionStorage.setItem('add_round_format_id', this.dataset.formatId || '');
           editRound(tournamentId, roundId);
+        });
+      });
+
+      // Add click handlers for "Delete round" buttons
+      document.querySelectorAll('.delete-round-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          showDeleteRoundModal(this.dataset.roundId, this.dataset.tournamentId, this.dataset.roundName);
         });
       });
     })
@@ -10034,6 +10048,52 @@ function loadMyGroups() {
     .catch(() => {
       list.innerHTML = '<p style="color:var(--color-action-danger); font-size:var(--font-size-sm);">Could not load groups.</p>';
     });
+}
+
+function showDeleteRoundModal(roundId, tournamentId, roundName) {
+  const modal      = document.getElementById('delete-round-modal');
+  const bodyEl     = document.getElementById('delete-round-modal-body');
+  const confirmBtn = document.getElementById('delete-round-confirm-btn');
+  const cancelBtn  = document.getElementById('delete-round-cancel-btn');
+
+  bodyEl.textContent = `"${roundName}" and all its matches, scores, and tee times will be permanently removed. This cannot be undone.`;
+  modal.style.display = 'flex';
+
+  // Clone buttons to remove any prior listeners
+  const newConfirm = confirmBtn.cloneNode(true);
+  const newCancel  = cancelBtn.cloneNode(true);
+  confirmBtn.replaceWith(newConfirm);
+  cancelBtn.replaceWith(newCancel);
+
+  const closeModal = () => { modal.style.display = 'none'; };
+
+  newCancel.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+  newConfirm.addEventListener('click', () => {
+    newConfirm.textContent = 'Deleting…';
+    newConfirm.disabled = true;
+
+    fetch(`${API_BASE_URL}/api/delete_round.php`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ round_id: parseInt(roundId), tournament_id: parseInt(tournamentId) })
+    })
+    .then(r => r.json())
+    .then(data => {
+      closeModal();
+      if (data.success) {
+        loadUserTournaments(currentUser.golfer_id);
+      } else {
+        alert(data.error || 'Failed to delete round.');
+      }
+    })
+    .catch(() => {
+      closeModal();
+      alert('Network error — round was not deleted.');
+    });
+  });
 }
 
 function openSwitchGroupModal(orgs) {

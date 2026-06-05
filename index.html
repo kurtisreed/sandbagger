@@ -620,6 +620,19 @@
   </div>
 </div>
 
+<!-- Delete Round Confirm -->
+<div id="delete-round-modal" style="display:none; position:fixed; inset:0; z-index:1100; background:rgba(0,0,0,0.55); align-items:center; justify-content:center;">
+  <div class="modal-box" style="max-width:360px;">
+    <div style="text-align:center; font-size:2.5rem; margin-bottom:var(--space-3);">🗑️</div>
+    <h3 class="modal-title" style="color:var(--color-action-danger);">Delete Round?</h3>
+    <p id="delete-round-modal-body" style="text-align:center; font-size:var(--font-size-sm); color:var(--color-text-secondary); font-weight:600; margin:var(--space-3) 0 var(--space-5);"></p>
+    <div style="display:flex; flex-direction:column; gap:var(--space-3);">
+      <button id="delete-round-confirm-btn" class="btn btn-danger-solid">Yes, delete this round</button>
+      <button id="delete-round-cancel-btn" class="btn btn-neutral">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- Switch Group -->
 <div id="switch-group-modal" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
   <div class="modal-box" style="max-width:380px;">

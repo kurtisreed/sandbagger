@@ -1838,3 +1838,21 @@ h3 {
   font-weight: 600;
   margin-top: 1px;
 }
+
+/* ── Delete round button ─────────────────────────────────────────────────── */
+.delete-round-btn {
+  display: block;
+  width: 100%;
+  text-align: right;
+  background: none;
+  border: none;
+  color: var(--color-action-danger);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  font-family: var(--font-family);
+  padding: var(--space-1) var(--space-2) var(--space-2);
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+.delete-round-btn:hover { opacity: 1; }
