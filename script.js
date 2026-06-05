@@ -8026,6 +8026,16 @@ function addNewTeeTime() {
 }
 
 function getMatchDisplayName(match) {
+  // Skins format: players[] array, no teams
+  if (Array.isArray(match.players)) {
+    const names = match.players
+      .map(id => tournamentPlayers.find(p => p.golfer_id == id))
+      .filter(Boolean)
+      .map(p => p.first_name);
+    return names.length ? names.join(', ') : 'Empty Group';
+  }
+
+  // Standard team-based format
   const p1 = tournamentPlayers.find(p => p.golfer_id == match.team1_player1);
   const p2 = tournamentPlayers.find(p => p.golfer_id == match.team1_player2);
   const p3 = tournamentPlayers.find(p => p.golfer_id == match.team2_player1);
@@ -8041,13 +8051,17 @@ function renderTeeTimes() {
   const teeTimesList = document.getElementById('tee-times-list');
   teeTimesList.innerHTML = '';
 
+  const _ttFormatId = parseInt(sessionStorage.getItem('add_round_format_id'));
+  const _isSkinsTT  = _ttFormatId === 5;
+  const _matchLabel = _isSkinsTT ? 'Group' : 'Match';
+
   // Build set of all assigned match IDs across all tee times
   const allAssigned = new Set();
   teeTimesData.forEach(tt => {
     (tt.match_ids || []).forEach(mid => { if (mid) allAssigned.add(mid); });
   });
 
-  // Generate match options for a specific slot (excludes that slot's current value from "taken" set)
+  // Generate match/group options for a specific slot
   const generateMatchOptions = (currentMatchId) => {
     return matchesData.map((match, matchIdx) => {
       const matchId = `match-${matchIdx}`;
@@ -8063,7 +8077,7 @@ function renderTeeTimes() {
     const matchSlots = (teeTime.match_ids || []).map((matchId, slotIdx) => `
       <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem; align-items:center; overflow:hidden;">
         <select class="tee-time-match-select" data-tee-index="${index}" data-slot-index="${slotIdx}" style="flex:1; min-width:0; padding:0.5rem; font-size:0.95rem; border:1px solid #ccc; border-radius:4px; overflow:hidden; text-overflow:ellipsis;">
-          <option value="">-- Select Match --</option>
+          <option value="">-- Select ${_matchLabel} --</option>
           ${generateMatchOptions(matchId)}
         </select>
         <button class="remove-match-from-tee-btn" data-tee-index="${index}" data-slot-index="${slotIdx}" style="background:#dc3545; color:white; border:none; padding:0.4rem 0.6rem; border-radius:4px; cursor:pointer; font-size:0.85rem; flex-shrink:0;">✕</button>
@@ -8095,9 +8109,9 @@ function renderTeeTimes() {
       </div>
 
       <div>
-        <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Matches</label>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">${_matchLabel}s</label>
         ${matchSlots}
-        <button class="add-match-to-tee-btn" data-tee-index="${index}" style="width: 100%; padding: 0.4rem; background: #e8e8e8; color: #333; border: 1px dashed #aaa; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">+ Add Match</button>
+        <button class="add-match-to-tee-btn" data-tee-index="${index}" style="width: 100%; padding: 0.4rem; background: #e8e8e8; color: #333; border: 1px dashed #aaa; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">+ Add ${_matchLabel}</button>
       </div>
     `;
 
