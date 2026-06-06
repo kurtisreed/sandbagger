@@ -6602,7 +6602,6 @@ async function loadTournamentPage(container) {
                 tournamentHandicapPct = parseFloat(courses[0].handicap_pct);
             }
             renderHandicapTable(container, courses, golfers);
-            renderCoursePDFLinks(container, courses); // Assuming this function exists to render course PDFs
         } else {
             console.error("Handicap Table Error:", handicapResult.reason);
             renderErrorWidget(container, 'Handicap Table');
@@ -6730,7 +6729,6 @@ async function loadSkinsTournamentPage(container) {
         tournamentHandicapPct = parseFloat(courses[0].handicap_pct);
       }
       renderHandicapTable(container, courses, golfers);
-      renderCoursePDFLinks(container, courses);
     } else {
       renderErrorWidget(container, 'Handicap Table');
     }
@@ -6805,7 +6803,6 @@ async function loadGuysTripTournamentPage(container) {
                 tournamentHandicapPct = parseFloat(courses[0].handicap_pct);
             }
             renderHandicapTable(container, courses, golfers);
-            renderCoursePDFLinks(container, courses);
         } else {
             console.error("Handicap Table Error:", handicapResult.reason);
             renderErrorWidget(container, 'Handicap Table');
