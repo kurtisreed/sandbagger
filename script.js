@@ -6919,8 +6919,8 @@ function loadMatchScorecard(match_id, container_id = "today-summary") {
       // Header
       const header = document.createElement("tr");
       header.innerHTML = `<th></th><th>#</th><th>P</th><th>HI</th>` + golfers.map(golfer => {
-        let bgColor = golfer.team_color || ""; // Use dynamic team color
-        let txtColor = pickContrastColorFromHex(bgColor);
+        let bgColor = golfer.team_color || "var(--color-brand-primary)";
+        let txtColor = golfer.team_color ? pickContrastColorFromHex(golfer.team_color) : "#fff";
         return `<th style="background-color: ${bgColor}; color: ${txtColor};">${golfer.name} (${parseFloat(golfer.handicap).toFixed(1)})</th>`;
       }).join("");
       table.appendChild(header);
