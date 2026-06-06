@@ -3809,7 +3809,13 @@ function loadSkinsMatch() {
         golfers.map(g => `<td class="totals-cell" data-golfer="${g.id}">–</td>`).join('');
       table.appendChild(totalRow);
 
-      // Finalize button — placed BEFORE the table wrapper so it stays reachable
+      // Wrap in scroll container so sticky header works
+      const tableWrapper = document.createElement('div');
+      tableWrapper.className = 'skins-table-wrapper';
+      tableWrapper.appendChild(table);
+      container.appendChild(tableWrapper);
+
+      // Finalize button
       let finalizeButton = document.getElementById('finalize-results-btn');
       if (!finalizeButton) {
         finalizeButton = document.createElement('button');
@@ -3835,12 +3841,6 @@ function loadSkinsMatch() {
           }
         });
       };
-
-      // Wrap table in scroll container so sticky header works — added AFTER the button
-      const tableWrapper = document.createElement('div');
-      tableWrapper.className = 'skins-table-wrapper';
-      tableWrapper.appendChild(table);
-      container.appendChild(tableWrapper);
 
       // Load existing scores
       fetch(`${API_BASE_URL}/api/get_scores.php?match_id=${currentMatchId}`, { credentials: 'include' })
