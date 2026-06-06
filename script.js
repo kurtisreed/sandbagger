@@ -6702,7 +6702,14 @@ async function loadSkinsTournamentPage(container) {
 
     const [grossResult, netResult, roundsResult, handicapResult] = results;
 
-    // Net Leaderboard (most important for skins — show first)
+    // Rounds & Groups — first so users can see who's playing what
+    if (roundsResult.status === 'fulfilled') {
+      renderSkinsRoundsAndGroups(container, roundsResult.value);
+    } else {
+      renderErrorWidget(container, 'Rounds & Groups');
+    }
+
+    // Net Leaderboard
     if (netResult.status === 'fulfilled') {
       renderGuysTripNetLeaderboard(container, netResult.value);
     } else {
@@ -6714,13 +6721,6 @@ async function loadSkinsTournamentPage(container) {
       renderGuysTripGrossLeaderboard(container, grossResult.value);
     } else {
       renderErrorWidget(container, 'Gross Leaderboard');
-    }
-
-    // Rounds & Groups
-    if (roundsResult.status === 'fulfilled') {
-      renderSkinsRoundsAndGroups(container, roundsResult.value);
-    } else {
-      renderErrorWidget(container, 'Rounds & Groups');
     }
 
     // Playing Handicaps
