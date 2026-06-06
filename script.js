@@ -5308,7 +5308,7 @@ function loadSkinsSummary() {
         const bb = calcGroupBestBall(sortedGolfers, match.scores || []);
         const bbLabel = bb
           ? `<span style="font-size:var(--font-size-xs); font-weight:700; color:${bb.toPar <= 0 ? 'var(--color-action-success)' : 'var(--color-action-danger)'};">
-               Best Ball: ${toParStr(bb.toPar)} thru ${bb.holesPlayed}
+               Team Best Ball: ${toParStr(bb.toPar)} thru ${bb.holesPlayed}
              </span>`
           : `<span style="font-size:var(--font-size-xs); color:var(--color-text-muted);">No scores yet</span>`;
 
