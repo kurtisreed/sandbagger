@@ -6632,7 +6632,8 @@ function renderSkinsRoundsAndGroups(parentContainer, rounds) {
     roundsDiv.appendChild(heading);
 
     const table = document.createElement('table');
-    table.className = 'leaderboard-table matchup-table';
+    table.className = 'leaderboard-table';
+    table.style.cssText = 'width:100%; table-layout:auto;';
 
     if (!round.tee_times || round.tee_times.length === 0) {
       table.innerHTML = '<tr><td colspan="2" style="text-align:center;">No tee times</td></tr>';
@@ -6640,11 +6641,11 @@ function renderSkinsRoundsAndGroups(parentContainer, rounds) {
       round.tee_times.forEach(teeTime => {
         if (!teeTime.matches || teeTime.matches.length === 0) {
           const row = document.createElement('tr');
-          row.innerHTML = `<td>${formatTeeTime(teeTime.time)}</td><td style="text-align:center;">Groups not yet assigned</td>`;
+          row.innerHTML = `<td style="width:15%; white-space:nowrap;">${formatTeeTime(teeTime.time)}</td><td>Groups not yet assigned</td>`;
           table.appendChild(row);
         } else {
           teeTime.matches.forEach((match, idx) => {
-            // All golfers are individual — just list names
+            // All golfers are individual — list names in one full-width column
             const names = match.golfers
               .sort((a, b) => a.player_order - b.player_order)
               .map(g => g.name).join(', ');
@@ -6660,7 +6661,7 @@ function renderSkinsRoundsAndGroups(parentContainer, rounds) {
             }
 
             if (idx === 0) {
-              row.innerHTML = `<td rowspan="${teeTime.matches.length}">${formatTeeTime(teeTime.time)}</td><td>${names}</td>`;
+              row.innerHTML = `<td style="width:15%; white-space:nowrap;" rowspan="${teeTime.matches.length}">${formatTeeTime(teeTime.time)}</td><td>${names}</td>`;
             } else {
               row.innerHTML = `<td>${names}</td>`;
             }
