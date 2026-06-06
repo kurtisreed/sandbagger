@@ -11,7 +11,7 @@ $data = json_decode(file_get_contents('php://input'), true);
 $match_id = $data['match_id'] ?? null;
 $points = $data['points'] ?? null;
 
-if (!$match_id || !$points || !is_array($points)) {
+if (!$match_id || !isset($points) || !is_array($points)) {
     echo json_encode(['error' => 'Missing or invalid data']);
     exit;
 }
