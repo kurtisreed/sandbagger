@@ -1855,3 +1855,17 @@ h3 {
   padding: 2px var(--space-3);
   margin-bottom: var(--space-2);
 }
+
+/* ── Skins score table scroll wrapper (makes sticky header work) ─────────── */
+.skins-table-wrapper {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: calc(100svh - 155px);
+  position: relative;
+  -webkit-overflow-scrolling: touch;
+}
+.skins-table-wrapper .score-table th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}

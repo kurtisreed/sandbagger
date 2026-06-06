@@ -3809,7 +3809,11 @@ function loadSkinsMatch() {
         golfers.map(g => `<td class="totals-cell" data-golfer="${g.id}">–</td>`).join('');
       table.appendChild(totalRow);
 
-      container.appendChild(table);
+      // Wrap in scroll container so sticky header works
+      const tableWrapper = document.createElement('div');
+      tableWrapper.className = 'skins-table-wrapper';
+      tableWrapper.appendChild(table);
+      container.appendChild(tableWrapper);
 
       // Finalize button
       let finalizeButton = document.getElementById('finalize-results-btn');
