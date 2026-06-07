@@ -10485,6 +10485,48 @@ function loadEditGolfersPage() {
   });
 
   refreshGolferList();
+
+  // Refresh All from GHIN button
+  const ghinBtn    = document.getElementById('ghin-refresh-btn');
+  const ghinStatus = document.getElementById('ghin-refresh-status');
+  if (ghinBtn) {
+    const freshBtn = ghinBtn.cloneNode(true);
+    ghinBtn.replaceWith(freshBtn);
+    freshBtn.addEventListener('click', () => {
+      freshBtn.disabled = true;
+      freshBtn.textContent = '⏳ Fetching from GHIN…';
+      ghinStatus.style.display = 'block';
+      ghinStatus.style.color = 'var(--color-text-muted)';
+      ghinStatus.textContent = 'Contacting GHIN…';
+
+      fetch(`${API_BASE_URL}/api/refresh_ghin_handicaps.php`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      .then(r => r.json())
+      .then(data => {
+        freshBtn.disabled = false;
+        freshBtn.textContent = '⛳ Refresh Handicaps from GHIN';
+        if (data.error) {
+          ghinStatus.style.color = 'var(--color-action-danger)';
+          ghinStatus.textContent = data.error;
+          return;
+        }
+        const msg = `✓ Updated ${data.updated} golfer${data.updated !== 1 ? 's' : ''}` +
+          (data.skipped ? `, ${data.skipped} skipped` : '') + '.';
+        ghinStatus.style.color = data.updated > 0 ? 'var(--color-action-success)' : 'var(--color-text-muted)';
+        ghinStatus.textContent = msg;
+        if (data.updated > 0) refreshGolferList();
+      })
+      .catch(() => {
+        freshBtn.disabled = false;
+        freshBtn.textContent = '⛳ Refresh Handicaps from GHIN';
+        ghinStatus.style.color = 'var(--color-action-danger)';
+        ghinStatus.textContent = 'Network error. Please try again.';
+      });
+    });
+  }
 }
 
 function refreshGolferList() {
@@ -10520,11 +10562,14 @@ function renderGolferCard(g, list) {
     const pendingBadge = !g.user_id
       ? `<span title="This golfer hasn't created an account yet" style="font-size:0.7rem; font-weight:600; color:#888; background:#f0f0f0; border:1px solid #ddd; border-radius:4px; padding:0.1rem 0.4rem; margin-left:0.4rem; vertical-align:middle;">Pending</span>`
       : '';
+    const ghinBadge = g.ghin_number
+      ? `<span style="font-size:0.75rem; color:#888; margin-left:0.4rem;">GHIN: ${g.ghin_number}</span>`
+      : '';
     card.innerHTML = `
       <div style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem;">
         <div>
           <span style="font-weight:600; font-size:1rem;">${g.first_name} ${g.last_name}</span>${pendingBadge}
-          <span style="color:#888; font-size:0.85rem; margin-left:0.5rem;">Hdcp: ${g.handicap}</span>
+          <span style="color:#888; font-size:0.85rem; margin-left:0.5rem;">Hdcp: ${g.handicap}</span>${ghinBadge}
         </div>
         <div style="display:flex; gap:0.4rem; flex-shrink:0;">
           <button class="golfer-edit-btn" style="padding:0.35rem 0.75rem; background:#f0e6ff; color:#4F2185; border:none; border-radius:4px; font-size:0.85rem; font-weight:bold; cursor:pointer;">Edit</button>
@@ -10545,8 +10590,10 @@ function renderGolferCard(g, list) {
           <input class="ef-last" type="text" value="${g.last_name}" placeholder="Last Name"
             style="flex:1; padding:0.5rem; font-size:0.95rem; border:1px solid #ccc; border-radius:4px;">
         </div>
-        <input class="ef-hcp" type="number" step="0.1" value="${g.handicap}" placeholder="Handicap"
+        <input class="ef-hcp" type="number" step="0.1" value="${g.handicap}" placeholder="Handicap Index"
           style="width:100%; padding:0.5rem; font-size:0.95rem; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
+        <input class="ef-ghin" type="text" value="${g.ghin_number || ''}" placeholder="GHIN # (optional, 7 digits)"
+          style="width:100%; padding:0.5rem; font-size:0.95rem; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;" maxlength="20">
         <div style="display:flex; gap:0.4rem;">
           <button class="ef-save" style="flex:1; padding:0.55rem; background:#4F2185; color:white; border:none; border-radius:4px; font-size:0.9rem; font-weight:bold; cursor:pointer;">Save</button>
           <button class="ef-cancel" style="flex:1; padding:0.55rem; background:#eee; color:#333; border:none; border-radius:4px; font-size:0.9rem; cursor:pointer;">Cancel</button>
@@ -10559,6 +10606,7 @@ function renderGolferCard(g, list) {
       const first  = card.querySelector('.ef-first').value.trim();
       const last   = card.querySelector('.ef-last').value.trim();
       const hcp    = parseFloat(card.querySelector('.ef-hcp').value);
+      const ghin   = card.querySelector('.ef-ghin').value.trim() || null;
       const efStatus = card.querySelector('.ef-status');
       if (!first || !last) { efStatus.textContent = 'Name is required.'; efStatus.style.color = 'red'; return; }
 
@@ -10568,12 +10616,12 @@ function renderGolferCard(g, list) {
       fetch(`${API_BASE_URL}/api/golfers.php?golfer_id=${g.golfer_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ first_name: first, last_name: last, handicap: hcp }),
+        body: JSON.stringify({ first_name: first, last_name: last, handicap: hcp, ghin_number: ghin }),
         credentials: 'include'
       })
         .then(r => r.json())
         .then(() => {
-          g.first_name = first; g.last_name = last; g.handicap = hcp;
+          g.first_name = first; g.last_name = last; g.handicap = hcp; g.ghin_number = ghin;
           showView();
           document.getElementById('edit-golfers-status').textContent = `✓ ${first} ${last} updated.`;
           document.getElementById('edit-golfers-status').style.color = '#4CAF50';
