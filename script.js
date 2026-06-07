@@ -6821,6 +6821,7 @@ function loadMatchScorecard(match_id, container_id = "today-summary") {
   const tournamentId = sessionStorage.getItem('selected_tournament_id');
   const formatId = parseInt(sessionStorage.getItem('selected_format_id'));
   const isGuysTripFormat = formatId === 4;
+  const isSkinsFormat    = formatId === 5;
 
   fetch(`${API_BASE_URL}/api/get_match_by_id.php?match_id=${match_id}&tournament_id=${tournamentId}`, { credentials: 'include' })
     .then(res => res.json())
@@ -6900,9 +6901,11 @@ function loadMatchScorecard(match_id, container_id = "today-summary") {
         }
 
 
-      // Adjust handicaps relative to lowest in this match
-      const minHcpMatch = Math.min(...golfers.map(g => g.handicap));
-      golfers.forEach(g => { g.handicap = g.handicap - minHcpMatch; });
+      // Adjust handicaps relative to lowest — skip for Skins (straight handicaps)
+      if (!isSkinsFormat) {
+        const minHcpMatch = Math.min(...golfers.map(g => g.handicap));
+        golfers.forEach(g => { g.handicap = g.handicap - minHcpMatch; });
+      }
 
       strokeMaps = {};
       golfers.forEach(g => {
