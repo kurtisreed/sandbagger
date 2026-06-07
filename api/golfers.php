@@ -16,7 +16,7 @@ switch ($method) {
     if ($id) {
       // Fetch one golfer (scoped to org)
       $stmt = $conn->prepare("
-        SELECT golfer_id, first_name, last_name, handicap, ghin_number, user_id
+        SELECT golfer_id, first_name, last_name, handicap, user_id
           FROM golfers
          WHERE golfer_id = ?
            AND org_id = ?
@@ -28,7 +28,7 @@ switch ($method) {
     } else {
       // Fetch all golfers for this org
       $stmt = $conn->prepare("
-        SELECT golfer_id, first_name, last_name, handicap, ghin_number, user_id
+        SELECT golfer_id, first_name, last_name, handicap, user_id
           FROM golfers
          WHERE org_id = ?
            AND active = 1
@@ -59,18 +59,17 @@ switch ($method) {
   case 'PUT':
     requireAdmin();
     // Update an existing golfer (must belong to this org)
-    $data       = json_decode(file_get_contents('php://input'), true);
-    $firstName  = trim($data['first_name']  ?? '');
-    $lastName   = trim($data['last_name']   ?? '');
-    $handicap   = (float)($data['handicap'] ?? 0);
-    $ghinNumber = isset($data['ghin_number']) ? trim($data['ghin_number']) : null;
+    $data      = json_decode(file_get_contents('php://input'), true);
+    $firstName = trim($data['first_name'] ?? '');
+    $lastName  = trim($data['last_name']  ?? '');
+    $handicap  = (float)($data['handicap'] ?? 0);
     $stmt = $conn->prepare("
       UPDATE golfers
-         SET first_name = ?, last_name = ?, handicap = ?, ghin_number = ?
+         SET first_name = ?, last_name = ?, handicap = ?
        WHERE golfer_id = ?
          AND org_id = ?
     ");
-    $stmt->bind_param('ssdsii', $firstName, $lastName, $handicap, $ghinNumber, $id, $currentOrgId);
+    $stmt->bind_param('ssdii', $firstName, $lastName, $handicap, $id, $currentOrgId);
     $stmt->execute();
     echo json_encode(['affected_rows' => $stmt->affected_rows]);
     break;
