@@ -48,8 +48,12 @@ if ($isAdmin) {
   LEFT JOIN rounds r ON t.tournament_id = r.tournament_id
   LEFT JOIN courses c ON r.course_id = c.course_id
   WHERE t.org_id = ?
-    AND t.end_date >= DATE_SUB(CURDATE(), INTERVAL 2 WEEK)
-  ORDER BY t.start_date DESC, r.round_date ASC, r.round_id ASC
+    AND t.end_date >= DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+  ORDER BY
+    CASE WHEN t.start_date >= CURDATE() THEN 0 ELSE 1 END ASC,
+    CASE WHEN t.start_date >= CURDATE() THEN t.start_date END ASC,
+    CASE WHEN t.start_date < CURDATE() THEN t.start_date END DESC,
+    r.round_date ASC, r.round_id ASC
   ";
   $stmt = $conn->prepare($sql);
   $stmt->bind_param("ii", $golferId, $currentOrgId);
@@ -73,8 +77,12 @@ if ($isAdmin) {
   LEFT JOIN rounds r ON t.tournament_id = r.tournament_id
   LEFT JOIN courses c ON r.course_id = c.course_id
   WHERE tg.golfer_id = ?
-    AND t.end_date >= DATE_SUB(CURDATE(), INTERVAL 2 WEEK)
-  ORDER BY t.start_date DESC, r.round_date ASC, r.round_id ASC
+    AND t.end_date >= DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+  ORDER BY
+    CASE WHEN t.start_date >= CURDATE() THEN 0 ELSE 1 END ASC,
+    CASE WHEN t.start_date >= CURDATE() THEN t.start_date END ASC,
+    CASE WHEN t.start_date < CURDATE() THEN t.start_date END DESC,
+    r.round_date ASC, r.round_id ASC
   ";
   $stmt = $conn->prepare($sql);
   $stmt->bind_param("ii", $currentOrgId, $golferId);
