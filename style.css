@@ -640,8 +640,8 @@ main {
   position: fixed;
   inset: 0;
   overflow-y: auto;
-  padding: calc(env(safe-area-inset-top) + 3rem) 1.25rem 3rem;
-  background: linear-gradient(160deg, #2e0d55 0%, var(--color-brand-primary) 55%, #3a1060 100%);
+  padding: calc(env(safe-area-inset-top) + 25vh) 1.25rem 3rem;
+  background: url('/images/verticaltitle.png') center center / cover no-repeat;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -669,10 +669,7 @@ main {
 }
 
 #pin-form .pin-prompt {
-  margin: 0;
-  color: rgba(255,255,255,0.85);
-  font-size: var(--font-size-sm);
-  text-align: center;
+  display: none;
 }
 
 #pin-form #pin-input {
@@ -700,16 +697,23 @@ main {
 
 #login-form h2, #register-form h2, #signup-chooser h2,
 #join-form h2, #reset-form h2, #org-picker h2 {
-  margin: 0 0 1.75rem;
-  color: #fff;
+  position: fixed;
+  top: env(safe-area-inset-top, 0);
+  left: 0;
+  width: 100vw;
+  margin: 0;
+  padding: 2rem 0 0;
   text-align: center;
-  width: 100%;
-  font-family: var(--font-family);
-  font-size: var(--font-size-3xl);
-  font-weight: 800;
-  letter-spacing: 0.06em;
+  font-family: 'Bebas Neue', var(--font-family);
+  font-size: 13vw;
+  font-weight: 400;
+  color: var(--color-brand-gold);
+  letter-spacing: 0.02em;
   text-transform: uppercase;
-  text-shadow: 0 2px 12px rgba(0,0,0,0.4);
+  line-height: 1;
+  white-space: nowrap;
+  text-shadow: 0 2px 16px rgba(0,0,0,0.5);
+  z-index: 11;
 }
 
 /* ── Auth Container ───────────────────────────────────────────────────────── */
@@ -717,12 +721,22 @@ main {
   position: fixed;
   inset: 0;
   overflow-y: auto;
-  padding: 3rem 1.25rem 3rem;
-  background: linear-gradient(160deg, #2e0d55 0%, var(--color-brand-primary) 55%, #3a1060 100%);
+  background: none;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-start;
+  padding: 8vh 1.25rem 3rem;
   z-index: 10;
+}
+
+#auth-bg-img {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -1;
 }
 
 #auth-form {
@@ -734,40 +748,25 @@ main {
 }
 
 #auth-form h2 {
-  margin: 0 0 1.75rem;
-  color: #fff;
-  text-align: center;
-  width: 100%;
-  font-family: var(--font-family);
-  font-size: var(--font-size-3xl);
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  text-shadow: 0 2px 12px rgba(0,0,0,0.4);
+  display: none;
 }
 
 /* ── Logo ─────────────────────────────────────────────────────────────────── */
 .form-logo {
-  display: block;
-  width: 92vw;
-  max-width: 92vw;
-  margin: 0 auto 2rem;
-  border-radius: var(--radius-lg);
-  filter: drop-shadow(0 8px 28px rgba(0,0,0,0.45))
-          drop-shadow(0 0 40px rgba(255,198,47,0.15));
+  display: none;
 }
 
 /* ── Auth Card (frosted glass) ────────────────────────────────────────────── */
 .auth-card {
-  width: 100%;
-  max-width: 420px;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  width: calc(100% - 3rem);
+  max-width: 340px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: var(--radius-xl);
-  padding: 1.75rem var(--space-6);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.2);
+  padding: 1.5rem var(--space-5);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
