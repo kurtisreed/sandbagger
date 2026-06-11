@@ -9585,8 +9585,8 @@ async function showCourseManager() {
           <p class="course-card-name">${c.name}</p>
         </div>
         <div class="course-card-actions">
-          <button class="btn btn-neutral btn-sm btn-auto edit-course-btn" data-id="${c.course_id}">Edit</button>
-          <button class="btn btn-danger btn-sm btn-auto delete-course-btn" data-id="${c.course_id}" data-name="${c.name.replace(/"/g,'&quot;')}">Delete</button>
+          <button class="card-btn card-btn-edit edit-course-btn" data-id="${c.course_id}">Edit</button>
+          <button class="card-btn card-btn-delete delete-course-btn" data-id="${c.course_id}" data-name="${c.name.replace(/"/g,'&quot;')}">Delete</button>
         </div>
       </div>`).join('');
 
@@ -10041,22 +10041,10 @@ async function showEditGroupPage() {
         <button id="eg-edit-info-btn" class="btn btn-neutral btn-sm btn-auto">Edit</button>
       </div>
 
-      <span style="font-size:0.8rem; font-weight:600; color:#888; text-transform:uppercase; letter-spacing:0.05em;">Members (${(members || []).length})</span>
-      <div style="margin-top:0.25rem;">${memberRows || '<p style="color:#aaa; font-size:0.9rem;">No members found.</p>'}</div>
-    </div>
-
-    <!-- Edit Golfers button -->
-    <div style="background:#fff; border:1px solid #e0e0e0; border-radius:12px; padding:1.25rem; margin-bottom:1rem; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-      <h3 style="margin:0 0 0.5rem; font-size:1.1rem; color:#1a1a1a;">Golfers</h3>
-      <p style="margin:0 0 1rem; font-size:0.9rem; color:#666;">Add, edit, or remove golfers in your group.</p>
-      <button id="edit-group-golfers-btn" style="width:100%; padding:0.65rem; background:#4F2185; color:white; border:none; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Edit Golfers</button>
-    </div>
-
-    <!-- Courses card -->
-    <div style="background:#fff; border:1px solid #e0e0e0; border-radius:12px; padding:1.25rem; margin-bottom:1rem; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-      <h3 style="margin:0 0 0.5rem; font-size:1.1rem; color:#1a1a1a;">Courses</h3>
-      <p style="margin:0 0 1rem; font-size:0.9rem; color:#666;">Manage golf courses and tees for your group.</p>
-      <button id="manage-courses-btn" style="width:100%; padding:0.65rem; background:#4F2185; color:white; border:none; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Manage Courses</button>
+      <div style="display:flex; gap:0.75rem;">
+        <button id="edit-group-golfers-btn" style="flex:1; padding:0.65rem; background:#4F2185; color:white; border:none; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Golfers</button>
+        <button id="manage-courses-btn" style="flex:1; padding:0.65rem; background:#4F2185; color:white; border:none; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Courses</button>
+      </div>
     </div>
 
     <!-- Invite members card -->
@@ -10524,57 +10512,69 @@ function refreshGolferList() {
 function renderGolferCard(g, list) {
   const card = document.createElement('div');
   card.dataset.golferId = g.golfer_id;
-  card.style.cssText = 'background:#fff; border:1px solid #eee; border-radius:8px; padding:0.75rem 1rem; margin-bottom:0.6rem; box-shadow:0 1px 3px rgba(0,0,0,0.05);';
+  card.style.cssText = 'background:#fff; border:1px solid #e8e8e8; border-radius:12px; padding:1rem 1.1rem; margin-bottom:0.6rem; box-shadow:0 1px 4px rgba(0,0,0,0.06);';
 
   function showView() {
-    const pendingBadge = !g.user_id
-      ? `<span title="This golfer hasn't created an account yet" style="font-size:0.7rem; font-weight:600; color:#888; background:#f0f0f0; border:1px solid #ddd; border-radius:4px; padding:0.1rem 0.4rem; margin-left:0.4rem; vertical-align:middle;">Pending</span>`
-      : '';
+    const emailLine = g.email
+      ? `<div style="font-size:0.82rem; color:#888; margin-top:0.2rem;">${g.email}</div>`
+      : `<div style="margin-top:0.25rem;"><span style="font-size:0.72rem; font-weight:700; color:#a07000; background:#fff8e1; border:1px solid #ffe082; border-radius:4px; padding:0.1rem 0.45rem; letter-spacing:0.03em;">PENDING</span></div>`;
     card.innerHTML = `
       <div style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem;">
-        <div>
-          <span style="font-weight:600; font-size:1rem;">${g.first_name} ${g.last_name}</span>${pendingBadge}
-          <span style="color:#888; font-size:0.85rem; margin-left:0.5rem;">Hdcp: ${g.handicap}</span>
+        <div style="min-width:0;">
+          <div style="font-weight:700; font-size:1rem; color:#1a1c23; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${g.first_name} ${g.last_name}</div>
+          <div style="font-size:0.82rem; color:#4F2185; font-weight:600; margin-top:0.1rem;">Handicap: ${g.handicap}</div>
+          ${emailLine}
         </div>
-        <div style="display:flex; gap:0.4rem; flex-shrink:0;">
-          <button class="golfer-edit-btn" style="padding:0.35rem 0.75rem; background:#f0e6ff; color:#4F2185; border:none; border-radius:4px; font-size:0.85rem; font-weight:bold; cursor:pointer;">Edit</button>
-          <button class="golfer-delete-btn" style="padding:0.35rem 0.75rem; background:#fff0f0; color:#c0392b; border:none; border-radius:4px; font-size:0.85rem; font-weight:bold; cursor:pointer;">Delete</button>
+        <div style="display:flex; gap:0.4rem; flex-shrink:0; align-items:center;">
+          <button class="card-btn card-btn-edit golfer-edit-btn">Edit</button>
+          <button class="card-btn card-btn-delete golfer-delete-btn">Delete</button>
         </div>
       </div>`;
 
-    card.querySelector('.golfer-edit-btn').addEventListener('click', showEditView);
+    card.querySelector('.golfer-edit-btn').addEventListener('click', openEditModal);
     card.querySelector('.golfer-delete-btn').addEventListener('click', showDeleteConfirm);
   }
 
-  function showEditView() {
-    card.innerHTML = `
-      <div style="display:flex; flex-direction:column; gap:0.5rem;">
-        <div style="display:flex; gap:0.4rem;">
-          <input class="ef-first" type="text" value="${g.first_name}" placeholder="First Name"
-            style="flex:1; padding:0.5rem; font-size:0.95rem; border:1px solid #ccc; border-radius:4px;">
-          <input class="ef-last" type="text" value="${g.last_name}" placeholder="Last Name"
-            style="flex:1; padding:0.5rem; font-size:0.95rem; border:1px solid #ccc; border-radius:4px;">
-        </div>
-        <input class="ef-hcp" type="number" step="0.1" value="${g.handicap}" placeholder="Handicap"
-          style="width:100%; padding:0.5rem; font-size:0.95rem; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
-        <div style="display:flex; gap:0.4rem;">
-          <button class="ef-save" style="flex:1; padding:0.55rem; background:#4F2185; color:white; border:none; border-radius:4px; font-size:0.9rem; font-weight:bold; cursor:pointer;">Save</button>
-          <button class="ef-cancel" style="flex:1; padding:0.55rem; background:#eee; color:#333; border:none; border-radius:4px; font-size:0.9rem; cursor:pointer;">Cancel</button>
-        </div>
-        <div class="ef-status" style="font-size:0.85rem; text-align:center;"></div>
-      </div>`;
+  function openEditModal() {
+    const modal    = document.getElementById('edit-golfer-modal');
+    const saveBtn  = document.getElementById('egm-save-btn');
+    const statusEl = document.getElementById('egm-status');
+    const resetSection = document.getElementById('egm-reset-section');
+    const resetBtn = document.getElementById('egm-reset-btn');
+    const resetLinkBlock = document.getElementById('egm-reset-link-block');
 
-    card.querySelector('.ef-cancel').addEventListener('click', showView);
-    card.querySelector('.ef-save').addEventListener('click', () => {
-      const first  = card.querySelector('.ef-first').value.trim();
-      const last   = card.querySelector('.ef-last').value.trim();
-      const hcp    = parseFloat(card.querySelector('.ef-hcp').value);
-      const efStatus = card.querySelector('.ef-status');
-      if (!first || !last) { efStatus.textContent = 'Name is required.'; efStatus.style.color = 'red'; return; }
+    // Populate fields
+    document.getElementById('egm-first').value = g.first_name;
+    document.getElementById('egm-last').value  = g.last_name;
+    document.getElementById('egm-hcp').value   = g.handicap;
+    statusEl.style.display = 'none';
+    statusEl.textContent   = '';
+    resetLinkBlock.style.display = 'none';
+    saveBtn.disabled    = false;
+    saveBtn.textContent = 'Save Changes';
 
-      card.querySelector('.ef-save').disabled = true;
-      card.querySelector('.ef-save').textContent = 'Saving…';
+    // Show reset section only if golfer has an account
+    resetSection.style.display = g.user_id ? 'block' : 'none';
+    resetBtn.disabled    = false;
+    resetBtn.textContent = 'Generate Reset Link';
 
+    modal.style.display = 'flex';
+
+    // Save handler
+    const newSaveBtn = saveBtn.cloneNode(true);
+    saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
+    newSaveBtn.addEventListener('click', () => {
+      const first = document.getElementById('egm-first').value.trim();
+      const last  = document.getElementById('egm-last').value.trim();
+      const hcp   = parseFloat(document.getElementById('egm-hcp').value);
+      if (!first || !last) {
+        statusEl.textContent   = 'Name is required.';
+        statusEl.style.color   = 'red';
+        statusEl.style.display = 'block';
+        return;
+      }
+      newSaveBtn.disabled    = true;
+      newSaveBtn.textContent = 'Saving…';
       fetch(`${API_BASE_URL}/api/golfers.php?golfer_id=${g.golfer_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -10584,11 +10584,49 @@ function renderGolferCard(g, list) {
         .then(r => r.json())
         .then(() => {
           g.first_name = first; g.last_name = last; g.handicap = hcp;
+          modal.style.display = 'none';
           showView();
           document.getElementById('edit-golfers-status').textContent = `✓ ${first} ${last} updated.`;
           document.getElementById('edit-golfers-status').style.color = '#4CAF50';
         })
-        .catch(() => { efStatus.textContent = 'Error saving. Please try again.'; efStatus.style.color = 'red'; });
+        .catch(() => {
+          statusEl.textContent   = 'Error saving. Please try again.';
+          statusEl.style.color   = 'red';
+          statusEl.style.display = 'block';
+          newSaveBtn.disabled    = false;
+          newSaveBtn.textContent = 'Save Changes';
+        });
+    });
+
+    // Reset password handler
+    const newResetBtn = resetBtn.cloneNode(true);
+    resetBtn.parentNode.replaceChild(newResetBtn, resetBtn);
+    newResetBtn.addEventListener('click', async () => {
+      newResetBtn.disabled    = true;
+      newResetBtn.textContent = 'Generating…';
+      try {
+        const res  = await fetch(`${API_BASE_URL}/api/admin_reset_password.php`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: g.user_id }),
+          credentials: 'include',
+        });
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('egm-reset-link-display').value = data.reset_link;
+          document.getElementById('egm-reset-expiry').textContent  = `Expires in ${data.expires_in}`;
+          resetLinkBlock.style.display = 'block';
+          newResetBtn.textContent = 'Regenerate Link';
+        } else {
+          alert(data.error || 'Could not generate reset link.');
+          newResetBtn.disabled    = false;
+          newResetBtn.textContent = 'Generate Reset Link';
+        }
+      } catch {
+        alert('Connection error.');
+        newResetBtn.disabled    = false;
+        newResetBtn.textContent = 'Generate Reset Link';
+      }
     });
   }
 
@@ -10644,6 +10682,25 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         document.getElementById('user-dashboard').style.display = 'block';
       }
+    });
+  }
+
+  // Edit Golfer modal close
+  const closeEditGolferModal = document.getElementById('close-edit-golfer-modal');
+  if (closeEditGolferModal) {
+    closeEditGolferModal.addEventListener('click', () => {
+      document.getElementById('edit-golfer-modal').style.display = 'none';
+    });
+  }
+  // Copy reset link button
+  const copyResetBtn = document.getElementById('egm-copy-reset-btn');
+  if (copyResetBtn) {
+    copyResetBtn.addEventListener('click', () => {
+      const val = document.getElementById('egm-reset-link-display').value;
+      navigator.clipboard.writeText(val).then(() => {
+        copyResetBtn.textContent = 'Copied!';
+        setTimeout(() => { copyResetBtn.textContent = 'Copy'; }, 2000);
+      });
     });
   }
 

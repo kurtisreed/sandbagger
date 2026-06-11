@@ -26,13 +26,15 @@ switch ($method) {
       $row = $stmt->get_result()->fetch_assoc();
       echo json_encode($row);
     } else {
-      // Fetch all golfers for this org
+      // Fetch all golfers for this org, with email from linked user account
       $stmt = $conn->prepare("
-        SELECT golfer_id, first_name, last_name, handicap, user_id
-          FROM golfers
-         WHERE org_id = ?
-           AND active = 1
-         ORDER BY last_name, first_name
+        SELECT g.golfer_id, g.first_name, g.last_name, g.handicap, g.user_id,
+               u.email
+          FROM golfers g
+          LEFT JOIN users u ON u.user_id = g.user_id
+         WHERE g.org_id = ?
+           AND g.active = 1
+         ORDER BY g.last_name, g.first_name
       ");
       $stmt->bind_param('i', $currentOrgId);
       $stmt->execute();
