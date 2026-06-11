@@ -1434,7 +1434,7 @@ function loadWolfScoring() {
           });
         }
       });
-      golfers = Array.from(golferMap.values()).sort((a, b) => a.order - b.order);
+      golfers = adjustHandicapsForMatch(Array.from(golferMap.values()).sort((a, b) => a.order - b.order));
 
       // Build stroke maps
       strokeMaps = {};
@@ -1971,9 +1971,9 @@ function loadRabbitScoring() {
           });
         }
       });
-      golfers = Array.from(golferMap.values());
+      golfers = adjustHandicapsForMatch(Array.from(golferMap.values()));
 
-      // Build stroke maps
+      // Build stroke maps from adjusted handicaps
       strokeMaps = {};
       golfers.forEach(g => {
         strokeMaps[g.id] = buildStrokeMapForGolfer(g.handicap, holeInfo);
