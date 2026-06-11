@@ -415,7 +415,7 @@ function loadBestBallSetup(preserveSelections = false) {
               <input type="text" id="new-player-last-name" class="form-input">
             </div>
             <div style="margin-bottom: 1rem;">
-              <label class="form-label">Handicap:</label>
+              <label class="form-label">Handicap: <button type="button" class="help-icon" data-help="handicap-index" aria-label="What is a Handicap Index?">?</button></label>
               <input type="number" id="new-player-handicap" step="0.1" class="form-input">
             </div>
             <div id="new-player-message" style="margin-bottom: 1rem; color: red; text-align: center;"></div>
@@ -841,7 +841,7 @@ function loadRabbitSetup(preserveSelections = false) {
             <input type="text" id="new-player-last-name" class="form-input">
           </div>
           <div style="margin-bottom: 1rem;">
-            <label class="form-label">Handicap:</label>
+            <label class="form-label">Handicap: <button type="button" class="help-icon" data-help="handicap-index" aria-label="What is a Handicap Index?">?</button></label>
             <input type="number" id="new-player-handicap" step="0.1" class="form-input">
           </div>
           <div id="new-player-message" style="margin-bottom: 1rem; color: red; text-align: center;"></div>
@@ -1127,7 +1127,7 @@ function loadWolfSetup(preserveSelections = false) {
             <input type="text" id="new-player-last-name" class="form-input">
           </div>
           <div style="margin-bottom: 1rem;">
-            <label class="form-label">Handicap:</label>
+            <label class="form-label">Handicap: <button type="button" class="help-icon" data-help="handicap-index" aria-label="What is a Handicap Index?">?</button></label>
             <input type="number" id="new-player-handicap" step="0.1" class="form-input">
           </div>
           <div id="new-player-message" style="margin-bottom: 1rem; color: red; text-align: center;"></div>
@@ -1448,7 +1448,7 @@ function loadWolfScoring() {
 
       // Header
       const header = document.createElement("tr");
-      header.innerHTML = `<th>#</th><th>P</th><th>HI</th><th>Partner</th>` + golfers.map(golfer => {
+      header.innerHTML = `<th>#</th><th>P</th><th><span class="help-term" data-help="stroke-index">HI</span></th><th>Partner</th>` + golfers.map(golfer => {
         return `<th style="background-color: #2196F3; color: white;">${golfer.name} (${parseFloat(golfer.handicap).toFixed(1)})</th>`;
       }).join("");
       table.appendChild(header);
@@ -1518,10 +1518,10 @@ function loadWolfScoring() {
       const explanation = document.createElement("div");
       explanation.style.cssText = "margin-top: 2rem; padding: 1rem; background: #f5f5f5; border-radius: 4px; font-size: 0.9rem;";
       explanation.innerHTML = `
-        <strong>How Wolf Works:</strong><br>
+        <strong>How Wolf Works: <button type="button" class="help-icon" data-help="format-wolf" aria-label="Wolf rules">?</button></strong><br>
         The Wolf rotates each hole, and tees off last. The Wolf chooses a partner or goes Lone.<br>
         <strong>Scoring:</strong> Lone Wolf win = 3 pts (loss = 0 pts, others get 1 pt each). Partnership win = 1 pt each (loss = 0 pts each).<br><br>
-        <strong>How Playing Handicap is Calculated:</strong><br>
+        <strong>How Playing Handicap is Calculated: <button type="button" class="help-icon" data-help="playing-handicap" aria-label="About playing handicap">?</button></strong><br>
         Each golfer's course handicap is calculated according to USGA guidelines using the formula:<br>
         <code>(Handicap × (Slope / 113) + (Rating - 72)) × ${tournamentHandicapPct}%</code><br>
       `;
@@ -1985,7 +1985,7 @@ function loadRabbitScoring() {
 
       // Header
       const header = document.createElement("tr");
-      header.innerHTML = `<th>#</th><th>P</th><th>HI</th>` + golfers.map(golfer => {
+      header.innerHTML = `<th>#</th><th>P</th><th><span class="help-term" data-help="stroke-index">HI</span></th>` + golfers.map(golfer => {
         return `<th style="background-color: #2196F3; color: white;">${golfer.name} (${parseFloat(golfer.handicap).toFixed(1)})</th>`;
       }).join("");
       table.appendChild(header);
@@ -2032,10 +2032,10 @@ function loadRabbitScoring() {
       const handicapExplanation = document.createElement("div");
       handicapExplanation.style.cssText = "margin-top: 2rem; padding: 1rem; background: #f5f5f5; border-radius: 4px; font-size: 0.9rem;";
       handicapExplanation.innerHTML = `
-        <strong>How Rabbit Works:</strong><br>
+        <strong>How Rabbit Works: <button type="button" class="help-icon" data-help="format-rabbit" aria-label="Rabbit rules">?</button></strong><br>
         Win a hole outright to own the Rabbit. If the next hole is tied, you keep the Rabbit.
         Another player must win a hole to set the Rabbit free. Points awarded every 3 holes (6 total).<br><br>
-        <strong>How Playing Handicap is Calculated:</strong><br>
+        <strong>How Playing Handicap is Calculated: <button type="button" class="help-icon" data-help="playing-handicap" aria-label="About playing handicap">?</button></strong><br>
         Each golfer's course handicap is calculated according to USGA guidelines using the formula:<br>
         <code>(Handicap × (Slope / 113) + (Rating - 72)) × ${tournamentHandicapPct}%</code><br>
       `;
@@ -2194,7 +2194,7 @@ function loadWolfScorecardReadOnly() {
 
       // Header
       const header = document.createElement("tr");
-      header.innerHTML = `<th>#</th><th>P</th><th>HI</th><th>Partner</th>` + golfers.map(golfer => {
+      header.innerHTML = `<th>#</th><th>P</th><th><span class="help-term" data-help="stroke-index">HI</span></th><th>Partner</th>` + golfers.map(golfer => {
         return `<th style="background-color: #2196F3; color: white;">${golfer.name} (${parseFloat(golfer.handicap).toFixed(1)})</th>`;
       }).join("");
       table.appendChild(header);
@@ -2335,7 +2335,7 @@ function loadWolfScorecardReadOnly() {
         const explanation = document.createElement("div");
         explanation.style.cssText = "margin-top: 2rem; padding: 1rem; background: #f5f5f5; border-radius: 4px; font-size: 0.9rem;";
         explanation.innerHTML = `
-          <strong>How Wolf Works:</strong><br>
+          <strong>How Wolf Works: <button type="button" class="help-icon" data-help="format-wolf" aria-label="Wolf rules">?</button></strong><br>
           The Wolf rotates each hole, and tees off last. The Wolf chooses a partner or goes Lone.<br>
           <strong>Scoring:</strong> Lone Wolf win = 3 pts (loss = 0 pts, others get 1 pt each). Partnership win = 1 pt each (loss = 0 pts each).
         `;
@@ -2449,7 +2449,7 @@ function loadRabbitScorecardReadOnly() {
 
       // Header
       const header = document.createElement("tr");
-      header.innerHTML = `<th>#</th><th>P</th><th>HI</th>` + golfers.map(golfer => {
+      header.innerHTML = `<th>#</th><th>P</th><th><span class="help-term" data-help="stroke-index">HI</span></th>` + golfers.map(golfer => {
         return `<th style="background-color: #2196F3; color: white;">${golfer.name} (${parseFloat(golfer.handicap).toFixed(1)})</th>`;
       }).join("");
       table.appendChild(header);
@@ -2552,7 +2552,7 @@ function loadRabbitScorecardReadOnly() {
         const explanation = document.createElement("div");
         explanation.style.cssText = "margin-top: 2rem; padding: 1rem; background: #f5f5f5; border-radius: 4px; font-size: 0.9rem;";
         explanation.innerHTML = `
-          <strong>How Rabbit Works:</strong><br>
+          <strong>How Rabbit Works: <button type="button" class="help-icon" data-help="format-rabbit" aria-label="Rabbit rules">?</button></strong><br>
           Win a hole outright to own the Rabbit. If the next hole is tied, you keep the Rabbit.
           Another player must win a hole to set the Rabbit free. Points awarded every 3 holes (6 total).
         `;
@@ -2862,7 +2862,7 @@ function loadBestBallScoring() {
 
       // Build header row
       const header = document.createElement("tr");
-      header.innerHTML = `<th></th><th>#</th><th>P</th><th>HI</th>` + golfers.map(golfer => {
+      header.innerHTML = `<th></th><th>#</th><th>P</th><th><span class="help-term" data-help="stroke-index">HI</span></th>` + golfers.map(golfer => {
         const bg = golfer.team_id === 1 ? '#4F2185' : '#FFC62F';
         const textColor = golfer.team_id === 1 ? '#fff' : '#000';
         const teamLabel = golfer.team_id === 1 ? 'Team 1' : 'Team 2';
@@ -2961,7 +2961,7 @@ function loadBestBallScoring() {
       const handicapExplanation = document.createElement("div");
       handicapExplanation.style.cssText = "margin-top: 2rem; padding: 1rem; background: #f5f5f5; border-radius: 4px; font-size: 0.9rem;";
       handicapExplanation.innerHTML = `
-        <strong>How Playing Handicap is Calculated:</strong><br>
+        <strong>How Playing Handicap is Calculated: <button type="button" class="help-icon" data-help="playing-handicap" aria-label="About playing handicap">?</button></strong><br>
         Each golfer's <b>playing handicap</b> is calculated according to USGA guidelines using the formula:<br>
         <code>(Handicap × (Slope / 113) + (Rating - 72)) × ${tournamentHandicapPct}%</code><br>
       `;
@@ -3151,7 +3151,7 @@ function loadBestBallScorecardReadOnly() {
 
       // Header
       const header = document.createElement("tr");
-      header.innerHTML = `<th></th><th>#</th><th>P</th><th>HI</th>` + golfers.map(golfer => {
+      header.innerHTML = `<th></th><th>#</th><th>P</th><th><span class="help-term" data-help="stroke-index">HI</span></th>` + golfers.map(golfer => {
         let bgColor = golfer.team_id === 1 ? primaryTeamColor : secondaryTeamColor;
         let txtColor = golfer.team_id === 1 ? '#fff' : '#000';
         return `<th style="background-color: ${bgColor}; color: ${txtColor};">${golfer.name} (${parseFloat(golfer.handicap).toFixed(1)})</th>`;
@@ -3209,7 +3209,7 @@ function loadBestBallScorecardReadOnly() {
       const handicapExplanation = document.createElement("div");
       handicapExplanation.style.cssText = "margin-top: 2rem; padding: 1rem; background: #f5f5f5; border-radius: 4px; font-size: 0.9rem;";
       handicapExplanation.innerHTML = `
-        <strong>How Playing Handicap is Calculated:</strong><br>
+        <strong>How Playing Handicap is Calculated: <button type="button" class="help-icon" data-help="playing-handicap" aria-label="About playing handicap">?</button></strong><br>
         Each golfer's <b>course handicap</b> is calculated according to USGA guidelines using the formula:<br>
         <code>(Handicap × (Slope / 113) + (Rating - 72)) × ${tournamentHandicapPct}%</code><br>
       `;
@@ -3513,7 +3513,7 @@ function loadTodaysMatch() {
 
       // Build header row
       const header = document.createElement("tr");
-      header.innerHTML = `<th></th><th>#</th><th>P</th><th>HI</th>` + golfers.map(golfer => {
+      header.innerHTML = `<th></th><th>#</th><th>P</th><th><span class="help-term" data-help="stroke-index">HI</span></th>` + golfers.map(golfer => {
 
           let bg, textColor;
 
@@ -3764,7 +3764,7 @@ function loadSkinsMatch() {
 
       // Header: # | P | HI | Golfer1 | Golfer2 | …
       const header = document.createElement('tr');
-      header.innerHTML = `<th>#</th><th>P</th><th>HI</th>` + golfers.map(g =>
+      header.innerHTML = `<th>#</th><th>P</th><th><span class="help-term" data-help="stroke-index">HI</span></th>` + golfers.map(g =>
         `<th style="background:var(--color-brand-primary); color:#fff;">${g.name} (${parseFloat(g.handicap).toFixed(1)})</th>`
       ).join('');
       table.appendChild(header);
@@ -3987,7 +3987,7 @@ function loadGuysTripMatch() {
 
       // Build header row
       const header = document.createElement("tr");
-      header.innerHTML = `<th></th><th>#</th><th>P</th><th>HI</th>` + golfers.map(golfer => {
+      header.innerHTML = `<th></th><th>#</th><th>P</th><th><span class="help-term" data-help="stroke-index">HI</span></th>` + golfers.map(golfer => {
         const bg = golfer.player_order <= 2 ? '#007bff' : '#28a745';
         const textColor = '#ffffff';
         return `<th style="background-color: ${bg}; color: ${textColor};">${golfer.name} (${parseFloat(golfer.handicap).toFixed(1)})</th>`;
@@ -4888,7 +4888,7 @@ function loadTodaySummary() {
 
         const status = calculateMatchStatus(primaryTeamGolfers, secondaryTeamGolfers, match.scores);
         const statusClass = getMatchStatusClass(status);
-        const statusDisplay = `<div class="${statusClass}">${status}</div>`;
+        const statusDisplay = `<div class="${statusClass}"><span class="help-term" data-help="match-status">${status}</span></div>`;
         div.innerHTML = header + statusDisplay;
 
         // Add click event to load match scorecard
@@ -4959,7 +4959,7 @@ function loadTodaySummary() {
 
           const leaderboardDiv = document.createElement("div");
           leaderboardDiv.className = "gross-leaderboard";
-          leaderboardDiv.innerHTML = "<h3>Individual Round Leaderboard - Gross</h3>";
+          leaderboardDiv.innerHTML = "<h3>Individual Round Leaderboard - Gross <button type='button' class='help-icon' data-help='gross-vs-net' aria-label='Gross vs Net'>?</button></h3>";
 
           const table = document.createElement("table");
           table.classList.add("leaderboard-table");
@@ -5012,7 +5012,7 @@ function loadTodaySummary() {
         
             const netDiv = document.createElement("div");
             netDiv.className = "net-leaderboard";
-            netDiv.innerHTML = "<h3>Individual Round Leaderboard - Net</h3>";
+            netDiv.innerHTML = "<h3>Individual Round Leaderboard - Net <button type='button' class='help-icon' data-help='gross-vs-net' aria-label='Gross vs Net'>?</button></h3>";
         
             const table = document.createElement("table");
             table.classList.add("leaderboard-table");
@@ -5129,7 +5129,7 @@ function loadSkinsGroupScorecard(matchId) {
 
       // Header
       const header = document.createElement('tr');
-      header.innerHTML = `<th>#</th><th>P</th><th>HI</th>` + localGolfers.map(g =>
+      header.innerHTML = `<th>#</th><th>P</th><th><span class="help-term" data-help="stroke-index">HI</span></th>` + localGolfers.map(g =>
         `<th style="background:var(--color-brand-primary); color:#fff;">${g.name} (${parseFloat(g.handicap).toFixed(1)})</th>`
       ).join('');
       table.appendChild(header);
@@ -5244,11 +5244,20 @@ function loadSkinsSummary() {
     container.innerHTML = '';
 
     // ── Helpers ───────────────────────────────────────────────────────────────
-    const section = (title) => {
+    const section = (title, helpKey) => {
       const h = document.createElement('h3');
       h.className = 'section-header';
       h.style.marginBottom = 'var(--space-4)';
       h.textContent = title;
+      if (helpKey) {
+        const icon = document.createElement('button');
+        icon.type = 'button';
+        icon.className = 'help-icon';
+        icon.dataset.help = helpKey;
+        icon.setAttribute('aria-label', 'What is this?');
+        icon.textContent = '?';
+        h.appendChild(icon);
+      }
       return h;
     };
 
@@ -5344,7 +5353,7 @@ function loadSkinsSummary() {
     // ── Net Leaderboard ───────────────────────────────────────────────────────
     const netDiv = document.createElement('div');
     netDiv.style.marginBottom = 'var(--space-6)';
-    netDiv.appendChild(section('Net Leaderboard'));
+    netDiv.appendChild(section('Net Leaderboard', 'gross-vs-net'));
 
     const netGolfers = Array.isArray(netData) ? netData : [];
     if (netGolfers.length === 0) {
@@ -5365,7 +5374,7 @@ function loadSkinsSummary() {
     // ── Gross Leaderboard ─────────────────────────────────────────────────────
     const grossDiv = document.createElement('div');
     grossDiv.style.marginBottom = 'var(--space-6)';
-    grossDiv.appendChild(section('Gross Leaderboard'));
+    grossDiv.appendChild(section('Gross Leaderboard', 'gross-vs-net'));
 
     const grossGolfers = Array.isArray(grossData) ? grossData : [];
     if (grossGolfers.length === 0) {
@@ -5484,7 +5493,7 @@ function loadGuysTripSummary() {
         // Get status - for Guys Trip, show stroke play scores
         const status = calculateGuysTripMatchStatus(partnership1Golfers, partnership2Golfers, match.scores);
         const statusClass = getMatchStatusClass(status);
-        const statusDisplay = `<div class="${statusClass}">${status}</div>`;
+        const statusDisplay = `<div class="${statusClass}"><span class="help-term" data-help="match-status">${status}</span></div>`;
         div.innerHTML = header + statusDisplay;
 
         // Add click event to load match scorecard
@@ -5549,7 +5558,7 @@ function loadGuysTripSummary() {
 
           const leaderboardDiv = document.createElement("div");
           leaderboardDiv.className = "gross-leaderboard";
-          leaderboardDiv.innerHTML = "<h3>Individual Round Leaderboard - Gross</h3>";
+          leaderboardDiv.innerHTML = "<h3>Individual Round Leaderboard - Gross <button type='button' class='help-icon' data-help='gross-vs-net' aria-label='Gross vs Net'>?</button></h3>";
 
           const table = document.createElement("table");
           table.classList.add("leaderboard-table");
@@ -5593,7 +5602,7 @@ function loadGuysTripSummary() {
 
           const netDiv = document.createElement("div");
           netDiv.className = "net-leaderboard";
-          netDiv.innerHTML = "<h3>Individual Round Leaderboard - Net</h3>";
+          netDiv.innerHTML = "<h3>Individual Round Leaderboard - Net <button type='button' class='help-icon' data-help='gross-vs-net' aria-label='Gross vs Net'>?</button></h3>";
 
           const table = document.createElement("table");
           table.classList.add("leaderboard-table");
@@ -6063,7 +6072,7 @@ function renderScoreboard(parentContainer, scoreboard) {
 // Renders the Gross Leaderboard
 function renderGrossLeaderboard(parentContainer, golfers) {
     if (!Array.isArray(golfers) || golfers.length === 0) return;
-    const { container, body } = createWidgetContainer('Individual Tournament Leaderboard - Gross', 'gross-leaderboard');
+    const { container, body } = createWidgetContainer('Individual Tournament Leaderboard - Gross <button type="button" class="help-icon" data-help="gross-vs-net" aria-label="Gross vs Net">?</button>', 'gross-leaderboard');
     if (!Array.isArray(golfers) || golfers.length === 0) return;
 
       const leaderboardDiv = document.createElement("div");
@@ -6108,7 +6117,7 @@ function renderGrossLeaderboard(parentContainer, golfers) {
 // Renders the Net Leaderboard
 function renderNetLeaderboard(parentContainer, players) {
     if (!Array.isArray(players) || players.length === 0) return;
-    const { container, body } = createWidgetContainer('Individual Tournament Leaderboard - Net', 'net-leaderboard');
+    const { container, body } = createWidgetContainer('Individual Tournament Leaderboard - Net <button type="button" class="help-icon" data-help="gross-vs-net" aria-label="Gross vs Net">?</button>', 'net-leaderboard');
           if (!Array.isArray(players) || players.length === 0) return;
 
       const netDiv = document.createElement("div");
@@ -6157,7 +6166,7 @@ function renderNetLeaderboard(parentContainer, players) {
 // Guys Trip versions - without Team column
 function renderGuysTripGrossLeaderboard(parentContainer, golfers) {
     if (!Array.isArray(golfers) || golfers.length === 0) return;
-    const { container, body } = createWidgetContainer('Individual Tournament Leaderboard - Gross', 'gross-leaderboard');
+    const { container, body } = createWidgetContainer('Individual Tournament Leaderboard - Gross <button type="button" class="help-icon" data-help="gross-vs-net" aria-label="Gross vs Net">?</button>', 'gross-leaderboard');
 
       const leaderboardDiv = document.createElement("div");
       leaderboardDiv.className = "gross-leaderboard";
@@ -6192,7 +6201,7 @@ function renderGuysTripGrossLeaderboard(parentContainer, golfers) {
 
 function renderGuysTripNetLeaderboard(parentContainer, players) {
     if (!Array.isArray(players) || players.length === 0) return;
-    const { container, body } = createWidgetContainer('Individual Tournament Leaderboard - Net', 'net-leaderboard');
+    const { container, body } = createWidgetContainer('Individual Tournament Leaderboard - Net <button type="button" class="help-icon" data-help="gross-vs-net" aria-label="Gross vs Net">?</button>', 'net-leaderboard');
 
       const netDiv = document.createElement("div");
       netDiv.className = "net-leaderboard";
@@ -6485,7 +6494,7 @@ function renderHandicapTable(parentContainer, courses, golfers) {
         explanation.className = "handicap-explanation";
         const displayPct = parseFloat(tournamentHandicapPct || 100);
         explanation.innerHTML = `
-          <strong>How Playing Handicap is Calculated:</strong><br>
+          <strong>How Playing Handicap is Calculated: <button type="button" class="help-icon" data-help="playing-handicap" aria-label="About playing handicap">?</button></strong><br>
           Each golfer's <b>course handicap</b> is calculated according to USGA guidelines using the formula:<br>
           <code>(Handicap &times; (Slope / 113) + (Rating - 72))</code><br>
           For this tournament, we are using <b>${displayPct}%</b> of the course handicap to calculate the <b>playing handicap</b>.<br>
@@ -6929,7 +6938,7 @@ function loadMatchScorecard(match_id, container_id = "today-summary") {
 
       // Header
       const header = document.createElement("tr");
-      header.innerHTML = `<th></th><th>#</th><th>P</th><th>HI</th>` + golfers.map(golfer => {
+      header.innerHTML = `<th></th><th>#</th><th>P</th><th><span class="help-term" data-help="stroke-index">HI</span></th>` + golfers.map(golfer => {
         let bgColor = golfer.team_color || "var(--color-brand-primary)";
         let txtColor = golfer.team_color ? pickContrastColorFromHex(golfer.team_color) : "#fff";
         return `<th style="background-color: ${bgColor}; color: ${txtColor};">${golfer.name} (${parseFloat(golfer.handicap).toFixed(1)})</th>`;
@@ -7967,7 +7976,7 @@ async function showEditTournamentForm(tournament) {
       </div>
     </div>
     <div style="margin-bottom:1.5rem;">
-      <label style="display:block; margin-bottom:0.4rem; font-weight:bold;">Handicap %</label>
+      <label style="display:block; margin-bottom:0.4rem; font-weight:bold;">Handicap % <button type="button" class="help-icon" data-help="handicap-pct" aria-label="What is Handicap %?">?</button></label>
       <input type="number" id="edit-tournament-handicap" value="${tournament.handicap_pct ?? 80}" min="0" max="100"
         style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
     </div>
@@ -9630,12 +9639,12 @@ function _renderCourseTeesUI() {
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-3);">
         <div>
-          <label class="form-label">Slope</label>
+          <label class="form-label">Slope <button type="button" class="help-icon" data-help="slope-rating" aria-label="What are Slope and Rating?">?</button></label>
           <input type="number" class="tee-slope form-input" value="${t.slope || ''}"
             placeholder="113" min="55" max="155">
         </div>
         <div>
-          <label class="form-label">Rating</label>
+          <label class="form-label">Rating <button type="button" class="help-icon" data-help="slope-rating" aria-label="What are Slope and Rating?">?</button></label>
           <input type="number" class="tee-rating form-input" value="${t.rating || ''}"
             placeholder="72.0" step="0.1" min="60" max="82">
         </div>
@@ -10049,7 +10058,7 @@ async function showEditGroupPage() {
 
     <!-- Invite members card -->
     <div style="background:#fff; border:1px solid #e0e0e0; border-radius:12px; padding:1.25rem; margin-bottom:1rem; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-      <h3 style="margin:0 0 0.5rem; font-size:1.1rem; color:#1a1a1a;">Invite Members</h3>
+      <h3 style="margin:0 0 0.5rem; font-size:1.1rem; color:#1a1a1a;">Invite Members <button type="button" class="help-icon" data-help="invite-code" aria-label="About invite codes and links">?</button></h3>
       <p style="margin:0 0 1rem; font-size:0.9rem; color:#666;">Share the code or link below — anyone with it can join your group.</p>
       <div id="invite-link-loading" style="color:#aaa; font-size:0.9rem; text-align:center; padding:0.5rem 0;">Loading…</div>
       <div id="invite-link-block" style="display:none;">
@@ -10360,7 +10369,7 @@ function showMemberDetailPage(member) {
 
     <!-- Password reset card -->
     <div style="background:#fff; border:1px solid #e0e0e0; border-radius:12px; padding:1.25rem; margin-bottom:1rem; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-      <h3 style="margin:0 0 0.5rem; font-size:1.1rem; color:#1a1a1a;">Reset Password</h3>
+      <h3 style="margin:0 0 0.5rem; font-size:1.1rem; color:#1a1a1a;">Reset Password <button type="button" class="help-icon" data-help="password-reset-link" aria-label="About reset links">?</button></h3>
       <p style="margin:0 0 1rem; font-size:0.9rem; color:#666;">Generate a one-time reset link to share with this member. It expires in 24 hours.</p>
       <button id="member-reset-btn" style="width:100%; padding:0.65rem; background:#fff; color:#4F2185; border:1px solid #4F2185; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Generate Reset Link</button>
       <div id="member-reset-link-block" style="display:none; margin-top:1rem;">
@@ -10522,7 +10531,7 @@ function renderGolferCard(g, list) {
       <div style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem;">
         <div style="min-width:0;">
           <div style="font-weight:700; font-size:1rem; color:#1a1c23; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${g.first_name} ${g.last_name}</div>
-          <div style="font-size:0.82rem; color:#4F2185; font-weight:600; margin-top:0.1rem;">Handicap: ${g.handicap}</div>
+          <div style="font-size:0.82rem; color:#4F2185; font-weight:600; margin-top:0.1rem;"><span class="help-term" data-help="handicap-index">Handicap</span>: ${g.handicap}</div>
           ${emailLine}
         </div>
         <div style="display:flex; gap:0.4rem; flex-shrink:0; align-items:center;">
@@ -10795,6 +10804,7 @@ function returnToDashboard() {
     'create-tournament-gt-step2',
     'manage-courses-container',
     'course-form-container',
+    'help-page-container',
   ];
   allPages.forEach(id => {
     const el = document.getElementById(id);
@@ -10807,6 +10817,63 @@ function returnToDashboard() {
     if (h2) h2.textContent = 'Edit Group';
   }
   document.getElementById('user-dashboard').style.display = 'block';
+}
+
+// ── Help system ─────────────────────────────────────────────────────────────
+function openHelpModal(topicKey) {
+  const topic = (window.HELP_TOPICS || {})[topicKey];
+  if (!topic) return;
+  document.getElementById('help-modal-title').textContent = topic.title;
+  document.getElementById('help-modal-body').innerHTML = topic.body;
+  document.getElementById('help-modal').style.display = 'flex';
+}
+
+function closeHelpModal() {
+  document.getElementById('help-modal').style.display = 'none';
+}
+
+// Map format names (DB labels / select values) to help topic keys
+const FORMAT_HELP_KEYS = {
+  'best ball': 'format-best-ball',
+  'best-ball': 'format-best-ball',
+  'rabbit':    'format-rabbit',
+  'wolf':      'format-wolf',
+  'skins':     'format-skins',
+  'ryder cup': 'format-ryder-cup',
+  'guys trip': 'format-guys-trip',
+  'stroke play, skins, scramble': 'format-skins',
+};
+
+// Point a format dropdown's help icon at the selected format's rules
+function syncFormatHelpIcon(selectEl, iconEl) {
+  if (!selectEl || !iconEl) return;
+  const byValue = (selectEl.value || '').toLowerCase().trim();
+  const byLabel = (selectEl.selectedOptions[0]?.textContent || '').toLowerCase().trim();
+  iconEl.dataset.help = FORMAT_HELP_KEYS[byValue] || FORMAT_HELP_KEYS[byLabel] || 'formats-overview';
+}
+
+function loadHelpPage() {
+  returnToDashboard();
+  document.getElementById('user-dashboard').style.display = 'none';
+  document.getElementById('help-page-container').style.display = 'block';
+  const list = document.getElementById('help-topics-list');
+  list.innerHTML = '';
+  (window.HELP_CATEGORIES || []).forEach(cat => {
+    const header = document.createElement('h3');
+    header.className = 'help-category-header';
+    header.textContent = cat;
+    list.appendChild(header);
+    Object.entries(window.HELP_TOPICS || {})
+      .filter(([, t]) => t.category === cat)
+      .forEach(([key, t]) => {
+        const row = document.createElement('button');
+        row.type = 'button';
+        row.className = 'help-topic-row';
+        row.dataset.help = key;
+        row.textContent = t.title;
+        list.appendChild(row);
+      });
+  });
 }
 
 function loadEditUserPage() {
@@ -11475,6 +11542,35 @@ document.addEventListener('DOMContentLoaded', () => {
     hamburgerDropdown.classList.remove('show');
     showEditGroupPage();
   });
+
+  // Menu option: Help
+  document.getElementById('menu-help').addEventListener('click', () => {
+    hamburgerDropdown.classList.remove('show');
+    loadHelpPage();
+  });
+  document.getElementById('back-from-help-btn').addEventListener('click', returnToDashboard);
+
+  // Help modal: delegated trigger (covers static HTML, JS templates, Help page rows)
+  document.addEventListener('click', (e) => {
+    const trigger = e.target.closest('[data-help]');
+    if (trigger) {
+      e.preventDefault();
+      e.stopPropagation();
+      openHelpModal(trigger.dataset.help);
+    }
+  });
+  document.getElementById('close-help-modal').addEventListener('click', closeHelpModal);
+  document.getElementById('help-modal').addEventListener('click', (e) => {
+    if (e.target.id === 'help-modal') closeHelpModal();
+  });
+
+  // Format dropdowns: help icon follows the selected format
+  const ntFormatSelect = document.getElementById('nt-format');
+  if (ntFormatSelect) ntFormatSelect.addEventListener('change', () =>
+    syncFormatHelpIcon(ntFormatSelect, document.getElementById('nt-format-help')));
+  const roundTypeSelectEl = document.getElementById('round-type-select');
+  if (roundTypeSelectEl) roundTypeSelectEl.addEventListener('change', () =>
+    syncFormatHelpIcon(roundTypeSelectEl, document.getElementById('round-type-help')));
 
   // Menu option: Logout
   document.getElementById('menu-logout').addEventListener('click', () => {

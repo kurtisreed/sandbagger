@@ -1385,6 +1385,88 @@ h3 {
   margin: 0 0 var(--space-5);
 }
 
+/* ── Help System ──────────────────────────────────────────────────────────── */
+.help-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-full);
+  border: 1.5px solid var(--color-action-info);
+  background: transparent;
+  color: var(--color-action-info);
+  font-size: 12px;
+  font-weight: 800;
+  font-family: var(--font-family);
+  line-height: 1;
+  cursor: pointer;
+  vertical-align: middle;
+  margin-left: var(--space-2);
+  padding: 0;
+  flex-shrink: 0;
+  position: relative;
+}
+/* Expand tap target to ~36px without affecting layout */
+.help-icon::after {
+  content: '';
+  position: absolute;
+  inset: -9px;
+}
+/* Light variant for dark purple auth cards */
+.help-icon-light {
+  border-color: rgba(255,255,255,0.7);
+  color: rgba(255,255,255,0.85);
+}
+/* Tappable jargon term (table headers, status badges) */
+.help-term {
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.help-modal-body {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--leading-normal);
+  max-height: 60vh;
+  overflow-y: auto;
+}
+.help-modal-body p { margin: 0 0 var(--space-3); }
+.help-modal-body p:last-child { margin-bottom: 0; }
+.help-modal-body code {
+  font-size: 0.8rem;
+  background: var(--color-bg-muted);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+/* Help page topic list */
+.help-category-header {
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+  font-weight: 800;
+  margin: var(--space-5) 0 var(--space-2);
+}
+.help-topic-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-2);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  font-family: var(--font-family);
+  cursor: pointer;
+  text-align: left;
+}
+.help-topic-row::after { content: '›'; color: var(--color-text-muted); font-size: var(--font-size-lg); }
+
 /* ── Match Results Modal ──────────────────────────────────────────────────── */
 .winner-display {
   font-size: var(--font-size-xl);

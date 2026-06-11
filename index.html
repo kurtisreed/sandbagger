@@ -44,6 +44,7 @@
         <button id="menu-my-history" type="button">My History</button>
         <button id="menu-edit-user" type="button">My Account</button>
         <button id="menu-edit-group" type="button" style="display:none;">Admin</button>
+        <button id="menu-help" type="button">Help</button>
         <button id="menu-logout" type="button">Logout</button>
       </div>
     </div>
@@ -139,6 +140,7 @@
       <input type="email" id="join-email" placeholder="Email address" autocomplete="email" required>
       <input type="password" id="join-password" placeholder="Password (min 8 characters)" autocomplete="new-password" required>
       <input type="number" id="join-handicap" placeholder="Handicap Index (e.g. 12.4)" step="0.1" min="-10" max="54">
+      <p style="text-align:center; font-size:0.85rem; color:rgba(255,255,255,0.7); margin:-0.25rem 0 0.5rem;">Not sure about your handicap? <button type="button" class="help-icon help-icon-light" data-help="handicap-index" aria-label="What is a Handicap Index?">?</button></p>
       <button type="submit" id="join-submit-btn">Join Group</button>
       <p id="join-error" style="display:none; color:#ffcdd2; text-align:center; font-size:0.9rem; margin:0;"></p>
       <p style="text-align:center; margin:0.75rem 0 0; color:rgba(255,255,255,0.7); font-size:0.9rem;">
@@ -242,11 +244,11 @@
       </div>
     </div>
     <div style="margin-bottom:var(--space-4);">
-      <label class="form-label">Handicap %</label>
+      <label class="form-label">Handicap % <button type="button" class="help-icon" data-help="handicap-pct" aria-label="What is Handicap %?">?</button></label>
       <input type="number" id="nt-handicap" value="80" min="0" max="100" class="form-input">
     </div>
     <div>
-      <label class="form-label">Format</label>
+      <label class="form-label">Format <button type="button" id="nt-format-help" class="help-icon" data-help="formats-overview" aria-label="About this format">?</button></label>
       <select id="nt-format" class="form-input form-select">
         <option value="">-- Choose Format --</option>
       </select>
@@ -261,7 +263,7 @@
 <!-- ── New Tournament: Step 2 — Team Setup ────────────────────────────────── -->
 <div class="container" id="create-tournament-step2" style="display: none;">
   <button id="nt-step2-back-btn" class="history-back-btn" style="margin-bottom:1rem;">← Back</button>
-  <h2 class="page-title">Team Setup</h2>
+  <h2 class="page-title">Team Setup <button type="button" class="help-icon" data-help="team-setup" aria-label="About team setup">?</button></h2>
   <p id="nt-step2-subtitle" class="page-subtitle" style="text-align:center;"></p>
 
   <div class="card">
@@ -296,7 +298,7 @@
 <!-- ── New Tournament: Step 3 — Assign Players ────────────────────────────── -->
 <div class="container" id="create-tournament-step3" style="display: none;">
   <button id="nt-step3-back-btn" class="history-back-btn" style="margin-bottom:1rem;">← Back</button>
-  <h2 class="page-title">Assign Players</h2>
+  <h2 class="page-title">Assign Players <button type="button" class="help-icon" data-help="assign-players" aria-label="About assigning players">?</button></h2>
   <p id="nt-step3-subtitle" class="page-subtitle" style="text-align:center;"></p>
   <div id="nt-step3-content"></div>
   <p id="nt-step3-error" style="display:none; color:var(--color-action-danger); margin:var(--space-3) 0;"></p>
@@ -307,7 +309,7 @@
 <!-- ── Guys Trip: Step 2 — Choose Players ─────────────────────────────────── -->
 <div class="container" id="create-tournament-gt-step2" style="display: none;">
   <button id="nt-gt-back-btn" class="history-back-btn" style="margin-bottom:1rem;">← Back</button>
-  <h2 class="page-title">Choose Players</h2>
+  <h2 class="page-title">Choose Players <button type="button" class="help-icon" data-help="format-guys-trip" aria-label="About Guys Trip">?</button></h2>
   <p id="nt-gt-subtitle" class="page-subtitle" style="text-align:center;"></p>
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--space-4);">
     <span id="nt-gt-selected-count" style="font-size:var(--font-size-sm); color:var(--color-text-secondary);"></span>
@@ -328,7 +330,7 @@
   <h2 class="page-title">Select Round Type</h2>
   <button id="back-from-round-type-btn" class="history-back-btn" style="margin-bottom:1rem;">Back</button>
   <div style="max-width:400px; margin:0 auto;">
-    <label for="round-type-select" class="form-label">Choose Round Type</label>
+    <label for="round-type-select" class="form-label">Choose Round Type <button type="button" id="round-type-help" class="help-icon" data-help="formats-overview" aria-label="About this round type">?</button></label>
     <select id="round-type-select" class="form-input form-select" style="margin-bottom:var(--space-4);">
       <option value="">-- Select Round Type --</option>
       <option value="best-ball">Best Ball</option>
@@ -342,7 +344,7 @@
 
 <!-- ── Add Round ──────────────────────────────────────────────────────────── -->
 <div class="container" id="add-round-container" style="display: none;">
-  <h2 class="page-title">Round Information</h2>
+  <h2 class="page-title">Round Information <button type="button" class="help-icon" data-help="add-round-flow" aria-label="About adding a round">?</button></h2>
   <button id="back-from-add-round-btn" class="history-back-btn" style="margin-bottom:1rem;">Back</button>
   <form id="add-round-form" style="max-width:400px; margin:0 auto;">
     <div style="margin-bottom:var(--space-4);">
@@ -371,7 +373,7 @@
 
 <!-- ── Add Matches ────────────────────────────────────────────────────────── -->
 <div class="container" id="add-matches-container" style="display: none;">
-  <h2 class="page-title">Matches</h2>
+  <h2 class="page-title">Matches <button type="button" class="help-icon" data-help="matches-setup" aria-label="About matches">?</button></h2>
   <button id="back-from-matches-btn" class="history-back-btn" style="margin-bottom:1rem;">Back</button>
   <div id="matches-list" style="max-width:500px; margin:0 auto;"></div>
   <div style="max-width:500px; margin:var(--space-4) auto;">
@@ -384,7 +386,7 @@
 
 <!-- ── Add Tee Times ──────────────────────────────────────────────────────── -->
 <div class="container" id="add-tee-times-container" style="display: none;">
-  <h2 class="page-title">Tee Times</h2>
+  <h2 class="page-title">Tee Times <button type="button" class="help-icon" data-help="tee-times" aria-label="About tee times">?</button></h2>
   <button id="back-from-tee-times-btn" class="history-back-btn" style="margin-bottom:1rem;">Back</button>
   <div id="tee-times-list" style="max-width:500px; margin:0 auto;"></div>
   <div style="max-width:500px; margin:var(--space-4) auto;">
@@ -420,7 +422,7 @@
 
     <!-- GolfCourseAPI search (new courses only) -->
     <div class="card" id="cf-search-card">
-      <label class="form-label">🔍 Search GolfCourseAPI</label>
+      <label class="form-label">🔍 Search GolfCourseAPI <button type="button" class="help-icon" data-help="course-search" aria-label="About course search">?</button></label>
       <p style="font-size:var(--font-size-xs); color:var(--color-text-muted); font-weight:600; margin-bottom:var(--space-3);">
         Search to auto-fill tees, slopes, ratings, and hole data — or fill in manually below.
       </p>
@@ -446,7 +448,7 @@
             <tr>
               <th>Hole</th>
               <th>Par</th>
-              <th>HI</th>
+              <th><span class="help-term" data-help="stroke-index">HI</span></th>
             </tr>
           </thead>
           <tbody id="cf-holes-body"></tbody>
@@ -488,6 +490,13 @@
   <img src="/images/lowerbanner.png" alt="" style="width:100%; display:block; margin-top:1rem;">
 </div>
 
+<!-- ── Help ───────────────────────────────────────────────────────────────── -->
+<div class="container" id="help-page-container" style="display: none;">
+  <button id="back-from-help-btn" class="history-back-btn" style="margin-bottom:1rem;">← Back</button>
+  <h2 class="page-title">Help</h2>
+  <div id="help-topics-list" style="max-width:500px; margin:0 auto;"></div>
+</div>
+
 <!-- ── My Account ─────────────────────────────────────────────────────────── -->
 <div class="container" id="edit-user-container" style="display: none;">
   <button id="back-from-edit-user-btn" class="history-back-btn" style="margin-bottom:1rem;">← Back</button>
@@ -512,7 +521,7 @@
           <p id="profile-display-email" class="meta-value" style="word-break:break-all;"></p>
         </div>
         <div>
-          <p class="meta-label">Handicap Index</p>
+          <p class="meta-label">Handicap Index <button type="button" class="help-icon" data-help="handicap-index" aria-label="What is a Handicap Index?">?</button></p>
           <p id="profile-display-handicap" class="meta-value"></p>
         </div>
       </div>
@@ -689,7 +698,7 @@
       <input type="email" id="edit-email" required class="form-input">
     </div>
     <div style="margin-bottom:var(--space-4);">
-      <label for="edit-handicap" class="form-label">Handicap Index</label>
+      <label for="edit-handicap" class="form-label">Handicap Index <button type="button" class="help-icon" data-help="handicap-index" aria-label="What is a Handicap Index?">?</button></label>
       <input type="number" id="edit-handicap" step="0.1" min="0" max="54" class="form-input">
     </div>
     <p id="edit-user-message" style="display:none; font-size:var(--font-size-sm); text-align:center; margin:0 0 var(--space-3);"></p>
@@ -736,7 +745,7 @@
         </div>
       </div>
       <div>
-        <label class="form-label">Handicap</label>
+        <label class="form-label">Handicap <button type="button" class="help-icon" data-help="handicap-index" aria-label="What is a Handicap Index?">?</button></label>
         <input id="egm-hcp" type="number" step="0.1" class="form-input" placeholder="Handicap">
       </div>
       <button id="egm-save-btn" style="width:100%; padding:0.65rem; background:#4F2185; color:white; border:none; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Save Changes</button>
@@ -798,7 +807,17 @@
   </div>
 </div>
 
+<!-- Help Modal (shared by all help icons + Help page) -->
+<div id="help-modal" style="display:none; position:fixed; inset:0; z-index:1300; background:rgba(0,0,0,0.55); align-items:center; justify-content:center;">
+  <div class="modal-box">
+    <button id="close-help-modal" class="modal-close">&#x2715;</button>
+    <h3 class="modal-title" id="help-modal-title"></h3>
+    <div id="help-modal-body" class="help-modal-body"></div>
+  </div>
+</div>
+
 <script src="offline-sync.js"></script>
+<script src="help-content.js"></script>
 <script src="script.js"></script>
 </body>
 </html>

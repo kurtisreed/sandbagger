@@ -1,10 +1,11 @@
 // service-worker.js
-const CACHE_NAME = 'sandbagger-v6';
+const CACHE_NAME = 'sandbagger-v7';
 
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/script.js',
+  '/help-content.js',
   '/style.css',
   '/manifest.json',
   '/offline-sync.js',
