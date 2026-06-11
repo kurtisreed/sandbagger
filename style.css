@@ -1581,6 +1581,11 @@ h3 {
 /* Stacked button groups */
 .btn + .btn { margin-top: var(--space-2); }
 
+/* Horizontal button rows: equal-height side-by-side buttons */
+.btn-row { display: flex; gap: var(--space-3); align-items: stretch; }
+.btn-row > .btn { flex: 1; width: auto; }
+.btn-row > .btn + .btn { margin-top: 0; }
+
 /* ── Course Manager ───────────────────────────────────────────────────────── */
 .course-card {
   display: flex;

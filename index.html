@@ -232,11 +232,11 @@
       <input type="text" id="nt-name" placeholder="e.g. Summer Golf Trip 2026" class="form-input">
     </div>
     <div style="display:flex; gap:1rem; margin-bottom:var(--space-4);">
-      <div style="flex:1;">
+      <div style="flex:1; min-width:0;">
         <label class="form-label">Start Date</label>
         <input type="date" id="nt-start-date" class="form-input">
       </div>
-      <div style="flex:1;">
+      <div style="flex:1; min-width:0;">
         <label class="form-label">End Date</label>
         <input type="date" id="nt-end-date" class="form-input">
       </div>
@@ -516,9 +516,9 @@
           <p id="profile-display-handicap" class="meta-value"></p>
         </div>
       </div>
-      <div style="display:flex; gap:var(--space-3);">
-        <button id="open-edit-profile-btn" class="btn btn-primary" style="flex:1;">Edit Profile</button>
-        <button id="open-change-password-btn" class="btn btn-ghost" style="flex:1;">Change Password</button>
+      <div class="btn-row">
+        <button id="open-edit-profile-btn" class="btn btn-primary">Edit Profile</button>
+        <button id="open-change-password-btn" class="btn btn-ghost">Change Password</button>
       </div>
     </div>
 
@@ -675,11 +675,11 @@
     <button id="close-edit-profile-modal" class="modal-close">&#x2715;</button>
     <h3 class="modal-title" style="margin-bottom:var(--space-5);">Edit Profile</h3>
     <div style="display:flex; gap:var(--space-3); margin-bottom:var(--space-3);">
-      <div style="flex:1;">
+      <div style="flex:1; min-width:0;">
         <label for="edit-first-name" class="form-label">First Name</label>
         <input type="text" id="edit-first-name" required class="form-input">
       </div>
-      <div style="flex:1;">
+      <div style="flex:1; min-width:0;">
         <label for="edit-last-name" class="form-label">Last Name</label>
         <input type="text" id="edit-last-name" required class="form-input">
       </div>
@@ -726,11 +726,11 @@
     <h3 class="modal-title" style="margin-bottom:var(--space-5);">Edit Golfer</h3>
     <div style="display:flex; flex-direction:column; gap:0.85rem;">
       <div style="display:flex; gap:0.5rem;">
-        <div style="flex:1;">
+        <div style="flex:1; min-width:0;">
           <label class="form-label">First Name</label>
           <input id="egm-first" type="text" class="form-input" placeholder="First">
         </div>
-        <div style="flex:1;">
+        <div style="flex:1; min-width:0;">
           <label class="form-label">Last Name</label>
           <input id="egm-last" type="text" class="form-input" placeholder="Last">
         </div>
