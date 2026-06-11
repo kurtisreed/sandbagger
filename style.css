@@ -697,23 +697,7 @@ main {
 
 #login-form h2, #register-form h2, #signup-chooser h2,
 #join-form h2, #reset-form h2, #org-picker h2 {
-  position: fixed;
-  top: env(safe-area-inset-top, 0);
-  left: 0;
-  width: 100vw;
-  margin: 0;
-  padding: 2rem 0 0;
-  text-align: center;
-  font-family: 'Bebas Neue', var(--font-family);
-  font-size: 13vw;
-  font-weight: 400;
-  color: var(--color-brand-gold);
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  line-height: 1;
-  white-space: nowrap;
-  text-shadow: 0 2px 16px rgba(0,0,0,0.5);
-  z-index: 11;
+  display: none;
 }
 
 /* ── Auth Container ───────────────────────────────────────────────────────── */
