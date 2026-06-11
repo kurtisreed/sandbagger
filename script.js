@@ -2033,8 +2033,9 @@ function loadRabbitScoring() {
       handicapExplanation.style.cssText = "margin-top: 2rem; padding: 1rem; background: #f5f5f5; border-radius: 4px; font-size: 0.9rem;";
       handicapExplanation.innerHTML = `
         <strong>How Rabbit Works: <button type="button" class="help-icon" data-help="format-rabbit" aria-label="Rabbit rules">?</button></strong><br>
-        Win a hole outright to own the Rabbit. If the next hole is tied, you keep the Rabbit.
-        Another player must win a hole to set the Rabbit free. Points awarded every 3 holes (6 total).<br><br>
+        Win a hole outright to own the Rabbit. You keep it as long as nobody beats your score on a hole —
+        if anyone scores better than you (even if several players tie for it), the Rabbit is knocked free.
+        Points awarded every 3 holes (6 total).<br><br>
         <strong>How Playing Handicap is Calculated: <button type="button" class="help-icon" data-help="playing-handicap" aria-label="About playing handicap">?</button></strong><br>
         Each golfer's course handicap is calculated according to USGA guidelines using the formula:<br>
         <code>(Handicap × (Slope / 113) + (Rating - 72)) × ${tournamentHandicapPct}%</code><br>
@@ -2509,18 +2510,19 @@ function loadRabbitScorecardReadOnly() {
                 const lowestNet = Math.min(...holeScores.map(s => s.net));
                 const winners = holeScores.filter(s => s.net === lowestNet);
 
-                if (winners.length === 1) {
-                  // Clear winner
-                  const winner = winners[0].golfer;
-                  if (rabbitFree) {
-                    rabbitOwner = winner;
-                    rabbitFree = false;
-                  } else if (rabbitOwner && rabbitOwner.id !== winner.id) {
+                if (rabbitOwner) {
+                  // Holder keeps the rabbit only if nobody beats their score.
+                  // Any player scoring better (even several tied) knocks it free.
+                  const holderScore = holeScores.find(s => s.golfer.id === rabbitOwner.id);
+                  if (holderScore && holderScore.net > lowestNet) {
                     rabbitOwner = null;
                     rabbitFree = true;
                   }
+                } else if (winners.length === 1) {
+                  // Rabbit is free — a single outright winner catches it
+                  rabbitOwner = winners[0].golfer;
+                  rabbitFree = false;
                 }
-                // Tie: rabbit stays where it is
               }
             }
 
@@ -2553,8 +2555,9 @@ function loadRabbitScorecardReadOnly() {
         explanation.style.cssText = "margin-top: 2rem; padding: 1rem; background: #f5f5f5; border-radius: 4px; font-size: 0.9rem;";
         explanation.innerHTML = `
           <strong>How Rabbit Works: <button type="button" class="help-icon" data-help="format-rabbit" aria-label="Rabbit rules">?</button></strong><br>
-          Win a hole outright to own the Rabbit. If the next hole is tied, you keep the Rabbit.
-          Another player must win a hole to set the Rabbit free. Points awarded every 3 holes (6 total).
+          Win a hole outright to own the Rabbit. You keep it as long as nobody beats your score on a hole —
+          if anyone scores better than you (even if several players tie for it), the Rabbit is knocked free.
+          Points awarded every 3 holes (6 total).
         `;
         container.appendChild(explanation);
       });
@@ -2597,24 +2600,19 @@ function calculateRabbitWinners() {
         const lowestNet = Math.min(...holeScores.map(s => s.net));
         const winners = holeScores.filter(s => s.net === lowestNet);
 
-        // If one player won outright
-        if (winners.length === 1) {
-          if (rabbitFree) {
-            // Rabbit was free, this player now owns it
-            rabbitOwner = winners[0].golfer;
-            rabbitFree = false;
-          } else if (rabbitOwner && rabbitOwner.id !== winners[0].golfer.id) {
-            // Different player won, rabbit is set free
-            rabbitFree = true;
+        if (rabbitOwner) {
+          // Holder keeps the rabbit only if nobody beats their score.
+          // Any player scoring better (even several tied) knocks it free.
+          const holderScore = holeScores.find(s => s.golfer.id === rabbitOwner.id);
+          if (holderScore && holderScore.net > lowestNet) {
             rabbitOwner = null;
-          } else if (!rabbitOwner) {
-            // No one owned it, this player now owns it
-            rabbitOwner = winners[0].golfer;
-            rabbitFree = false;
+            rabbitFree = true;
           }
-          // If the same player wins again, they keep the rabbit
+        } else if (winners.length === 1) {
+          // Rabbit is free — a single outright winner catches it
+          rabbitOwner = winners[0].golfer;
+          rabbitFree = false;
         }
-        // If tied, rabbit status doesn't change
       }
     }
 

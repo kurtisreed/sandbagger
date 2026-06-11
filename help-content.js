@@ -33,7 +33,7 @@ window.HELP_TOPICS = {
     category: 'Game Formats',
     title: 'Rabbit',
     body: `<p>The Rabbit starts the round running free. Win a hole <em>outright</em> — lowest net score, no ties — and you catch it.</p>
-<p>Once you hold the Rabbit, you keep it as long as nobody else wins a hole outright; tied holes change nothing. When another player does win a hole, the Rabbit is set <em>free</em>, and it takes another outright win for someone to catch it again.</p>
+<p>Once you hold the Rabbit, you keep it as long as nobody beats your score on a hole. The moment any player scores better than you — even if two or three of them tie for that better score — the Rabbit is knocked <em>free</em>, and it takes an outright win for someone to catch it again. Matching your score doesn't hurt you: ties with the holder change nothing.</p>
 <p>Points are awarded every 3 holes (6 segments per round): whoever holds the Rabbit at the end of each segment wins that segment. Tip: a tied hole helps whoever is holding the Rabbit — sometimes a safe par is all you need.</p>`
   },
 
