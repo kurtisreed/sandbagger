@@ -1,0 +1,15 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["ZC33A3H3Z6.com.kurtisreed.sandbagger"],
+        "components": [
+          { "/": "/", "?": { "join": "?*" } },
+          { "/": "/", "?": { "reset": "?*" } },
+          { "/": "/index.html", "?": { "join": "?*" } },
+          { "/": "/index.html", "?": { "reset": "?*" } }
+        ]
+      }
+    ]
+  }
+}

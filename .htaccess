@@ -63,5 +63,10 @@ RewriteRule . /index.php [L]
   Header set Expires "0"
 </FilesMatch>
 
+# Deep link verification: serve AASA with JSON content type
+<Files "apple-app-site-association">
+  ForceType application/json
+</Files>
+
 # LOCAL MAMP VERSION - cPanel handler removed for local development
 # For production, use .htaccess.production

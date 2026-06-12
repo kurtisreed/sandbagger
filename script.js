@@ -21,7 +21,40 @@ initializeApiUrl();
 document.addEventListener('DOMContentLoaded', () => {
   initializeApiUrl();
   initOfflineBanner();
+  initDeepLinks();
 });
+
+// ── Deep links (Universal Links / App Links) ─────────────────────────────────
+// When the OS opens https://sandbaggerscoring.com?join=CODE (or ?reset=TOKEN)
+// in the native app, re-enter the app with those params so the existing
+// startup logic handles the join/reset flow.
+function handleDeepLink(urlStr) {
+  if (!urlStr) return;
+  try {
+    const url    = new URL(urlStr);
+    const join   = url.searchParams.get('join');
+    const reset  = url.searchParams.get('reset');
+    if (!join && !reset) return;
+    const current = new URLSearchParams(window.location.search);
+    if (join && current.get('join') === join) return;      // already handling it
+    if (reset && current.get('reset') === reset) return;
+    const param = join ? `join=${encodeURIComponent(join)}` : `reset=${encodeURIComponent(reset)}`;
+    window.location.href = `/index.html?${param}`;
+  } catch (e) {
+    console.error('[Sandbagger] bad deep link:', urlStr, e);
+  }
+}
+
+function initDeepLinks() {
+  const cap = window.Capacitor;
+  if (!(cap && typeof cap.isNativePlatform === 'function' && cap.isNativePlatform())) return;
+  const AppPlugin = cap.Plugins && cap.Plugins.App;
+  if (!AppPlugin) return;
+  // Warm start: app already running when the link is tapped
+  AppPlugin.addListener('appUrlOpen', (event) => handleDeepLink(event && event.url));
+  // Cold start: app launched by the link
+  AppPlugin.getLaunchUrl().then(res => handleDeepLink(res && res.url)).catch(() => {});
+}
 
 // ── Offline score save helper ─────────────────────────────────────────────────
 
@@ -10328,9 +10361,10 @@ async function _loadGroupInviteLink(regenerate = false) {
     if (data.success) {
       // In the native app window.location is localhost — use the production
       // domain (API_BASE_URL) there; on the web keep the current origin.
-      const base = API_BASE_URL ||
-        `${window.location.origin}${window.location.pathname.replace(/\/$/, '')}`;
-      const link = `${base}?join=${data.code}`;
+      // Always target /index.html: the bare domain root serves the marketing
+      // landing page, which would drop the join code for browser users.
+      const origin = API_BASE_URL || window.location.origin;
+      const link = `${origin}/index.html?join=${data.code}`;
       if (codeEl)    codeEl.textContent = data.code;
       if (linkInput) linkInput.value    = link;
       if (loadingEl) loadingEl.style.display = 'none';
