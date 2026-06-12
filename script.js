@@ -10326,9 +10326,11 @@ async function _loadGroupInviteLink(regenerate = false) {
     const res  = await fetch(url, { method: 'POST', credentials: 'include' });
     const data = await res.json();
     if (data.success) {
-      const origin = window.location.origin;
-      const path   = window.location.pathname.replace(/\/$/, '');
-      const link   = `${origin}${path}?join=${data.code}`;
+      // In the native app window.location is localhost — use the production
+      // domain (API_BASE_URL) there; on the web keep the current origin.
+      const base = API_BASE_URL ||
+        `${window.location.origin}${window.location.pathname.replace(/\/$/, '')}`;
+      const link = `${base}?join=${data.code}`;
       if (codeEl)    codeEl.textContent = data.code;
       if (linkInput) linkInput.value    = link;
       if (loadingEl) loadingEl.style.display = 'none';
