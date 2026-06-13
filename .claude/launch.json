@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "sandbagger-php",
+      "runtimeExecutable": "/Applications/XAMPP/xamppfiles/bin/php",
+      "runtimeArgs": ["-S", "localhost:8080", "-t", "/Applications/XAMPP/xamppfiles/htdocs/sandbagger"],
+      "port": 8080
+    }
+  ]
+}
