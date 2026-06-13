@@ -1325,30 +1325,424 @@ function startRollingSkinsRound() {
   });
 }
 
-// Placeholder scorecard — full scoring/scoreboard built in the next step.
-function loadRollingSkinsScoring() {
-  const matchCode = sessionStorage.getItem('rolling_skins_match_code');
-  const setupContainer = document.getElementById('best-ball-setup');
-  const setupContent = document.getElementById('best-ball-setup-content');
-  if (setupContainer) setupContainer.style.display = 'block';
-  if (setupContent) {
-    setupContent.innerHTML = `
-      <div class="setup-wrapper" style="text-align:center;">
-        <h2 class="page-title">Rolling Skins</h2>
-        <div class="setup-section">
-          <p style="font-size:1.1rem; margin:0 0 0.5rem;">Round created! 🎉</p>
-          <p style="margin:0 0 0.5rem;">Share code <strong style="font-family:monospace; font-size:1.2rem;">${matchCode || '----'}</strong> with your group.</p>
-          <p style="color:var(--color-text-secondary); margin:0;">The live scorecard is coming next.</p>
-        </div>
-        <button class="btn btn-neutral btn-auto" onclick="returnToDashboard()">Back to Dashboard</button>
-      </div>
-    `;
+// Rolling Skins core: walk the holes in order, awarding a skin to the
+// outright-low net player. Tied holes roll their value onto the next hole.
+// Stops at the first hole not yet fully scored (carry can't be resolved past
+// an unknown hole). Any skins still carried at the end are void.
+function calculateRollingSkins(scoreMap) {
+  const holeResults = [];
+  const totals = {};
+  golfers.forEach(g => { totals[g.id] = 0; });
+  let carry = 0;
+
+  for (let hole = 1; hole <= 18; hole++) {
+    const holeScores = [];
+    let allScored = true;
+    golfers.forEach(g => {
+      const gross = scoreMap[hole] && scoreMap[hole][g.id] != null ? parseInt(scoreMap[hole][g.id]) : null;
+      if (gross == null) {
+        allScored = false;
+      } else {
+        const strokes = strokeMaps[g.id]?.[hole] || 0;
+        holeScores.push({ id: g.id, name: g.name, net: gross - strokes });
+      }
+    });
+    if (!allScored || holeScores.length !== golfers.length) break;
+
+    const lowestNet = Math.min(...holeScores.map(s => s.net));
+    const winners = holeScores.filter(s => s.net === lowestNet);
+    const value = carry + 1;
+    if (winners.length === 1) {
+      totals[winners[0].id] += value;
+      holeResults.push({ hole, value, winnerId: winners[0].id, winnerName: winners[0].name });
+      carry = 0;
+    } else {
+      holeResults.push({ hole, value, winnerId: null, winnerName: null });
+      carry = value;
+    }
   }
+
+  return { holeResults, totals, carryRemaining: carry };
 }
 
-// Placeholder read-only scorecard — built out in the next step.
+// Render the per-hole skins outcomes + per-player totals into a container.
+function renderRollingSkinsSummary(targetEl, calc) {
+  const anyResolved = calc.holeResults.length > 0;
+  const totalsArr = golfers.map(g => ({ id: g.id, name: g.name, skins: calc.totals[g.id] || 0 }))
+    .sort((a, b) => b.skins - a.skins);
+  const maxSkins = totalsArr.length ? totalsArr[0].skins : 0;
+
+  const totalsCards = totalsArr.map(t => `
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:0.5rem 0.75rem; border-radius:var(--radius-sm); margin-bottom:0.4rem;
+                background:${t.skins > 0 && t.skins === maxSkins ? '#FFC62F' : 'var(--color-bg-muted)'};">
+      <span style="font-weight:700;">${t.name}</span>
+      <span style="font-weight:800;">${t.skins} skin${t.skins === 1 ? '' : 's'}</span>
+    </div>`).join('');
+
+  const holeRows = calc.holeResults.map(r => {
+    const won = r.winnerId != null;
+    return `<tr style="${won ? '' : 'color:var(--color-text-muted);'}">
+      <td style="text-align:center;">${r.hole}</td>
+      <td style="text-align:center; font-weight:700;">${r.value}</td>
+      <td style="text-align:center;">${won ? `🏆 ${r.winnerName}` : 'Carry ▶'}</td>
+    </tr>`;
+  }).join('');
+
+  const carryNote = calc.carryRemaining > 0
+    ? `<p style="margin:0.75rem 0 0; font-size:0.85rem; color:var(--color-text-muted);">${calc.carryRemaining} skin${calc.carryRemaining === 1 ? '' : 's'} currently carrying. Unclaimed skins at the end of the round are void.</p>`
+    : '';
+
+  targetEl.innerHTML = `
+    <h3 style="margin:0 0 var(--space-3); font-size:var(--font-size-base); font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-secondary);">Skins Won</h3>
+    ${anyResolved ? totalsCards : '<p style="color:var(--color-text-muted); margin:0 0 var(--space-4);">No holes completed yet.</p>'}
+    ${anyResolved ? `
+      <h3 style="margin:var(--space-5) 0 var(--space-3); font-size:var(--font-size-base); font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-secondary);">By Hole</h3>
+      <table class="score-table" style="width:100%;">
+        <tr><th>Hole</th><th>Skins</th><th>Winner</th></tr>
+        ${holeRows}
+      </table>` : ''}
+    ${carryNote}
+  `;
+}
+
+function buildScoreMapFromSelects() {
+  const m = {};
+  document.querySelectorAll('select.score-input').forEach(s => {
+    if (s.value) {
+      const h = parseInt(s.dataset.hole);
+      const g = parseInt(s.dataset.golfer);
+      (m[h] = m[h] || {})[g] = parseInt(s.value);
+    }
+  });
+  return m;
+}
+
+function refreshRollingSkinsSummary() {
+  const summaryEl = document.getElementById('rolling-skins-summary');
+  if (summaryEl) renderRollingSkinsSummary(summaryEl, calculateRollingSkins(buildScoreMapFromSelects()));
+}
+
+function loadRollingSkinsScoring() {
+  const matchId = sessionStorage.getItem('rolling_skins_match_id');
+
+  if (!matchId) {
+    console.error('No match ID found');
+    return;
+  }
+
+  const setupContainer = document.getElementById('best-ball-setup');
+  if (setupContainer) setupContainer.style.display = 'none';
+
+  const appContent = document.getElementById('app-content');
+  if (!appContent) {
+    alert('Error: app-content not found. Please refresh the page.');
+    return;
+  }
+  appContent.style.display = 'block';
+
+  const navElement = appContent.querySelector('nav');
+  if (navElement) navElement.style.display = 'none';
+
+  const headerElement = appContent.querySelector('header');
+  if (headerElement) {
+    headerElement.style.display = 'block';
+    const tournamentBar = headerElement.querySelector('#tournament-bar');
+    if (tournamentBar) tournamentBar.style.display = 'none';
+    const userBar = headerElement.querySelector('#user-bar');
+    if (userBar) userBar.style.display = 'none';
+  }
+
+  const roundBar = document.getElementById('round-bar');
+  if (roundBar) roundBar.style.display = 'none';
+
+  const container = document.getElementById('score-entry-content');
+  if (!container) {
+    alert('Error: score-entry-content not found. Please refresh the page.');
+    return;
+  }
+  container.innerHTML = '';
+
+  fetch(`${API_BASE_URL}/api/get_rolling_skins_match.php?match_id=${matchId}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.error) {
+        container.innerHTML = `<p>Error loading match: ${data.error}</p>`;
+        return;
+      }
+
+      const matchGolfers = data.match;
+      holeInfo = data.holes;
+      const match = matchGolfers[0];
+      currentMatchId = match.match_id;
+      tournamentHandicapPct = parseFloat(match.tournament_handicap_pct || 100);
+
+      const headerDiv = document.createElement('div');
+      headerDiv.style.cssText = 'background: #4F2185; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; text-align: center; color: white;';
+      headerDiv.innerHTML = `<h2 style="margin: 0; color: white;">${match.match_name}</h2>`;
+      container.appendChild(headerDiv);
+
+      courses = {
+        course_name: match.course_name,
+        slope: match.slope,
+        rating: match.rating,
+        par: match.par
+      };
+
+      // Build golfer list (deduplicate), adjust handicaps to lowest = 0
+      const golferMap = new Map();
+      matchGolfers.forEach(row => {
+        if (!golferMap.has(row.golfer_id)) {
+          golferMap.set(row.golfer_id, {
+            id: row.golfer_id,
+            name: row.first_name,
+            lastName: row.last_name,
+            handicap: calculatePlayingHandicap(row.handicap),
+          });
+        }
+      });
+      golfers = adjustHandicapsForMatch(Array.from(golferMap.values()));
+
+      strokeMaps = {};
+      golfers.forEach(g => {
+        strokeMaps[g.id] = buildStrokeMapForGolfer(g.handicap, holeInfo);
+      });
+
+      const table = document.createElement("table");
+      table.classList.add("score-table");
+
+      const header = document.createElement("tr");
+      header.innerHTML = `<th>#</th><th>P</th><th><span class="help-term" data-help="stroke-index">HI</span></th>` + golfers.map(golfer =>
+        `<th style="background-color: #1e8a44; color: white;">${golfer.name} (${parseFloat(golfer.handicap).toFixed(1)})</th>`
+      ).join("");
+      table.appendChild(header);
+
+      for (let i = 1; i <= 18; i++) {
+        const row = document.createElement("tr");
+        const par = holeInfo.find(h => h.hole_number === i)?.par || "-";
+        const index = holeInfo.find(h => h.hole_number === i)?.handicap_index || "-";
+        row.innerHTML = `<td>${i}</td><td>${par}</td><td>${index}</td>` + golfers.map(golfer => {
+          const stroke = strokeMaps[golfer.id]?.[i] || 0;
+          const dots = strokeDots(stroke);
+          return `<td style="position:relative;">
+            ${dots}
+            <select class="score-input" data-hole="${i}" data-golfer="${golfer.id}" style="width: 100%; padding: 0.3rem; font-size: 1rem; border: 1px solid #ccc; border-radius: 3px; box-sizing: border-box;">
+              <option value="">–</option>
+              ${[1,2,3,4,5,6,7,8,9,10].map(n => `<option value="${n}">${n}</option>`).join('')}
+            </select>
+          </td>`;
+        }).join("");
+        table.appendChild(row);
+      }
+
+      const totalsRow = document.createElement("tr");
+      totalsRow.id = "totals-row";
+      totalsRow.innerHTML = `<td></td><td></td><td></td>` + golfers.map(g =>
+        `<td class="totals-cell" data-golfer="${g.id}">–</td>`
+      ).join("");
+      table.appendChild(totalsRow);
+
+      container.appendChild(table);
+
+      // Skins summary panel (re-rendered live as scores change)
+      const summaryDiv = document.createElement("div");
+      summaryDiv.id = "rolling-skins-summary";
+      summaryDiv.style.cssText = "margin-top: 2rem;";
+      container.appendChild(summaryDiv);
+
+      const explanation = document.createElement("div");
+      explanation.style.cssText = "margin-top: 2rem; padding: 1rem; background: #f5f5f5; border-radius: 4px; font-size: 0.9rem;";
+      explanation.innerHTML = `
+        <strong>How Rolling Skins Works: <button type="button" class="help-icon" data-help="format-rolling-skins" aria-label="Rolling Skins rules">?</button></strong><br>
+        Win a hole outright (lowest net) to take the skin. Tie a hole and the skin rolls onto the next, which is then worth 2 (and so on). Unclaimed skins at the end are void.<br><br>
+        <strong>How Playing Handicap is Calculated: <button type="button" class="help-icon" data-help="playing-handicap" aria-label="About playing handicap">?</button></strong><br>
+        Handicaps are adjusted so the lowest player is 0; strokes use<br>
+        <code>(Handicap × (Slope / 113) + (Rating - 72)) × ${tournamentHandicapPct}%</code><br>
+      `;
+      container.appendChild(explanation);
+
+      // Load existing scores
+      fetch(`${API_BASE_URL}/api/get_scores.php?match_id=${matchId}`, { credentials: 'include' })
+        .then(res => res.json())
+        .then(scores => {
+          scores.forEach(score => {
+            const select = document.querySelector(`select[data-hole="${score.hole_number}"][data-golfer="${score.golfer_id}"]`);
+            if (select) select.value = score.strokes;
+          });
+          updateScoreCellClasses();
+          applyPendingScores(matchId);
+          updateTotalScores();
+          refreshRollingSkinsSummary();
+        });
+
+      // Save + recompute on change
+      table.querySelectorAll("select").forEach(select => {
+        select.addEventListener("change", function () {
+          const strokes = this.value;
+          const hole = this.dataset.hole;
+          const golfer_id = this.dataset.golfer;
+          if (!strokes || !golfer_id || !hole) return;
+
+          saveScore({
+            match_id: matchId,
+            golfer_id: parseInt(golfer_id),
+            hole: parseInt(hole),
+            strokes: parseInt(strokes)
+          }, () => {
+            updateTotalScores();
+            updateScoreCellClasses();
+            refreshRollingSkinsSummary();
+          });
+        });
+      });
+    })
+    .catch(err => {
+      console.error("Error loading Rolling Skins match:", err);
+      container.innerHTML = '<p>Error loading match data. Please try again.</p>';
+    });
+}
+
 function loadRollingSkinsScorecardReadOnly() {
-  loadRollingSkinsScoring();
+  const matchId = sessionStorage.getItem('rolling_skins_match_id');
+
+  if (!matchId) {
+    console.error('No match ID found');
+    return;
+  }
+
+  document.getElementById('best-ball-setup').style.display = 'none';
+  document.getElementById('round-history-container').style.display = 'none';
+  document.getElementById('auth-container').style.display = 'none';
+
+  const appContent = document.getElementById('app-content');
+  appContent.style.display = 'block';
+
+  const navElement = appContent.querySelector('nav');
+  if (navElement) navElement.style.display = 'none';
+
+  const headerElement = appContent.querySelector('header');
+  if (headerElement) {
+    headerElement.style.display = 'block';
+    const tournamentBar = headerElement.querySelector('#tournament-bar');
+    if (tournamentBar) tournamentBar.style.display = 'none';
+    const userBar = headerElement.querySelector('#user-bar');
+    if (userBar) userBar.style.display = 'none';
+  }
+
+  const roundBar = document.getElementById('round-bar');
+  if (roundBar) roundBar.style.display = 'none';
+
+  const container = document.getElementById('score-entry-content');
+  container.innerHTML = '';
+
+  fetch(`${API_BASE_URL}/api/get_rolling_skins_match.php?match_id=${matchId}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.error) {
+        container.innerHTML = `<p>Error loading match: ${data.error}</p>`;
+        return;
+      }
+
+      const matchGolfers = data.match;
+      holeInfo = data.holes;
+      const match = matchGolfers[0];
+      currentMatchId = match.match_id;
+      tournamentHandicapPct = parseFloat(match.tournament_handicap_pct || 100);
+
+      const headerDiv = document.createElement('div');
+      headerDiv.style.cssText = 'background: #4F2185; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; text-align: center; color: white;';
+      headerDiv.innerHTML = `
+        <h2 style="margin: 0; color: white;">${match.match_name}</h2>
+        <p style="margin: 0.5rem 0 0 0; color: white; font-size: 1.1rem;">Match Finalized</p>
+      `;
+      container.appendChild(headerDiv);
+
+      courses = {
+        course_name: match.course_name,
+        slope: match.slope,
+        rating: match.rating,
+        par: match.par
+      };
+
+      const golferMap = new Map();
+      matchGolfers.forEach(row => {
+        if (!golferMap.has(row.golfer_id)) {
+          golferMap.set(row.golfer_id, {
+            id: row.golfer_id,
+            name: row.first_name,
+            lastName: row.last_name,
+            handicap: calculatePlayingHandicap(row.handicap),
+          });
+        }
+      });
+      golfers = adjustHandicapsForMatch(Array.from(golferMap.values()));
+
+      strokeMaps = {};
+      golfers.forEach(g => {
+        strokeMaps[g.id] = buildStrokeMapForGolfer(g.handicap, holeInfo);
+      });
+
+      const table = document.createElement("table");
+      table.classList.add("score-table");
+
+      const header = document.createElement("tr");
+      header.innerHTML = `<th>#</th><th>P</th><th><span class="help-term" data-help="stroke-index">HI</span></th>` + golfers.map(golfer =>
+        `<th style="background-color: #1e8a44; color: white;">${golfer.name} (${parseFloat(golfer.handicap).toFixed(1)})</th>`
+      ).join("");
+      table.appendChild(header);
+
+      fetch(`${API_BASE_URL}/api/get_scores.php?match_id=${matchId}`, { credentials: 'include' })
+        .then(res => res.json())
+        .then(scores => {
+          const scoreMap = {};
+          scores.forEach(score => {
+            if (!scoreMap[score.hole_number]) scoreMap[score.hole_number] = {};
+            scoreMap[score.hole_number][score.golfer_id] = score.strokes;
+          });
+
+          for (let i = 1; i <= 18; i++) {
+            const row = document.createElement("tr");
+            const par = holeInfo.find(h => h.hole_number === i)?.par || "-";
+            const index = holeInfo.find(h => h.hole_number === i)?.handicap_index || "-";
+            row.innerHTML = `<td>${i}</td><td>${par}</td><td>${index}</td>` + golfers.map(golfer => {
+              const stroke = strokeMaps[golfer.id]?.[i] || 0;
+              const dots = strokeDots(stroke);
+              const scoreValue = scoreMap[i] && scoreMap[i][golfer.id] ? scoreMap[i][golfer.id] : '–';
+              return `<td style="position:relative; text-align: center; padding: 0.5rem;">${dots}${scoreValue}</td>`;
+            }).join("");
+            table.appendChild(row);
+          }
+
+          const totalsRow = document.createElement("tr");
+          totalsRow.innerHTML = `<td></td><td></td><td></td>` + golfers.map(g => {
+            let total = 0;
+            for (let hole = 1; hole <= 18; hole++) {
+              if (scoreMap[hole] && scoreMap[hole][g.id]) total += parseInt(scoreMap[hole][g.id]);
+            }
+            return `<td style="text-align: center;">${total > 0 ? total : '–'}</td>`;
+          }).join("");
+          table.appendChild(totalsRow);
+
+          container.appendChild(table);
+
+          // Skins summary (computed from saved scores)
+          const summaryDiv = document.createElement("div");
+          summaryDiv.style.cssText = "margin-top: 2rem;";
+          renderRollingSkinsSummary(summaryDiv, calculateRollingSkins(scoreMap));
+          container.appendChild(summaryDiv);
+
+          const explanation = document.createElement("div");
+          explanation.style.cssText = "margin-top: 2rem; padding: 1rem; background: #f5f5f5; border-radius: 4px; font-size: 0.9rem;";
+          explanation.innerHTML = `
+            <strong>How Rolling Skins Works: <button type="button" class="help-icon" data-help="format-rolling-skins" aria-label="Rolling Skins rules">?</button></strong><br>
+            Win a hole outright (lowest net) to take the skin. Tie a hole and the skin rolls onto the next, which is then worth 2 (and so on). Unclaimed skins at the end are void.
+          `;
+          container.appendChild(explanation);
+        });
+    })
+    .catch(err => {
+      console.error("Error loading Rolling Skins match:", err);
+      container.innerHTML = '<p>Error loading match data. Please try again.</p>';
+    });
 }
 
 function loadWolfSetup(preserveSelections = false) {
