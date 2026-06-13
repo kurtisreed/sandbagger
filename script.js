@@ -318,10 +318,11 @@ function handicapSectionHTML() {
     </div>`;
 }
 
-// Display name for a player slot, stripping the "(handicap)" suffix.
+// Label for a manual-handicap slot: the player's name with their current
+// handicap (the dropdown option text already includes it, e.g. "Al Best (12.3)").
 function manualSlotName(sel, idx) {
   if (sel && sel.value && sel.value !== 'new-player' && sel.selectedIndex >= 0) {
-    return sel.options[sel.selectedIndex].textContent.replace(/\s*\(.*\)\s*$/, '').trim();
+    return sel.options[sel.selectedIndex].textContent.trim();
   }
   return `Player ${idx + 1}`;
 }
