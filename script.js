@@ -286,7 +286,18 @@ let currentSelectId = null; // Track which dropdown triggered new/edit player
 let newPlayerId = null; // Track newly created player ID
 let allCourses = []; // Store available courses
 
+// Tracks which quick-round setup is active so the New/Edit Player modal
+// reloads the correct screen after saving.
+let currentQuickSetup = 'best-ball';
+function reloadCurrentQuickSetup() {
+  if (currentQuickSetup === 'rabbit') loadRabbitSetup(true);
+  else if (currentQuickSetup === 'wolf') loadWolfSetup(true);
+  else if (currentQuickSetup === 'rolling-skins') loadRollingSkinsSetup(true);
+  else loadBestBallSetup(true);
+}
+
 function loadBestBallSetup(preserveSelections = false) {
+  currentQuickSetup = 'best-ball';
   const setupContainer = document.getElementById('best-ball-setup');
   const setupContent = document.getElementById('best-ball-setup-content');
 
@@ -695,10 +706,10 @@ function saveNewPlayer() {
         newPlayerId = data.golfer_id;
       }
 
-      // Reload the best ball setup to refresh dropdowns, preserving existing selections
+      // Reload the active setup to refresh dropdowns, preserving existing selections
       setTimeout(() => {
         closeNewPlayerModal();
-        loadBestBallSetup(true);
+        reloadCurrentQuickSetup();
       }, 1000);
     } else {
       message.style.color = 'red';
@@ -713,6 +724,7 @@ function saveNewPlayer() {
 }
 
 function loadRabbitSetup(preserveSelections = false) {
+  currentQuickSetup = 'rabbit';
   const setupContainer = document.getElementById('best-ball-setup');
   const setupContent = document.getElementById('best-ball-setup-content');
 
@@ -998,6 +1010,7 @@ function loadRabbitSetup(preserveSelections = false) {
 }
 
 function loadRollingSkinsSetup(preserveSelections = false) {
+  currentQuickSetup = 'rolling-skins';
   const setupContainer = document.getElementById('best-ball-setup');
   const setupContent = document.getElementById('best-ball-setup-content');
 
@@ -1746,6 +1759,7 @@ function loadRollingSkinsScorecardReadOnly() {
 }
 
 function loadWolfSetup(preserveSelections = false) {
+  currentQuickSetup = 'wolf';
   const setupContainer = document.getElementById('best-ball-setup');
   const setupContent = document.getElementById('best-ball-setup-content');
 

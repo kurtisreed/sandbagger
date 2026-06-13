@@ -14,7 +14,12 @@ require_once '../db_connect.php';
 require_once __DIR__ . '/auth_middleware.php';
 requireAdmin();
 
-$data = json_decode(file_get_contents('php://input'), true);
+// Accept either form-encoded POST (used by the quick round setup) or a JSON body
+$data = $_POST;
+if (empty($data)) {
+  $json = json_decode(file_get_contents('php://input'), true);
+  if (is_array($json)) $data = $json;
+}
 
 $golferId = isset($data['golfer_id']) ? intval($data['golfer_id']) : null;
 $firstName = isset($data['first_name']) ? trim($data['first_name']) : null;
@@ -38,8 +43,15 @@ if (!isset($conn) || $conn->connect_error) {
 }
 
 try {
-  $stmt = $conn->prepare("UPDATE golfers SET first_name = ?, last_name = ?, handicap = ?, email = ? WHERE golfer_id = ? AND org_id = ?");
-  $stmt->bind_param("ssdsii", $firstName, $lastName, $handicap, $email, $golferId, $currentOrgId);
+  if ($email !== null && $email !== '') {
+    // Email explicitly provided — update it
+    $stmt = $conn->prepare("UPDATE golfers SET first_name = ?, last_name = ?, handicap = ?, email = ? WHERE golfer_id = ? AND org_id = ?");
+    $stmt->bind_param("ssdsii", $firstName, $lastName, $handicap, $email, $golferId, $currentOrgId);
+  } else {
+    // No email supplied (e.g. quick round player edit) — leave existing email untouched
+    $stmt = $conn->prepare("UPDATE golfers SET first_name = ?, last_name = ?, handicap = ? WHERE golfer_id = ? AND org_id = ?");
+    $stmt->bind_param("ssdii", $firstName, $lastName, $handicap, $golferId, $currentOrgId);
+  }
 
   if ($stmt->execute()) {
     if ($stmt->affected_rows > 0 || $stmt->affected_rows === 0) {
