@@ -25,6 +25,11 @@ if (!$data ||
     exit;
 }
 
+// Manual handicaps: store -1 as the % sentinel and use the typed handicap per player
+$isManual = (($data['handicap_mode'] ?? 'calculated') === 'manual');
+$manualHandicaps = is_array($data['manual_handicaps'] ?? null) ? $data['manual_handicaps'] : [];
+$effectivePct = $isManual ? -1 : $data['handicap_pct'];
+
 try {
     // Start transaction
     $conn->begin_transaction();
@@ -40,7 +45,7 @@ try {
         INSERT INTO tournaments (name, start_date, end_date, handicap_pct, format_id, org_id)
         VALUES (?, ?, ?, ?, NULL, ?)
     ");
-    $stmt->bind_param('sssdi', $tournamentName, $currentDate, $currentDate, $data['handicap_pct'], $currentOrgId);
+    $stmt->bind_param('sssdi', $tournamentName, $currentDate, $currentDate, $effectivePct, $currentOrgId);
     $stmt->execute();
     $tournamentId = $stmt->insert_id;
 
@@ -86,16 +91,29 @@ try {
     $matchId = $stmt->insert_id;
 
     // 6. Link golfers to tournament with handicap snapshot (no team assignments for Wolf)
-    $stmt = $conn->prepare("
-        INSERT INTO tournament_golfers (tournament_id, golfer_id, team_id, handicap_at_assignment, handicap_pct_at_assignment)
-        SELECT ?, ?, NULL, g.handicap, ?
-        FROM golfers g
-        WHERE g.golfer_id = ?
-    ");
-
-    foreach ($data['players'] as $golferId) {
-        $stmt->bind_param('iidi', $tournamentId, $golferId, $data['handicap_pct'], $golferId);
-        $stmt->execute();
+    if ($isManual) {
+        // Manual: store the typed handicap directly, pct sentinel -1
+        $stmt = $conn->prepare("
+            INSERT INTO tournament_golfers (tournament_id, golfer_id, team_id, handicap_at_assignment, handicap_pct_at_assignment)
+            VALUES (?, ?, NULL, ?, -1)
+        ");
+        foreach ($data['players'] as $golferId) {
+            $manual = isset($manualHandicaps[$golferId]) ? (float)$manualHandicaps[$golferId] : 0;
+            $stmt->bind_param('iid', $tournamentId, $golferId, $manual);
+            $stmt->execute();
+        }
+    } else {
+        // Calculated: snapshot the golfer's index and the chosen %
+        $stmt = $conn->prepare("
+            INSERT INTO tournament_golfers (tournament_id, golfer_id, team_id, handicap_at_assignment, handicap_pct_at_assignment)
+            SELECT ?, ?, NULL, g.handicap, ?
+            FROM golfers g
+            WHERE g.golfer_id = ?
+        ");
+        foreach ($data['players'] as $golferId) {
+            $stmt->bind_param('iidi', $tournamentId, $golferId, $data['handicap_pct'], $golferId);
+            $stmt->execute();
+        }
     }
 
     // 7. Link all golfers to the match WITH player_order

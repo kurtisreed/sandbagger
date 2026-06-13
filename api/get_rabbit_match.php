@@ -43,8 +43,8 @@ SELECT
   g.golfer_id,
   g.first_name,
   g.last_name,
-  g.handicap,
-  t.handicap_pct AS tournament_handicap_pct
+  COALESCE(tg.handicap_at_assignment, g.handicap) AS handicap,
+  COALESCE(tg.handicap_pct_at_assignment, t.handicap_pct) AS tournament_handicap_pct
 FROM matches m
 JOIN rounds r ON m.round_id = r.round_id
 JOIN tournaments t ON r.tournament_id = t.tournament_id AND t.org_id = ?
@@ -52,6 +52,7 @@ JOIN courses c ON r.course_id = c.course_id
 JOIN course_tees ct ON r.tee_id = ct.tee_id
 JOIN match_golfers mg ON m.match_id = mg.match_id
 JOIN golfers g ON mg.golfer_id = g.golfer_id
+LEFT JOIN tournament_golfers tg ON g.golfer_id = tg.golfer_id AND tg.tournament_id = t.tournament_id
 WHERE m.match_id = ?
 ORDER BY g.first_name
 ";

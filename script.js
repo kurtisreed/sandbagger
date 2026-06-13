@@ -296,7 +296,109 @@ function reloadCurrentQuickSetup() {
   else loadBestBallSetup(true);
 }
 
+// ── Handicap mode (Calculated vs Manual) shared UI ───────────────────────────
+// Markup for the handicap section used by every quick-round setup. Contains the
+// mode dropdown, the existing % slider (calculated), and an empty manual wrap.
+function handicapSectionHTML() {
+  return `
+    <div class="setup-section">
+      <h3 style="margin:0 0 var(--space-3); font-size:var(--font-size-base); font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-secondary);">Handicaps</h3>
+      <div style="margin-bottom:1rem;">
+        <label class="form-label">Handicap Type</label>
+        <select id="handicap-mode-select" class="form-input form-select">
+          <option value="calculated">Calculated Handicaps</option>
+          <option value="manual">Manual Handicaps</option>
+        </select>
+      </div>
+      <div id="handicap-adjustment-slider-wrap">
+        <label class="form-label">Handicap Percentage: <span id="handicap-value" style="font-weight: bold;">100%</span></label>
+        <input type="range" id="handicap-slider" min="0" max="100" step="10" value="100" style="width: 100%; height: 8px; border-radius: 5px; background: #ddd; outline: none; cursor: pointer;">
+      </div>
+      <div id="manual-handicaps-wrap" style="display:none;"></div>
+    </div>`;
+}
+
+// Display name for a player slot, stripping the "(handicap)" suffix.
+function manualSlotName(sel, idx) {
+  if (sel && sel.value && sel.value !== 'new-player' && sel.selectedIndex >= 0) {
+    return sel.options[sel.selectedIndex].textContent.replace(/\s*\(.*\)\s*$/, '').trim();
+  }
+  return `Player ${idx + 1}`;
+}
+
+// Build one handicap number input per player slot, preserving any entered values.
+function renderManualHandicapInputs(playerSelectIds) {
+  const wrap = document.getElementById('manual-handicaps-wrap');
+  if (!wrap) return;
+  const prev = {};
+  playerSelectIds.forEach(sid => {
+    const inp = document.getElementById('manual-hcp-' + sid);
+    if (inp) prev[sid] = inp.value;
+  });
+  wrap.innerHTML = `
+    <label class="form-label" style="display:block; margin-bottom:var(--space-2);">Enter each player's handicap</label>
+    ${playerSelectIds.map((sid, i) => {
+      const sel = document.getElementById(sid);
+      return `<div style="display:flex; align-items:center; gap:var(--space-3); margin-bottom:0.5rem;">
+        <span class="manual-hcp-label" data-for="${sid}" style="flex:1;">${manualSlotName(sel, i)}</span>
+        <input type="number" step="0.1" id="manual-hcp-${sid}" class="form-input" style="flex:0 0 100px;" value="${prev[sid] ?? ''}">
+      </div>`;
+    }).join('')}
+  `;
+}
+
+// Wire the mode dropdown: toggle slider vs manual inputs, keep labels in sync.
+function wireHandicapModeToggle(playerSelectIds) {
+  const modeSel = document.getElementById('handicap-mode-select');
+  const sliderWrap = document.getElementById('handicap-adjustment-slider-wrap');
+  const manualWrap = document.getElementById('manual-handicaps-wrap');
+  if (!modeSel) return;
+  const apply = () => {
+    const manual = modeSel.value === 'manual';
+    if (sliderWrap) sliderWrap.style.display = manual ? 'none' : 'block';
+    if (manualWrap) manualWrap.style.display = manual ? 'block' : 'none';
+    if (manual) renderManualHandicapInputs(playerSelectIds);
+  };
+  modeSel.addEventListener('change', apply);
+  playerSelectIds.forEach((sid, i) => {
+    const sel = document.getElementById(sid);
+    if (sel) sel.addEventListener('change', () => {
+      const lbl = document.querySelector(`.manual-hcp-label[data-for="${sid}"]`);
+      if (lbl) lbl.textContent = manualSlotName(sel, i);
+    });
+  });
+  apply();
+}
+
+// Handicap explanation shown on scoring screens — manual vs calculated.
+function handicapExplanationHTML() {
+  if (parseFloat(tournamentHandicapPct) < 0) {
+    return `<strong>Handicaps</strong><br>Manual handicaps — entered directly; no course calculation or lowest-player adjustment.`;
+  }
+  return `<strong>How Playing Handicap is Calculated: <button type="button" class="help-icon" data-help="playing-handicap" aria-label="About playing handicap">?</button></strong><br>
+        Handicaps are adjusted so the lowest player is 0; strokes use<br>
+        <code>(Handicap × (Slope / 113) + (Rating - 72)) × ${tournamentHandicapPct}%</code>`;
+}
+
+// Collect the manual handicap map { golfer_id: value } from the inputs.
+// Returns { ok, handicaps, error }.
+function collectManualHandicaps(playerSelectIds) {
+  const handicaps = {};
+  for (let i = 0; i < playerSelectIds.length; i++) {
+    const sel = document.getElementById(playerSelectIds[i]);
+    if (!sel || !sel.value || sel.value === 'new-player') continue;
+    const inp = document.getElementById('manual-hcp-' + playerSelectIds[i]);
+    const val = inp ? inp.value : '';
+    if (val === '' || isNaN(val)) {
+      return { ok: false, error: `Please enter a handicap for ${manualSlotName(sel, i)}.` };
+    }
+    handicaps[parseInt(sel.value)] = parseFloat(val);
+  }
+  return { ok: true, handicaps };
+}
+
 function loadBestBallSetup(preserveSelections = false) {
+  currentQuickSetup = 'best-ball';
   currentQuickSetup = 'best-ball';
   const setupContainer = document.getElementById('best-ball-setup');
   const setupContent = document.getElementById('best-ball-setup-content');
@@ -426,13 +528,7 @@ function loadBestBallSetup(preserveSelections = false) {
             </div>
           </div>
 
-          <div class="setup-section">
-            <h3 style="margin:0 0 var(--space-3); font-size:var(--font-size-base); font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-secondary);">Handicap Adjustment</h3>
-            <div>
-              <label class="form-label">Handicap Percentage: <span id="handicap-value" style="font-weight: bold;">100%</span></label>
-              <input type="range" id="handicap-slider" min="0" max="100" step="10" value="100" style="width: 100%; height: 8px; border-radius: 5px; background: #ddd; outline: none; cursor: pointer;">
-            </div>
-          </div>
+          ${handicapSectionHTML()}
 
           <div style="display:flex; gap:var(--space-3); justify-content:center; flex-wrap:wrap;">
             <button id="start-best-ball" class="btn btn-success btn-auto">
@@ -476,6 +572,7 @@ function loadBestBallSetup(preserveSelections = false) {
       `;
 
       // Add event listeners
+      wireHandicapModeToggle(['team1-player1', 'team1-player2', 'team2-player1', 'team2-player2']);
       document.getElementById('start-best-ball').addEventListener('click', startBestBallRound);
       document.getElementById('cancel-best-ball').addEventListener('click', () => {
         setupContainer.style.display = 'none';
@@ -853,13 +950,7 @@ function loadRabbitSetup(preserveSelections = false) {
           </div>
         </div>
 
-        <div class="setup-section">
-          <h3 style="margin:0 0 var(--space-3); font-size:var(--font-size-base); font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-secondary);">Handicap Adjustment</h3>
-          <div>
-            <label class="form-label">Handicap Percentage: <span id="handicap-value" style="font-weight: bold;">100%</span></label>
-            <input type="range" id="handicap-slider" min="0" max="100" step="10" value="100" style="width: 100%; height: 8px; border-radius: 5px; background: #ddd; outline: none; cursor: pointer;">
-          </div>
-        </div>
+        ${handicapSectionHTML()}
 
         <div style="display:flex; gap:var(--space-3); justify-content:center; flex-wrap:wrap;">
           <button id="start-rabbit" class="btn btn-success btn-auto">
@@ -917,6 +1008,7 @@ function loadRabbitSetup(preserveSelections = false) {
     }
 
     // Add event listeners
+    wireHandicapModeToggle(['rabbit-player1', 'rabbit-player2', 'rabbit-player3', 'rabbit-player4']);
     document.getElementById('start-rabbit').addEventListener('click', startRabbitRound);
     document.getElementById('cancel-rabbit').addEventListener('click', () => {
       setupContainer.style.display = 'none';
@@ -1122,13 +1214,7 @@ function loadRollingSkinsSetup(preserveSelections = false) {
           </div>
         </div>
 
-        <div class="setup-section">
-          <h3 style="margin:0 0 var(--space-3); font-size:var(--font-size-base); font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-secondary);">Handicap Adjustment</h3>
-          <div>
-            <label class="form-label">Handicap Percentage: <span id="handicap-value" style="font-weight: bold;">100%</span></label>
-            <input type="range" id="handicap-slider" min="0" max="100" step="10" value="100" style="width: 100%; height: 8px; border-radius: 5px; background: #ddd; outline: none; cursor: pointer;">
-          </div>
-        </div>
+        ${handicapSectionHTML()}
 
         <div style="display:flex; gap:var(--space-3); justify-content:center; flex-wrap:wrap;">
           <button id="start-rolling-skins" class="btn btn-success btn-auto">
@@ -1185,6 +1271,7 @@ function loadRollingSkinsSetup(preserveSelections = false) {
     }
 
     // Add event listeners
+    wireHandicapModeToggle(['rs-player1', 'rs-player2', 'rs-player3', 'rs-player4']);
     document.getElementById('start-rolling-skins').addEventListener('click', startRollingSkinsRound);
     document.getElementById('cancel-rolling-skins').addEventListener('click', () => {
       setupContainer.style.display = 'none';
@@ -1295,6 +1382,15 @@ function startRollingSkinsRound() {
     return;
   }
 
+  // Handicap mode
+  const handicapMode = document.getElementById('handicap-mode-select')?.value || 'calculated';
+  let manualHandicaps = {};
+  if (handicapMode === 'manual') {
+    const hc = collectManualHandicaps(['rs-player1', 'rs-player2', 'rs-player3', 'rs-player4']);
+    if (!hc.ok) { message.style.color = 'red'; message.textContent = hc.error; return; }
+    manualHandicaps = hc.handicaps;
+  }
+
   message.style.color = 'blue';
   message.textContent = 'Creating round...';
 
@@ -1302,7 +1398,9 @@ function startRollingSkinsRound() {
     players: players.map(p => parseInt(p)),
     course_id: parseInt(courseId),
     tee_id: parseInt(teeId),
-    handicap_pct: parseFloat(handicapPct)
+    handicap_pct: parseFloat(handicapPct),
+    handicap_mode: handicapMode,
+    manual_handicaps: manualHandicaps
   };
 
   fetch(`${API_BASE_URL}/api/create_rolling_skins_round.php`, {
@@ -1567,9 +1665,7 @@ function loadRollingSkinsScoring() {
       explanation.innerHTML = `
         <strong>How Rolling Skins Works: <button type="button" class="help-icon" data-help="format-rolling-skins" aria-label="Rolling Skins rules">?</button></strong><br>
         Win a hole outright (lowest net) to take the skin. Tie a hole and the skin rolls onto the next, which is then worth 2 (and so on). Unclaimed skins at the end are void.<br><br>
-        <strong>How Playing Handicap is Calculated: <button type="button" class="help-icon" data-help="playing-handicap" aria-label="About playing handicap">?</button></strong><br>
-        Handicaps are adjusted so the lowest player is 0; strokes use<br>
-        <code>(Handicap × (Slope / 113) + (Rating - 72)) × ${tournamentHandicapPct}%</code><br>
+        ${handicapExplanationHTML()}
       `;
       container.appendChild(explanation);
 
@@ -1889,13 +1985,7 @@ function loadWolfSetup(preserveSelections = false) {
           </div>
         </div>
 
-        <div class="setup-section">
-          <h3 style="margin:0 0 var(--space-3); font-size:var(--font-size-base); font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-secondary);">Handicap Adjustment</h3>
-          <div>
-            <label class="form-label">Handicap Percentage: <span id="handicap-value" style="font-weight: bold;">100%</span></label>
-            <input type="range" id="handicap-slider" min="0" max="100" step="10" value="100" style="width: 100%; height: 8px; border-radius: 5px; background: #ddd; outline: none; cursor: pointer;">
-          </div>
-        </div>
+        ${handicapSectionHTML()}
 
         <div style="display:flex; gap:var(--space-3); justify-content:center; flex-wrap:wrap;">
           <button id="start-wolf" class="btn btn-success btn-auto">
@@ -1953,6 +2043,7 @@ function loadWolfSetup(preserveSelections = false) {
     }
 
     // Add event listeners
+    wireHandicapModeToggle(['wolf-player1', 'wolf-player2', 'wolf-player3', 'wolf-player4']);
     document.getElementById('start-wolf').addEventListener('click', startWolfRound);
     document.getElementById('cancel-wolf').addEventListener('click', () => {
       setupContainer.style.display = 'none';
@@ -2078,6 +2169,15 @@ function startWolfRound() {
     return;
   }
 
+  // Handicap mode
+  const handicapMode = document.getElementById('handicap-mode-select')?.value || 'calculated';
+  let manualHandicaps = {};
+  if (handicapMode === 'manual') {
+    const hc = collectManualHandicaps(['wolf-player1', 'wolf-player2', 'wolf-player3', 'wolf-player4']);
+    if (!hc.ok) { message.style.color = 'red'; message.textContent = hc.error; return; }
+    manualHandicaps = hc.handicaps;
+  }
+
   message.style.color = 'blue';
   message.textContent = 'Creating round...';
 
@@ -2085,7 +2185,9 @@ function startWolfRound() {
     players: players.map(p => parseInt(p)),
     course_id: parseInt(courseId),
     tee_id: parseInt(teeId),
-    handicap_pct: parseFloat(handicapPct)
+    handicap_pct: parseFloat(handicapPct),
+    handicap_mode: handicapMode,
+    manual_handicaps: manualHandicaps
   };
 
   fetch(`${API_BASE_URL}/api/create_wolf_round.php`, {
@@ -2316,9 +2418,7 @@ function loadWolfScoring() {
         <strong>How Wolf Works: <button type="button" class="help-icon" data-help="format-wolf" aria-label="Wolf rules">?</button></strong><br>
         The Wolf rotates each hole, and tees off last. The Wolf chooses a partner or goes Lone.<br>
         <strong>Scoring:</strong> Lone Wolf win = 3 pts (loss = 0 pts, others get 1 pt each). Partnership win = 1 pt each (loss = 0 pts each).<br><br>
-        <strong>How Playing Handicap is Calculated: <button type="button" class="help-icon" data-help="playing-handicap" aria-label="About playing handicap">?</button></strong><br>
-        Each golfer's course handicap is calculated according to USGA guidelines using the formula:<br>
-        <code>(Handicap × (Slope / 113) + (Rating - 72)) × ${tournamentHandicapPct}%</code><br>
+        ${handicapExplanationHTML()}
       `;
       container.appendChild(explanation);
 
@@ -2617,6 +2717,15 @@ function startRabbitRound() {
     return;
   }
 
+  // Handicap mode
+  const handicapMode = document.getElementById('handicap-mode-select')?.value || 'calculated';
+  let manualHandicaps = {};
+  if (handicapMode === 'manual') {
+    const hc = collectManualHandicaps(['rabbit-player1', 'rabbit-player2', 'rabbit-player3', 'rabbit-player4']);
+    if (!hc.ok) { message.style.color = 'red'; message.textContent = hc.error; return; }
+    manualHandicaps = hc.handicaps;
+  }
+
   message.style.color = 'blue';
   message.textContent = 'Creating round...';
 
@@ -2624,7 +2733,9 @@ function startRabbitRound() {
     players: players.map(p => parseInt(p)),
     course_id: parseInt(courseId),
     tee_id: parseInt(teeId),
-    handicap_pct: parseFloat(handicapPct)
+    handicap_pct: parseFloat(handicapPct),
+    handicap_mode: handicapMode,
+    manual_handicaps: manualHandicaps
   };
 
   fetch(`${API_BASE_URL}/api/create_rabbit_round.php`, {
@@ -2831,9 +2942,7 @@ function loadRabbitScoring() {
         Win a hole outright to own the Rabbit. You keep it as long as nobody beats your score on a hole —
         if anyone scores better than you (even if several players tie for it), the Rabbit is knocked free.
         Points awarded every 3 holes (6 total).<br><br>
-        <strong>How Playing Handicap is Calculated: <button type="button" class="help-icon" data-help="playing-handicap" aria-label="About playing handicap">?</button></strong><br>
-        Each golfer's course handicap is calculated according to USGA guidelines using the formula:<br>
-        <code>(Handicap × (Slope / 113) + (Rating - 72)) × ${tournamentHandicapPct}%</code><br>
+        ${handicapExplanationHTML()}
       `;
       container.appendChild(handicapExplanation);
 
@@ -3458,6 +3567,15 @@ function startBestBallRound() {
     return;
   }
 
+  // Handicap mode
+  const handicapMode = document.getElementById('handicap-mode-select')?.value || 'calculated';
+  let manualHandicaps = {};
+  if (handicapMode === 'manual') {
+    const hc = collectManualHandicaps(['team1-player1', 'team1-player2', 'team2-player1', 'team2-player2']);
+    if (!hc.ok) { message.style.color = 'red'; message.textContent = hc.error; return; }
+    manualHandicaps = hc.handicaps;
+  }
+
   message.style.color = '#2196F3';
   message.textContent = 'Creating round...';
 
@@ -3469,7 +3587,9 @@ function startBestBallRound() {
     team2_player2: parseInt(team2p2),
     course_id: parseInt(courseId),
     tee_id: parseInt(teeId),
-    handicap_pct: parseFloat(handicapPct)
+    handicap_pct: parseFloat(handicapPct),
+    handicap_mode: handicapMode,
+    manual_handicaps: manualHandicaps
   };
 
   fetch(`${API_BASE_URL}/api/create_quick_round.php`, {
@@ -3754,9 +3874,7 @@ function loadBestBallScoring() {
       const handicapExplanation = document.createElement("div");
       handicapExplanation.style.cssText = "margin-top: 2rem; padding: 1rem; background: #f5f5f5; border-radius: 4px; font-size: 0.9rem;";
       handicapExplanation.innerHTML = `
-        <strong>How Playing Handicap is Calculated: <button type="button" class="help-icon" data-help="playing-handicap" aria-label="About playing handicap">?</button></strong><br>
-        Each golfer's <b>playing handicap</b> is calculated according to USGA guidelines using the formula:<br>
-        <code>(Handicap × (Slope / 113) + (Rating - 72)) × ${tournamentHandicapPct}%</code><br>
+        ${handicapExplanationHTML()}
       `;
       container.appendChild(handicapExplanation);
 
@@ -4002,9 +4120,7 @@ function loadBestBallScorecardReadOnly() {
       const handicapExplanation = document.createElement("div");
       handicapExplanation.style.cssText = "margin-top: 2rem; padding: 1rem; background: #f5f5f5; border-radius: 4px; font-size: 0.9rem;";
       handicapExplanation.innerHTML = `
-        <strong>How Playing Handicap is Calculated: <button type="button" class="help-icon" data-help="playing-handicap" aria-label="About playing handicap">?</button></strong><br>
-        Each golfer's <b>course handicap</b> is calculated according to USGA guidelines using the formula:<br>
-        <code>(Handicap × (Slope / 113) + (Rating - 72)) × ${tournamentHandicapPct}%</code><br>
+        ${handicapExplanationHTML()}
       `;
       container.appendChild(handicapExplanation);
 
@@ -6705,6 +6821,8 @@ function strokeDots(stroke) {
 // Returns a new array with adjusted .handicap values.
 function adjustHandicapsForMatch(golfers) {
   if (!golfers || golfers.length === 0) return golfers;
+  // Manual handicap mode (sentinel pct < 0): use entered handicaps verbatim, no adjustment
+  if (typeof tournamentHandicapPct !== 'undefined' && parseFloat(tournamentHandicapPct) < 0) return golfers;
   const min = Math.min(...golfers.map(g => g.handicap));
   return golfers.map(g => ({ ...g, handicap: g.handicap - min }));
 }
@@ -8105,6 +8223,9 @@ function calculateBestBallStatus() {
 
 
 function calculatePlayingHandicap(handicap) {
+  // Manual handicap mode (sentinel pct < 0): use the entered handicap directly,
+  // with no slope/rating calculation or % scaling.
+  if (parseFloat(tournamentHandicapPct) < 0) return parseFloat(handicap) || 0;
   if (!courses || !courses.slope || !courses.rating || !tournamentHandicapPct) return 0;
   const slope = parseFloat(courses.slope);
   const rating = parseFloat(courses.rating);
