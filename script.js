@@ -997,6 +997,360 @@ function loadRabbitSetup(preserveSelections = false) {
   });
 }
 
+function loadRollingSkinsSetup(preserveSelections = false) {
+  const setupContainer = document.getElementById('best-ball-setup');
+  const setupContent = document.getElementById('best-ball-setup-content');
+
+  // Save current selections if we're preserving them
+  let savedSelections = {};
+  if (preserveSelections) {
+    const selects = ['rs-player1', 'rs-player2', 'rs-player3', 'rs-player4', 'select-course', 'select-tee'];
+    selects.forEach(id => {
+      const select = document.getElementById(id);
+      if (select && select.value && select.value !== 'new-player') {
+        savedSelections[id] = select.value;
+      }
+    });
+    const handicapSlider = document.getElementById('handicap-slider');
+    if (handicapSlider) {
+      savedSelections['handicap-slider'] = handicapSlider.value;
+    }
+  }
+
+  setupContainer.style.display = 'block';
+
+  Promise.all([
+    fetch(`${API_BASE_URL}/api/get_golfers.php`).then(res => {
+      if (!res.ok) throw new Error(`Golfers HTTP ${res.status}: ${res.statusText}`);
+      return res.json();
+    }),
+    fetch(`${API_BASE_URL}/api/courses.php`).then(res => {
+      if (!res.ok) throw new Error(`Courses HTTP ${res.status}: ${res.statusText}`);
+      return res.json();
+    })
+  ])
+  .then(([golfers, courses]) => {
+    allGolfers = golfers;
+    allCourses = courses;
+
+    const golferOptions = golfers.map(g => `<option value="${g.golfer_id}">${g.first_name} ${g.last_name} (${g.handicap})</option>`).join('');
+    const courseOptions = courses.map(c => `<option value="${c.course_id}">${c.name}</option>`).join('');
+
+    setupContent.innerHTML = `
+      <div class="setup-wrapper">
+        <h2 class="page-title">Rolling Skins Setup <button type="button" class="help-icon" data-help="format-rolling-skins" aria-label="Rolling Skins rules">?</button></h2>
+
+        <div class="setup-section">
+          <h3 style="margin:0 0 var(--space-3); font-size:var(--font-size-base); font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-secondary);">Players</h3>
+
+          <div style="margin-bottom: 1rem;">
+            <label class="form-label">Player 1:</label>
+            <div class="setup-player-row">
+              <select id="rs-player1" class="player-select form-input" style="flex:1;">
+                <option value="">-- Select Player --</option>
+                ${golferOptions}
+                <option value="new-player">+ New Player</option>
+              </select>
+              <button class="edit-player-btn" data-select="rs-player1" class="btn-edit-player">✏️</button>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 1rem;">
+            <label class="form-label">Player 2:</label>
+            <div class="setup-player-row">
+              <select id="rs-player2" class="player-select form-input" style="flex:1;">
+                <option value="">-- Select Player --</option>
+                ${golferOptions}
+                <option value="new-player">+ New Player</option>
+              </select>
+              <button class="edit-player-btn" data-select="rs-player2" class="btn-edit-player">✏️</button>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 1rem;">
+            <label class="form-label">Player 3:</label>
+            <div class="setup-player-row">
+              <select id="rs-player3" class="player-select form-input" style="flex:1;">
+                <option value="">-- Select Player --</option>
+                ${golferOptions}
+                <option value="new-player">+ New Player</option>
+              </select>
+              <button class="edit-player-btn" data-select="rs-player3" class="btn-edit-player">✏️</button>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 1rem;">
+            <label class="form-label">Player 4:</label>
+            <div class="setup-player-row">
+              <select id="rs-player4" class="player-select form-input" style="flex:1;">
+                <option value="">-- Select Player --</option>
+                ${golferOptions}
+                <option value="new-player">+ New Player</option>
+              </select>
+              <button class="edit-player-btn" data-select="rs-player4" class="btn-edit-player">✏️</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="setup-section">
+          <h3 style="margin:0 0 var(--space-3); font-size:var(--font-size-base); font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-secondary);">Course</h3>
+          <div style="margin-bottom: 1rem;">
+            <label class="form-label">Select Course:</label>
+            <select id="select-course" class="form-input form-select">
+              <option value="">-- Select Course --</option>
+              ${courseOptions}
+            </select>
+          </div>
+          <div id="tee-selection" style="display: none;">
+            <label class="form-label">Select Tees:</label>
+            <select id="select-tee" class="form-input form-select">
+              <option value="">-- Select Tees --</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="setup-section">
+          <h3 style="margin:0 0 var(--space-3); font-size:var(--font-size-base); font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-secondary);">Handicap Adjustment</h3>
+          <div>
+            <label class="form-label">Handicap Percentage: <span id="handicap-value" style="font-weight: bold;">100%</span></label>
+            <input type="range" id="handicap-slider" min="0" max="100" step="10" value="100" style="width: 100%; height: 8px; border-radius: 5px; background: #ddd; outline: none; cursor: pointer;">
+          </div>
+        </div>
+
+        <div style="display:flex; gap:var(--space-3); justify-content:center; flex-wrap:wrap;">
+          <button id="start-rolling-skins" class="btn btn-success btn-auto">
+            Start Round
+          </button>
+          <button id="cancel-rolling-skins" class="btn btn-neutral btn-auto">
+            Cancel
+          </button>
+        </div>
+        <div id="setup-message" style="margin-top: 1rem; text-align: center; color: red;"></div>
+      </div>
+
+      <!-- New Player Modal (reused) -->
+      <div id="new-player-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+        <div class="modal-box" style="max-width:400px;">
+          <h3 id="player-modal-title" class="modal-title" style="margin-bottom:var(--space-5);">Add New Player</h3>
+          <input type="hidden" id="edit-player-id" value="">
+          <div style="margin-bottom: 1rem;">
+            <label class="form-label">First Name:</label>
+            <input type="text" id="new-player-first-name" class="form-input">
+          </div>
+          <div style="margin-bottom: 1rem;">
+            <label class="form-label">Last Name:</label>
+            <input type="text" id="new-player-last-name" class="form-input">
+          </div>
+          <div style="margin-bottom: 1rem;">
+            <label class="form-label">Handicap: <button type="button" class="help-icon" data-help="handicap-index" aria-label="What is a Handicap Index?">?</button></label>
+            <input type="number" id="new-player-handicap" step="0.1" class="form-input">
+          </div>
+          <div id="new-player-message" style="margin-bottom: 1rem; color: red; text-align: center;"></div>
+          <div style="text-align: center;">
+            <button id="save-new-player" class="btn btn-success btn-auto">
+              Save
+            </button>
+            <button id="cancel-new-player" class="btn btn-neutral btn-auto">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Restore saved selections if preserving
+    if (preserveSelections) {
+      Object.keys(savedSelections).forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+          element.value = savedSelections[id];
+          if (id === 'select-course') {
+            element.dispatchEvent(new Event('change'));
+          }
+        }
+      });
+    }
+
+    // Add event listeners
+    document.getElementById('start-rolling-skins').addEventListener('click', startRollingSkinsRound);
+    document.getElementById('cancel-rolling-skins').addEventListener('click', () => {
+      setupContainer.style.display = 'none';
+      document.getElementById('user-dashboard').style.display = 'block';
+    });
+
+    // Add listeners for "New Player" option
+    document.querySelectorAll('.player-select').forEach(select => {
+      select.addEventListener('change', function() {
+        if (this.value === 'new-player') {
+          showNewPlayerModal(this.id);
+        }
+      });
+    });
+
+    // Modal event listeners
+    document.getElementById('cancel-new-player').addEventListener('click', closeNewPlayerModal);
+    document.getElementById('save-new-player').addEventListener('click', saveNewPlayer);
+
+    // Add listeners for edit buttons
+    document.querySelectorAll('.edit-player-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const select = document.getElementById(this.getAttribute('data-select'));
+        const golferId = select.value;
+        if (!golferId || golferId === 'new-player' || golferId === '') return;
+        const golfer = allGolfers.find(g => g.golfer_id == golferId);
+        if (golfer) showEditPlayerModal(golfer);
+      });
+    });
+
+    // Handicap slider
+    const handicapSlider = document.getElementById('handicap-slider');
+    const handicapValue = document.getElementById('handicap-value');
+    handicapSlider.addEventListener('input', function() {
+      handicapValue.textContent = this.value + '%';
+    });
+
+    // Course selection loads tees
+    const courseSelect = document.getElementById('select-course');
+    courseSelect.addEventListener('change', function() {
+      const courseId = this.value;
+      const teeSelection = document.getElementById('tee-selection');
+      const teeSelect = document.getElementById('select-tee');
+
+      if (!courseId) {
+        teeSelection.style.display = 'none';
+        teeSelect.innerHTML = '<option value="">-- Select Tees --</option>';
+        return;
+      }
+
+      fetch(`${API_BASE_URL}/api/get_course_tees.php?course_id=${courseId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.tees && data.tees.length > 0) {
+            teeSelect.innerHTML = '<option value="">-- Select Tees --</option>' +
+              data.tees.map(tee =>
+                `<option value="${tee.tee_id}">${tee.tee_name} (${tee.slope}, ${tee.rating}, ${tee.yardage})</option>`
+              ).join('');
+            teeSelection.style.display = 'block';
+            if (preserveSelections && savedSelections['select-tee']) {
+              setTimeout(() => { teeSelect.value = savedSelections['select-tee']; }, 100);
+            }
+          } else {
+            teeSelect.innerHTML = '<option value="">No tees available</option>';
+            teeSelection.style.display = 'block';
+          }
+        })
+        .catch(err => console.error('Error loading tees:', err));
+    });
+  })
+  .catch(err => {
+    console.error('Error loading setup data:', err);
+    setupContent.innerHTML = '<p style="color: red; text-align: center;">Error loading golfers. Please try again.</p>';
+  });
+}
+
+function startRollingSkinsRound() {
+  const player1 = document.getElementById('rs-player1').value;
+  const player2 = document.getElementById('rs-player2').value;
+  const player3 = document.getElementById('rs-player3').value;
+  const player4 = document.getElementById('rs-player4').value;
+  const courseId = document.getElementById('select-course').value;
+  const teeId = document.getElementById('select-tee').value;
+  const handicapPct = document.getElementById('handicap-slider').value;
+
+  const message = document.getElementById('setup-message');
+
+  // Validation
+  if (!player1 || !player2) {
+    message.style.color = 'red';
+    message.textContent = 'Please select at least 2 players.';
+    return;
+  }
+
+  if (!courseId || !teeId) {
+    message.style.color = 'red';
+    message.textContent = 'Please select a course and tees.';
+    return;
+  }
+
+  // Collect selected players (only non-empty values)
+  const players = [player1, player2, player3, player4].filter(p => p);
+
+  // Check for duplicate players
+  if (new Set(players).size !== players.length) {
+    message.style.color = 'red';
+    message.textContent = 'Please select different players.';
+    return;
+  }
+
+  message.style.color = 'blue';
+  message.textContent = 'Creating round...';
+
+  const rollingSkinsRoundData = {
+    players: players.map(p => parseInt(p)),
+    course_id: parseInt(courseId),
+    tee_id: parseInt(teeId),
+    handicap_pct: parseFloat(handicapPct)
+  };
+
+  fetch(`${API_BASE_URL}/api/create_rolling_skins_round.php`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(rollingSkinsRoundData),
+    credentials: 'include'
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      message.style.color = 'green';
+      message.textContent = 'Round created! Loading scorecard...';
+
+      sessionStorage.removeItem('quick_round_read_only');
+      sessionStorage.setItem('rolling_skins_match_id', data.match_id);
+      sessionStorage.setItem('rolling_skins_tournament_id', data.tournament_id);
+      sessionStorage.setItem('rolling_skins_round_id', data.round_id);
+      sessionStorage.setItem('rolling_skins_match_code', data.match_code);
+
+      setTimeout(() => {
+        loadRollingSkinsScoring();
+      }, 1000);
+    } else {
+      message.style.color = 'red';
+      message.textContent = 'Error creating round: ' + (data.error || 'Unknown error');
+    }
+  })
+  .catch(err => {
+    console.error('Error creating rolling skins round:', err);
+    message.style.color = 'red';
+    message.textContent = 'Error creating round. Please try again.';
+  });
+}
+
+// Placeholder scorecard — full scoring/scoreboard built in the next step.
+function loadRollingSkinsScoring() {
+  const matchCode = sessionStorage.getItem('rolling_skins_match_code');
+  const setupContainer = document.getElementById('best-ball-setup');
+  const setupContent = document.getElementById('best-ball-setup-content');
+  if (setupContainer) setupContainer.style.display = 'block';
+  if (setupContent) {
+    setupContent.innerHTML = `
+      <div class="setup-wrapper" style="text-align:center;">
+        <h2 class="page-title">Rolling Skins</h2>
+        <div class="setup-section">
+          <p style="font-size:1.1rem; margin:0 0 0.5rem;">Round created! 🎉</p>
+          <p style="margin:0 0 0.5rem;">Share code <strong style="font-family:monospace; font-size:1.2rem;">${matchCode || '----'}</strong> with your group.</p>
+          <p style="color:var(--color-text-secondary); margin:0;">The live scorecard is coming next.</p>
+        </div>
+        <button class="btn btn-neutral btn-auto" onclick="returnToDashboard()">Back to Dashboard</button>
+      </div>
+    `;
+  }
+}
+
+// Placeholder read-only scorecard — built out in the next step.
+function loadRollingSkinsScorecardReadOnly() {
+  loadRollingSkinsScoring();
+}
+
 function loadWolfSetup(preserveSelections = false) {
   const setupContainer = document.getElementById('best-ball-setup');
   const setupContent = document.getElementById('best-ball-setup-content');
@@ -7429,7 +7783,8 @@ function loadQuickRoundHistory() {
 
         const roundTypeColor = match.round_name === 'Best Ball' ? '#4F2185' :
                                match.round_name === 'Rabbit' ? '#FF5722' :
-                               match.round_name === 'Wolf' ? '#2196F3' : '#666';
+                               match.round_name === 'Wolf' ? '#2196F3' :
+                               match.round_name === 'Rolling Skins' ? '#1e8a44' : '#666';
 
         html += `
           <div class="match-history-card" data-match-id="${match.match_id}" data-round-name="${match.round_name}"
@@ -7482,6 +7837,9 @@ function loadQuickRoundFromHistory(matchId, roundName) {
   } else if (roundName === 'Wolf') {
     sessionStorage.setItem('wolf_match_id', matchId);
     loadWolfScorecardReadOnly();
+  } else if (roundName === 'Rolling Skins') {
+    sessionStorage.setItem('rolling_skins_match_id', matchId);
+    loadRollingSkinsScorecardReadOnly();
   }
 }
 
@@ -9084,6 +9442,17 @@ function loadQuickRoundFromTournament(tournamentId, roundName) {
           } else {
             sessionStorage.removeItem('quick_round_read_only');
             loadWolfScoring();
+          }
+        } else if (roundName === 'Rolling Skins') {
+          sessionStorage.setItem('rolling_skins_match_id', data.match_id);
+          sessionStorage.setItem('rolling_skins_tournament_id', tournamentId);
+
+          if (isFinalized) {
+            sessionStorage.setItem('quick_round_read_only', 'true');
+            loadRollingSkinsScorecardReadOnly();
+          } else {
+            sessionStorage.removeItem('quick_round_read_only');
+            loadRollingSkinsScoring();
           }
         }
       } else {
@@ -10872,6 +11241,8 @@ const FORMAT_HELP_KEYS = {
   'best-ball': 'format-best-ball',
   'rabbit':    'format-rabbit',
   'wolf':      'format-wolf',
+  'rolling-skins': 'format-rolling-skins',
+  'rolling skins': 'format-rolling-skins',
   'skins':     'format-skins',
   'ryder cup': 'format-ryder-cup',
   'guys trip': 'format-guys-trip',
@@ -12633,6 +13004,8 @@ document.addEventListener('DOMContentLoaded', () => {
         loadRabbitSetup();
       } else if (selectedType === 'wolf') {
         loadWolfSetup();
+      } else if (selectedType === 'rolling-skins') {
+        loadRollingSkinsSetup();
       }
     });
   }

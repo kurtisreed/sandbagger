@@ -30,7 +30,7 @@ $stmt = $conn->prepare("
     JOIN matches m ON mg.match_id = m.match_id
         AND (m.finalized IS NULL OR m.finalized = 0)
     JOIN rounds r ON m.round_id = r.round_id
-        AND r.round_name IN ('Best Ball', 'Rabbit', 'Wolf')
+        AND r.round_name IN ('Best Ball', 'Rabbit', 'Wolf', 'Rolling Skins')
     JOIN tournaments t ON r.tournament_id = t.tournament_id
         AND t.org_id = ?
     JOIN courses c ON m.course_id = c.course_id

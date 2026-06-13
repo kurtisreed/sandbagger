@@ -18,6 +18,7 @@ window.HELP_TOPICS = {
 <p><strong>Stroke Play, Skins, and Scramble</strong> — regular stroke play scoring. This format can also be used to track skins and manage a Scramble.</p>
 <p><strong>Rabbit</strong> — catch and hold the Rabbit by winning holes outright.</p>
 <p><strong>Wolf</strong> — the Wolf rotates each hole and picks a partner (or goes it alone) for points.</p>
+<p><strong>Rolling Skins</strong> — win a hole outright for a skin; tied holes roll the skin onto the next hole.</p>
 <p>Pick a format from the dropdown, then tap this icon again for the full rules.</p>`
   },
 
@@ -51,6 +52,14 @@ window.HELP_TOPICS = {
     body: `<p>The all-purpose format: everyone plays their own ball and posts a regular stroke play score, with gross and net leaderboards for the group.</p>
 <p>It also tracks <strong>skins</strong> automatically. Every hole is worth a "skin" — win one by posting the outright lowest <em>net</em> score on the hole. Beat everyone, not just tie them; if two or more players tie for low score, nobody wins that hole's skin. The skins table on the round page shows exactly who won which holes.</p>
 <p>Running a <strong>Scramble</strong>? Use this format too — enter the team's score and the leaderboards handle the rest.</p>`
+  },
+
+  'format-rolling-skins': {
+    category: 'Game Formats',
+    title: 'Rolling Skins',
+    body: `<p>Every hole is worth a skin. To win it you need the outright lowest <em>net</em> score on the hole — beat everyone, not just tie them.</p>
+<p>If two or more players tie for the low score, nobody wins and the skin <em>rolls</em> onto the next hole. So if hole 3 is tied, hole 4 is worth 2 skins; tie that too and hole 5 is worth 3, and so on until someone wins them all outright.</p>
+<p>That makes a clutch birdie late in a stretch of tied holes hugely valuable — one outright win can sweep a big pile of carried-over skins. Most net skins at the end of the round wins.</p>`
   },
 
   'format-ryder-cup': {

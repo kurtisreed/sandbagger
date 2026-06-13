@@ -16,7 +16,7 @@ if (!isset($conn) || $conn->connect_error) {
   }
 }
 
-// Get all quick round matches (Best Ball, Rabbit, Wolf) for this org
+// Get all quick round matches (Best Ball, Rabbit, Wolf, Rolling Skins) for this org
 $stmt = $conn->prepare("
 SELECT
   m.match_id,
@@ -31,7 +31,7 @@ JOIN rounds r ON m.round_id = r.round_id
 JOIN tournaments t ON t.tournament_id = r.tournament_id AND t.org_id = ?
 JOIN match_golfers mg ON m.match_id = mg.match_id
 JOIN golfers g ON mg.golfer_id = g.golfer_id
-WHERE r.round_name IN ('Best Ball', 'Rabbit', 'Wolf')
+WHERE r.round_name IN ('Best Ball', 'Rabbit', 'Wolf', 'Rolling Skins')
 GROUP BY m.match_id, m.match_name, m.match_code, m.round_id, m.finalized, r.round_name
 ORDER BY m.match_id DESC
 LIMIT 50
