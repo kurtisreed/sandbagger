@@ -53,7 +53,12 @@ if ($method === 'GET') {
   }
   $checkStmt->close();
 
-  $stmt = $conn->prepare("
+  $stmtBoth = $conn->prepare("
+    UPDATE tournament_golfers
+    SET handicap_at_assignment = ?, handicap_pct_at_assignment = ?
+    WHERE tournament_id = ? AND golfer_id = ?
+  ");
+  $stmtHcp = $conn->prepare("
     UPDATE tournament_golfers
     SET handicap_at_assignment = ?
     WHERE tournament_id = ? AND golfer_id = ?
@@ -62,8 +67,15 @@ if ($method === 'GET') {
   foreach ($golfers as $g) {
     $golfer_id = intval($g['golfer_id']);
     $handicap  = floatval($g['handicap_at_assignment']);
-    $stmt->bind_param('dii', $handicap, $tournament_id, $golfer_id);
-    $stmt->execute();
+    if (array_key_exists('handicap_pct_at_assignment', $g)) {
+      // Also flip the per-golfer % snapshot (drives manual/calculated detection)
+      $pct = floatval($g['handicap_pct_at_assignment']);
+      $stmtBoth->bind_param('ddii', $handicap, $pct, $tournament_id, $golfer_id);
+      $stmtBoth->execute();
+    } else {
+      $stmtHcp->bind_param('dii', $handicap, $tournament_id, $golfer_id);
+      $stmtHcp->execute();
+    }
   }
 
   echo json_encode(['success' => true]);

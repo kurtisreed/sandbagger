@@ -9025,6 +9025,8 @@ async function showEditTournamentForm(tournament) {
   content.innerHTML = '<p style="color:#666;">Loading...</p>';
 
   const isRyderCup = parseInt(tournament.format_id) === 3;
+  const isQuickRound = !tournament.format_id; // Best Ball / Rabbit / Wolf / Rolling Skins
+  const isManualMode = parseFloat(tournament.handicap_pct) < 0;
 
   // Fetch teams, all golfers, tournament golfers, and locked handicaps in parallel
   const [teams, allGolfers, tournamentGolfers, lockedHcps] = await Promise.all([
@@ -9101,7 +9103,11 @@ async function showEditTournamentForm(tournament) {
           </label>
         </td>
         <td style="${tdStyle} text-align:center; color:#555;">${liveHcp}</td>
-        <td style="${tdStyle} text-align:center;">${lockedCell}</td>
+        <td style="${tdStyle} text-align:center;">${
+          isQuickRound
+            ? `<input type="number" step="0.1" class="manual-hcp-input" data-golfer-id="${g.golfer_id}" data-live="${liveHcp}" value="${lockedHcp ?? liveHcp}" style="width:4rem; padding:0.25rem; font-size:0.85rem; border:1px solid #ccc; border-radius:4px; text-align:center;">`
+            : lockedCell
+        }</td>
         <td style="${tdStyle}">${teamCell}</td>
       </tr>`;
   });
@@ -9143,19 +9149,37 @@ async function showEditTournamentForm(tournament) {
           style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
       </div>
     </div>
+    ${isQuickRound ? `
+    <div style="margin-bottom:1rem;">
+      <label style="display:block; margin-bottom:0.4rem; font-weight:bold;">Handicap Type</label>
+      <select id="edit-handicap-mode-select" style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
+        <option value="calculated">Calculated Handicaps</option>
+        <option value="manual">Manual Handicaps</option>
+      </select>
+    </div>
+    <div id="edit-handicap-pct-wrap" style="margin-bottom:1.5rem;">
+      <label style="display:block; margin-bottom:0.4rem; font-weight:bold;">Handicap % <button type="button" class="help-icon" data-help="handicap-pct" aria-label="What is Handicap %?">?</button></label>
+      <input type="number" id="edit-tournament-handicap" value="${isManualMode ? 100 : (tournament.handicap_pct ?? 80)}" min="0" max="100"
+        style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
+    </div>
+    <p id="edit-manual-hint" style="display:none; margin:0 0 1.5rem; font-size:0.85rem; color:#666;">Enter each player's handicap in the Hdcp column below.</p>
+    ` : `
     <div style="margin-bottom:1.5rem;">
       <label style="display:block; margin-bottom:0.4rem; font-weight:bold;">Handicap % <button type="button" class="help-icon" data-help="handicap-pct" aria-label="What is Handicap %?">?</button></label>
       <input type="number" id="edit-tournament-handicap" value="${tournament.handicap_pct ?? 80}" min="0" max="100"
         style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
     </div>
+    `}
     ${teamsHtml}
     ${rosterHtml}
     <button id="save-edit-tournament-btn" style="width:100%; padding:0.75rem; background:#4F2185; color:white; border:none; border-radius:4px; font-size:1rem; font-weight:bold; cursor:pointer; margin-bottom:0.5rem;">
       Save Changes
     </button>
+    ${isQuickRound ? '' : `
     <button id="lock-handicaps-btn" style="width:100%; padding:0.75rem; background:white; color:#4F2185; border:2px solid #4F2185; border-radius:4px; font-size:1rem; font-weight:bold; cursor:pointer; margin-top:0.5rem;">
       Lock Handicaps for Tournament
     </button>
+    `}
     <div id="edit-tournament-status" style="margin-top:0.5rem; font-size:0.9rem; text-align:center;"></div>
     <hr style="border:none; border-top:1px solid var(--color-border); margin:var(--space-5) 0;">
     <button id="delete-tournament-btn" class="btn btn-danger">🗑 Delete This Tournament</button>
@@ -9177,9 +9201,29 @@ async function showEditTournamentForm(tournament) {
     saveEditTournament(tournament, teams, isRyderCup);
   });
 
-  document.getElementById('lock-handicaps-btn').addEventListener('click', () => {
+  const lockBtn = document.getElementById('lock-handicaps-btn');
+  if (lockBtn) lockBtn.addEventListener('click', () => {
     showLockHandicapsScreen(tournament);
   });
+
+  // Quick rounds: Calculated/Manual toggle (Calculated → % field, Manual → per-player inputs)
+  const editModeSel = document.getElementById('edit-handicap-mode-select');
+  if (editModeSel) {
+    const pctWrap   = document.getElementById('edit-handicap-pct-wrap');
+    const manualHint = document.getElementById('edit-manual-hint');
+    const applyEditMode = () => {
+      const manual = editModeSel.value === 'manual';
+      if (pctWrap)    pctWrap.style.display    = manual ? 'none' : 'block';
+      if (manualHint) manualHint.style.display = manual ? 'block' : 'none';
+      content.querySelectorAll('.manual-hcp-input').forEach(inp => {
+        inp.disabled = !manual;
+        inp.style.opacity = manual ? '1' : '0.45';
+      });
+    };
+    editModeSel.value = isManualMode ? 'manual' : 'calculated';
+    editModeSel.addEventListener('change', applyEditMode);
+    applyEditMode();
+  }
 
   document.getElementById('delete-tournament-btn').addEventListener('click', () => {
     showDeleteTournamentModal(tournament.tournament_id, tournament.tournament_name);
@@ -9319,13 +9363,33 @@ async function saveEditTournament(tournament, teams, isRyderCup) {
     return;
   }
 
+  // Quick-round handicap mode (Calculated vs Manual)
+  const isQuickRound = !tournament.format_id;
+  const modeSel      = document.getElementById('edit-handicap-mode-select');
+  const manualMode   = isQuickRound && modeSel && modeSel.value === 'manual';
+  const effectivePct = manualMode ? -1 : handicapPct;
+
+  // Validate manual handicap inputs for the players in the round
+  if (manualMode) {
+    const checkedInputs = Array.from(document.querySelectorAll('.golfer-checkbox:checked'))
+      .map(cb => document.querySelector(`.manual-hcp-input[data-golfer-id="${cb.dataset.golferId}"]`));
+    for (const inp of checkedInputs) {
+      if (!inp || inp.value === '' || isNaN(inp.value)) {
+        status.textContent = 'Please enter a handicap for every player.';
+        status.style.color = 'red';
+        btn.disabled = false;
+        return;
+      }
+    }
+  }
+
   try {
-    // 1. Save tournament name, dates, and handicap %
+    // 1. Save tournament name, dates, and handicap % (−1 sentinel when manual)
     await fetch(`${API_BASE_URL}/api/tournaments.php?tournament_id=${tournament.tournament_id}`, {
       method: 'PUT',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, start_date: startDate, end_date: endDate, handicap_pct: handicapPct }),
+      body: JSON.stringify({ name, start_date: startDate, end_date: endDate, handicap_pct: effectivePct }),
     });
 
     // 2. Save team names + colors (Ryder Cup)
@@ -9357,6 +9421,27 @@ async function saveEditTournament(tournament, teams, isRyderCup) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tournament_id: tournament.tournament_id, assignments }),
     });
+
+    // 4. Quick rounds: persist per-player handicaps + the manual/calculated snapshot
+    if (isQuickRound) {
+      const golfers = assignments.map(a => {
+        const inp = document.querySelector(`.manual-hcp-input[data-golfer-id="${a.golfer_id}"]`);
+        if (manualMode) {
+          return { golfer_id: a.golfer_id, handicap_at_assignment: parseFloat(inp.value), handicap_pct_at_assignment: -1 };
+        }
+        // Calculated: snapshot the player's live index and the chosen %
+        const liveIndex = inp ? parseFloat(inp.dataset.live) : 0;
+        return { golfer_id: a.golfer_id, handicap_at_assignment: liveIndex, handicap_pct_at_assignment: handicapPct };
+      });
+      if (golfers.length) {
+        await fetch(`${API_BASE_URL}/api/lock_handicaps.php`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tournament_id: tournament.tournament_id, golfers }),
+        });
+      }
+    }
 
     status.textContent = 'Saved!';
     status.style.color = 'green';
