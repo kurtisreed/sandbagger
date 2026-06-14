@@ -8934,8 +8934,10 @@ function loadUserTournaments(golferId) {
           html += `<p style="font-size:var(--font-size-sm); color:var(--color-text-muted); margin:var(--space-2) 0;">No rounds scheduled</p>`;
         }
 
-        // Add Round button for admins
-        if (currentUser && currentUser.role === 'admin') {
+        // Add Round button for admins — not for Quick Rounds (single round only;
+        // they have no tournament format_id).
+        const isQuickRoundCard = !tournament.format_id;
+        if (currentUser && currentUser.role === 'admin' && !isQuickRoundCard) {
           html += `
             <button class="add-round-btn" data-tournament-id="${tournament.tournament_id}" data-format-id="${tournament.format_id || ''}">+ Add Round</button>
           `;
