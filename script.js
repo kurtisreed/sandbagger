@@ -217,7 +217,9 @@ function loadPage(page) {
 
     // Branch on format
     const formatId = parseInt(sessionStorage.getItem('selected_format_id'));
-    if (formatId === 5) {
+    if (formatId === 6) {
+      loadScrambleMatch();
+    } else if (formatId === 5) {
       loadSkinsMatch();
     } else if (formatId === 4) {
       loadGuysTripMatch();
@@ -230,7 +232,9 @@ function loadPage(page) {
     content.appendChild(container);
 
     const formatId = parseInt(sessionStorage.getItem('selected_format_id'));
-    if (formatId === 5) {
+    if (formatId === 6) {
+      loadScrambleSummary();
+    } else if (formatId === 5) {
       loadSkinsSummary();
     } else if (formatId === 4) {
       loadGuysTripSummary();
@@ -243,7 +247,9 @@ function loadPage(page) {
       content.appendChild(container);
 
       const formatId = parseInt(sessionStorage.getItem('selected_format_id'));
-      if (formatId === 5) {
+      if (formatId === 6) {
+        loadScrambleTournamentPage(container);
+      } else if (formatId === 5) {
         loadSkinsTournamentPage(container);
       } else if (formatId === 4) {
         loadGuysTripTournamentPage(container);
@@ -4809,6 +4815,246 @@ function loadSkinsMatch() {
     .catch(err => console.error('Error loading Skins match:', err));
 }
 
+// Scramble: the whole match is one team that records a single score per hole.
+// The team score is written to every golfer in the match so existing per-golfer
+// queries and the team leaderboard both work.
+function loadScrambleMatch() {
+  const roundId      = sessionStorage.getItem('selected_round_id');
+  const tournamentId = sessionStorage.getItem('selected_tournament_id');
+  const golferId     = currentUser?.golfer_id || sessionStorage.getItem('golfer_id');
+  const container    = document.getElementById('score-entry-content');
+
+  if (!roundId || !tournamentId || !golferId) {
+    container.innerHTML = '<p>Missing round, tournament, or golfer information.</p>';
+    return;
+  }
+
+  const url = `${API_BASE_URL}/api/get_match_by_round.php?round_id=${roundId}&tournament_id=${tournamentId}&golfer_id=${golferId}`;
+  fetch(url, { credentials: 'include' })
+    .then(res => res.json())
+    .then(data => {
+      const matchGolfers = data.match;
+      holeInfo = data.holes;
+
+      if (data.error || !matchGolfers || matchGolfers.length === 0) {
+        container.innerHTML = `
+          <div class="no-match-card">
+            <img src="/images/verticaltitlenowords.png" alt="Sandbagger" class="no-match-img">
+            <div class="no-match-overlay">
+              <h2 class="no-match-title">No Team Yet</h2>
+              <p class="no-match-msg">The commissioner hasn't set up your scramble team for this round. Check back later.</p>
+            </div>
+          </div>`;
+        return;
+      }
+
+      const firstMatch = matchGolfers[0];
+      courses = { course_name: firstMatch.course_name, slope: firstMatch.slope, rating: firstMatch.rating, par: firstMatch.par };
+      tournamentHandicapPct = parseFloat(data.tournament_handicap_pct || 100);
+      currentMatchId = firstMatch.match_id;
+
+      const teamGolferIds = matchGolfers.map(r => r.golfer_id);
+      const teamLabel     = matchGolfers.map(r => r.first_name).join(', ');
+      const repGolferId   = teamGolferIds[0]; // representative member for reading scores
+      const isFinalized   = firstMatch.finalized && parseInt(firstMatch.finalized) === 1;
+
+      const frontPar = holeInfo.filter(h => h.hole_number <= 9).reduce((s, h) => s + (h.par || 0), 0);
+      const backPar  = holeInfo.filter(h => h.hole_number >= 10).reduce((s, h) => s + (h.par || 0), 0);
+
+      const table = document.createElement('table');
+      table.classList.add('score-table');
+
+      const header = document.createElement('tr');
+      header.innerHTML = `<th>#</th><th>P</th><th><span class="help-term" data-help="format-scramble">Team</span> (${teamLabel})</th>`;
+      table.appendChild(header);
+
+      for (let i = 1; i <= 18; i++) {
+        const par = holeInfo.find(h => h.hole_number === i)?.par || '-';
+        const hi  = holeInfo.find(h => h.hole_number === i)?.handicap_index || '-';
+        const row = document.createElement('tr');
+        const select = `<select class="scramble-score" data-hole="${i}" ${isFinalized ? 'disabled' : ''}>
+            <option value="">–</option>
+            ${[...Array(12).keys()].map(n => `<option value="${n+1}">${n+1}</option>`).join('')}
+          </select>`;
+        row.innerHTML = `<td>${i}</td><td>${par}</td><td>${select}</td>`;
+        table.appendChild(row);
+
+        if (i === 9) {
+          const outRow = document.createElement('tr');
+          outRow.classList.add('subtotal-row');
+          outRow.innerHTML = `<td>Out</td><td>${frontPar}</td><td id="scramble-out">–</td>`;
+          table.appendChild(outRow);
+        }
+        if (i === 18) {
+          const inRow = document.createElement('tr');
+          inRow.classList.add('subtotal-row');
+          inRow.innerHTML = `<td>In</td><td>${backPar}</td><td id="scramble-in">–</td>`;
+          table.appendChild(inRow);
+        }
+      }
+
+      const totalRow = document.createElement('tr');
+      totalRow.innerHTML = `<td colspan="2" style="font-weight:700; text-align:left; padding-left:0.5rem;">Total</td><td id="scramble-total" style="font-weight:700;">–</td>`;
+      table.appendChild(totalRow);
+
+      const tableWrapper = document.createElement('div');
+      tableWrapper.className = 'skins-table-wrapper';
+      tableWrapper.appendChild(table);
+      container.appendChild(tableWrapper);
+
+      function colorCell(cell, strokes, par) {
+        cell.classList.remove('score-birdie', 'score-bogey', 'score-par', 'score-eagle');
+        const s = parseInt(strokes), p = parseInt(par);
+        if (!isNaN(p) && !isNaN(s)) {
+          if (s <= p - 2) cell.classList.add('score-eagle');
+          else if (s === p - 1) cell.classList.add('score-birdie');
+          else if (s === p) cell.classList.add('score-par');
+          else cell.classList.add('score-bogey');
+        }
+      }
+
+      function recomputeTotals() {
+        let out = 0, inn = 0;
+        table.querySelectorAll('select.scramble-score').forEach(sel => {
+          const v = parseInt(sel.value);
+          if (isNaN(v)) return;
+          if (parseInt(sel.dataset.hole) <= 9) out += v; else inn += v;
+        });
+        document.getElementById('scramble-out').textContent   = out || '–';
+        document.getElementById('scramble-in').textContent    = inn || '–';
+        document.getElementById('scramble-total').textContent = (out + inn) || '–';
+      }
+
+      // Finalize button (locks the round; no head-to-head points)
+      if (!isFinalized) {
+        let finalizeButton = document.getElementById('finalize-results-btn');
+        if (!finalizeButton) {
+          finalizeButton = document.createElement('button');
+          finalizeButton.id = 'finalize-results-btn';
+          finalizeButton.textContent = 'Finalize Round';
+          container.appendChild(finalizeButton);
+        }
+        finalizeButton.style.display = 'block';
+        finalizeButton.onclick = function() {
+          fetch(`${API_BASE_URL}/api/finalize_match_result.php`, {
+            method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ match_id: currentMatchId, points: [] })
+          })
+          .then(res => res.json())
+          .then(result => {
+            if (result.success) loadScrambleMatch();
+            else alert('Error finalizing: ' + (result.error || 'Unknown error'));
+          });
+        };
+      }
+
+      // Load existing scores from the representative team member
+      fetch(`${API_BASE_URL}/api/get_scores.php?match_id=${currentMatchId}`, { credentials: 'include' })
+        .then(res => res.json())
+        .then(scores => {
+          scores.filter(s => parseInt(s.golfer_id) === parseInt(repGolferId)).forEach(score => {
+            const sel = table.querySelector(`select.scramble-score[data-hole="${score.hole_number}"]`);
+            if (sel) {
+              sel.value = score.strokes;
+              const cell = sel.closest('td');
+              if (cell) colorCell(cell, score.strokes, holeInfo.find(h => h.hole_number == score.hole_number)?.par);
+            }
+          });
+          recomputeTotals();
+        })
+        .catch(err => console.error('Error loading scramble scores:', err));
+
+      // Change listener: write the single team score to every member
+      table.querySelectorAll('select.scramble-score').forEach(select => {
+        select.addEventListener('change', function() {
+          const strokes = this.value;
+          const hole    = this.dataset.hole;
+          if (!strokes || !hole) return;
+          const cell = this.closest('td');
+          if (cell) colorCell(cell, strokes, holeInfo.find(h => h.hole_number == hole)?.par);
+          teamGolferIds.forEach(gid => {
+            saveScore({ match_id: currentMatchId, golfer_id: parseInt(gid), hole: parseInt(hole), strokes: parseInt(strokes) });
+          });
+          recomputeTotals();
+        });
+      });
+    })
+    .catch(err => console.error('Error loading Scramble match:', err));
+}
+
+// ── Scramble team leaderboard (Round + Tournament tabs) ──────────────────────
+function sortScrambleTeams(teams) {
+  return teams.slice().sort((a, b) => {
+    const ap = a.holes_played > 0, bp = b.holes_played > 0;
+    if (ap !== bp) return ap ? -1 : 1;
+    if (ap && bp) return a.net - b.net;
+    return a.team_label.localeCompare(b.team_label);
+  });
+}
+
+function renderScrambleTeamTable(rows) {
+  const table = document.createElement('table');
+  table.className = 'score-table';
+  table.style.width = '100%';
+  table.innerHTML = `<tr><th>#</th><th>Team</th><th>Gross</th><th>Net</th><th>Thru</th></tr>` +
+    rows.map((t, i) => `<tr>
+      <td style="text-align:center;">${t.holes_played > 0 ? i + 1 : '–'}</td>
+      <td>${t.team_label}</td>
+      <td style="text-align:center;">${t.holes_played > 0 ? t.gross : '–'}</td>
+      <td style="text-align:center;">${t.holes_played > 0 ? t.net : '–'}</td>
+      <td style="text-align:center;">${t.holes_played || 0}</td>
+    </tr>`).join('');
+  return table;
+}
+
+function loadScrambleSummary() {
+  const roundId      = parseInt(sessionStorage.getItem('selected_round_id'));
+  const tournamentId = sessionStorage.getItem('selected_tournament_id');
+  const container    = document.getElementById('today-summary');
+  if (!tournamentId) { container.innerHTML = '<p>Missing tournament information.</p>'; return; }
+
+  container.innerHTML = '<p style="color:var(--color-text-muted); text-align:center; padding:2rem;">Loading…</p>';
+  fetch(`${API_BASE_URL}/api/get_scramble_leaderboard.php?tournament_id=${tournamentId}`, { credentials: 'include' })
+    .then(r => r.json())
+    .then(data => {
+      container.innerHTML = '';
+      const teams = sortScrambleTeams((data.teams || []).filter(t => t.round_id === roundId));
+      const { container: card, body } = createWidgetContainer('Team Leaderboard — This Round', 'scramble-leaderboard');
+      if (teams.length === 0) body.innerHTML = '<p style="color:var(--color-text-muted);">No teams or scores yet.</p>';
+      else body.appendChild(renderScrambleTeamTable(teams));
+      container.appendChild(card);
+    })
+    .catch(err => { console.error('Error loading scramble summary:', err); container.innerHTML = '<p>Error loading leaderboard.</p>'; });
+}
+
+function loadScrambleTournamentPage(container) {
+  const tournamentId = sessionStorage.getItem('selected_tournament_id');
+  if (!tournamentId) { container.innerHTML = '<p>Missing tournament information.</p>'; return; }
+
+  container.innerHTML = '<p style="color:var(--color-text-muted); text-align:center; padding:2rem;">Loading…</p>';
+  fetch(`${API_BASE_URL}/api/get_scramble_leaderboard.php?tournament_id=${tournamentId}`, { credentials: 'include' })
+    .then(r => r.json())
+    .then(data => {
+      container.innerHTML = '';
+      // Aggregate by team (same set of members) across all rounds
+      const byKey = {};
+      (data.teams || []).forEach(t => {
+        if (!byKey[t.team_key]) byKey[t.team_key] = { team_label: t.team_label, gross: 0, net: 0, par: 0, holes_played: 0 };
+        byKey[t.team_key].gross += t.gross;
+        byKey[t.team_key].net += t.net;
+        byKey[t.team_key].par += t.par;
+        byKey[t.team_key].holes_played += t.holes_played;
+      });
+      const teams = sortScrambleTeams(Object.values(byKey));
+      const { container: card, body } = createWidgetContainer('Team Leaderboard', 'scramble-leaderboard');
+      if (teams.length === 0) body.innerHTML = '<p style="color:var(--color-text-muted);">No teams or scores yet.</p>';
+      else body.appendChild(renderScrambleTeamTable(teams));
+      container.appendChild(card);
+    })
+    .catch(err => { console.error('Error loading scramble tournament page:', err); container.innerHTML = '<p>Error loading leaderboard.</p>'; });
+}
+
 function loadGuysTripMatch() {
   const roundId = sessionStorage.getItem('selected_round_id');
   const tournamentId = sessionStorage.getItem('selected_tournament_id');
@@ -8648,7 +8894,8 @@ function loadUserTournaments(golferId) {
             const isGuysTrip = tournament.format_id === 4;
             const isRyderCup = tournament.format_id === 3;
             const isSkins    = tournament.format_id === 5;
-            const hasEditButton = isGuysTrip || isRyderCup || isSkins;
+            const isScramble = tournament.format_id === 6;
+            const hasEditButton = isGuysTrip || isRyderCup || isSkins || isScramble;
             const hasScores = round.has_scores || false;
             const isLocked = hasScores;
 
@@ -8720,8 +8967,8 @@ function loadUserTournaments(golferId) {
           } else if (formatId === 4) {
             // Guys Trip tournament
             loadGuysTripTournamentRound(roundId, tournamentId, roundName, formatId);
-          } else if (formatId === 5) {
-            // Skins tournament — round view coming soon
+          } else if (formatId === 5 || formatId === 6) {
+            // Stroke Play / Scramble — group-based round view
             loadGuysTripTournamentRound(roundId, tournamentId, roundName, formatId);
           } else {
             // Load regular tournament round
@@ -9273,7 +9520,7 @@ async function loadExistingMatches(tournamentId, roundId) {
   try {
     const formatId   = parseInt(sessionStorage.getItem('add_round_format_id'));
     const isRyderCup = formatId === 3;
-    const isSkins    = formatId === 5;
+    const isSkins    = (formatId === 5 || formatId === 6); // groups-style setup
     tournamentTeams  = [];
 
     // Load tournament players and (for Ryder Cup) teams in parallel with existing matches
@@ -9338,7 +9585,7 @@ async function loadExistingMatches(tournamentId, roundId) {
 async function showMatchesScreen(tournamentId) {
   const formatId   = parseInt(sessionStorage.getItem('add_round_format_id'));
   const isRyderCup = formatId === 3;
-  const isSkins    = formatId === 5;
+  const isSkins    = (formatId === 5 || formatId === 6); // groups-style setup
 
   document.getElementById('add-matches-container').style.display = 'block';
 
@@ -9377,8 +9624,8 @@ function addNewMatch() {
   const matchIndex = matchesData.length;
   const matchId   = `new-${Date.now()}-${matchIndex}`;
 
-  if (formatId === 5) {
-    // Skins: individual players, no teams — start with 4 empty slots
+  if (formatId === 5 || formatId === 6) {
+    // Groups mode (Stroke Play / Scramble): players-only groups, no fixed teams
     matchesData.push({ match_id: matchId, players: ['', '', '', ''] });
   } else {
     matchesData.push({
@@ -9469,7 +9716,7 @@ function renderSkinsMatches() {
 
 function renderMatches() {
   const formatId = parseInt(sessionStorage.getItem('add_round_format_id'));
-  if (formatId === 5) { renderSkinsMatches(); return; }
+  if (formatId === 5 || formatId === 6) { renderSkinsMatches(); return; }
 
   const matchesList = document.getElementById('matches-list');
   matchesList.innerHTML = '';
@@ -9896,8 +10143,8 @@ function loadTournamentHistory(golferId) {
 
           if (isQuickRound) {
             loadQuickRoundFromTournament(tournamentId, roundName);
-          } else if (formatId === 4) {
-            // Guys Trip tournament
+          } else if (formatId === 4 || formatId === 6) {
+            // Guys Trip / Scramble — group-based round view
             loadGuysTripTournamentRound(roundId, tournamentId, roundName, formatId);
           } else {
             // Regular tournament (Ryder Cup, etc.)
@@ -10187,7 +10434,7 @@ function loadGuysTripTournamentRound(roundId, tournamentId, roundName = '', form
   // Rename "My Match" tab to "My Group" for Skins
   const myMatchTabBtn = document.querySelector('button[data-page="my-match"]');
   if (myMatchTabBtn) {
-    myMatchTabBtn.textContent = formatId === 5 ? 'My Group' : 'My Match';
+    myMatchTabBtn.textContent = formatId === 6 ? 'My Team' : (formatId === 5 ? 'My Group' : 'My Match');
   }
 
   // Default to My Match, but fall back to Tournament tab if no matchups assigned yet
@@ -11776,7 +12023,9 @@ const FORMAT_HELP_KEYS = {
   'skins':     'format-skins',
   'ryder cup': 'format-ryder-cup',
   'guys trip': 'format-guys-trip',
+  'stroke play and team best ball': 'format-skins',
   'stroke play, skins, scramble': 'format-skins',
+  'scramble':  'format-scramble',
 };
 
 // Point a format dropdown's help icon at the selected format's rules
@@ -12431,7 +12680,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Load the selected round - check format to call correct function
                 const formatId = parseInt(sessionStorage.getItem('selected_format_id'));
-                if (formatId === 4) {
+                if (formatId === 4 || formatId === 6) {
                   loadGuysTripTournamentRound(roundId, tournamentId, roundName, formatId);
                 } else {
                   loadTournamentRound(roundId, tournamentId, roundName);
@@ -13280,8 +13529,8 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (fId === 4) {
       // Guys Trip → Player Selection → Create
       showGuysTripStep2();
-    } else if (fId === 5) {
-      // Skins → Player Selection → Create (same UI as Guys Trip, no teams)
+    } else if (fId === 5 || fId === 6) {
+      // Stroke Play/Team Best Ball + Scramble → Player Selection → Groups (no fixed teams)
       showGuysTripStep2();
     } else {
       errorEl.textContent = `Setup for "${formatName}" tournaments is coming soon.`;

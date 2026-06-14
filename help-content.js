@@ -15,7 +15,8 @@ window.HELP_TOPICS = {
     body: `<p><strong>Ryder Cup</strong> — two teams battle across one or more rounds; every match is worth a point.</p>
 <p><strong>Guys Trip</strong> — multi-day trip with rotating 2-vs-2 team matches plus individual leaderboards.</p>
 <p><strong>Best Ball</strong> — 2-vs-2 match where each team counts its best score on every hole.</p>
-<p><strong>Stroke Play, Skins, and Scramble</strong> — regular stroke play scoring. This format can also be used to track skins and manage a Scramble.</p>
+<p><strong>Stroke Play and Team Best Ball</strong> — regular stroke play scoring with gross and net leaderboards, and automatic skins.</p>
+<p><strong>Scramble</strong> — teams play one ball; each team posts a single score per hole.</p>
 <p><strong>Rabbit</strong> — catch and hold the Rabbit by winning holes outright.</p>
 <p><strong>Wolf</strong> — the Wolf rotates each hole and picks a partner (or goes it alone) for points.</p>
 <p><strong>Rolling Skins</strong> — win a hole outright for a skin; tied holes roll the skin onto the next hole.</p>
@@ -48,10 +49,17 @@ window.HELP_TOPICS = {
 
   'format-skins': {
     category: 'Game Formats',
-    title: 'Stroke Play, Skins, and Scramble',
+    title: 'Stroke Play and Team Best Ball',
     body: `<p>The all-purpose format: everyone plays their own ball and posts a regular stroke play score, with gross and net leaderboards for the group.</p>
-<p>It also tracks <strong>skins</strong> automatically. Every hole is worth a "skin" — win one by posting the outright lowest <em>net</em> score on the hole. Beat everyone, not just tie them; if two or more players tie for low score, nobody wins that hole's skin. The skins table on the round page shows exactly who won which holes.</p>
-<p>Running a <strong>Scramble</strong>? Use this format too — enter the team's score and the leaderboards handle the rest.</p>`
+<p>It also tracks <strong>skins</strong> automatically. Every hole is worth a "skin" — win one by posting the outright lowest <em>net</em> score on the hole. Beat everyone, not just tie them; if two or more players tie for low score, nobody wins that hole's skin. The skins table on the round page shows exactly who won which holes.</p>`
+  },
+
+  'format-scramble': {
+    category: 'Game Formats',
+    title: 'Scramble',
+    body: `<p>A team game: everyone on the team tees off, the team picks the best shot, and everyone plays their next shot from that spot — repeating until the ball is holed.</p>
+<p>Each team records a <strong>single score per hole</strong>, so you'll enter just one number for the whole team. Lowest team total wins.</p>
+<p>The Round and Tournament leaderboards show one row per team with each team's gross and net total.</p>`
   },
 
   'format-rolling-skins': {
