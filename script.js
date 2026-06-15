@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initializeApiUrl();
   initOfflineBanner();
   initDeepLinks();
+  initHardwareBackButton();
 });
 
 // ── Deep links (Universal Links / App Links) ─────────────────────────────────
@@ -54,6 +55,95 @@ function initDeepLinks() {
   AppPlugin.addListener('appUrlOpen', (event) => handleDeepLink(event && event.url));
   // Cold start: app launched by the link
   AppPlugin.getLaunchUrl().then(res => handleDeepLink(res && res.url)).catch(() => {});
+}
+
+// ── Hardware back button (Android) ────────────────────────────────────────────
+// The app is a single page that toggles many views with display:none/block, so
+// the OS back button has no webview history to fall back on. Instead of letting
+// it kill the app, we delegate the press to whatever control already governs
+// "back" for the layer currently on top: a modal's close button, an auth form's
+// back link, or a sub-page's own "← Back" button. At the dashboard root we
+// minimize to the home screen rather than exiting.
+function initHardwareBackButton() {
+  const cap = window.Capacitor;
+  if (!(cap && typeof cap.isNativePlatform === 'function' && cap.isNativePlatform())) return;
+  const AppPlugin = cap.Plugins && cap.Plugins.App;
+  if (!AppPlugin) return;
+
+  // getClientRects() is empty when the element (or any ancestor) is display:none,
+  // and works for position:fixed overlays where offsetParent would be null.
+  const isVisible = el => !!el && el.getClientRects().length > 0;
+
+  // Modals — dismissed by clicking their close button, or hidden as a fallback.
+  const MODAL_IDS = [
+    'help-modal', 'invite-modal', 'create-group-modal', 'switch-group-modal',
+    'edit-profile-modal', 'change-password-modal', 'edit-golfer-modal',
+    'delete-tournament-modal', 'delete-round-modal',
+  ];
+
+  // Sub-pages, most-specific first so stacked flows (e.g. tournament steps)
+  // resolve to the innermost visible view. Each is closed by clicking the
+  // "← Back" control it already renders.
+  const PAGE_IDS = [
+    'course-form-container', 'manage-courses-container',
+    'create-tournament-step3', 'create-tournament-gt-step2',
+    'create-tournament-step2', 'create-tournament-container',
+    'add-tee-times-container', 'add-matches-container', 'add-round-container',
+    'edit-tournament-container', 'edit-group-container', 'edit-golfers-container',
+    'round-history-container', 'tournament-history-container', 'edit-user-container',
+    'best-ball-setup', 'quick-round-type-selector', 'help-page-container',
+    'app-content',
+  ];
+
+  AppPlugin.addListener('backButton', () => {
+    // 1. An open modal takes priority.
+    for (const id of MODAL_IDS) {
+      const m = document.getElementById(id);
+      if (isVisible(m)) {
+        const closeBtn = m.querySelector('.modal-close');
+        if (closeBtn) closeBtn.click();
+        else m.style.display = 'none';
+        return;
+      }
+    }
+
+    // 2. Auth screens: register/join step back to the chooser.
+    const registerForm = document.getElementById('register-form');
+    const joinForm = document.getElementById('join-form');
+    if (isVisible(registerForm) || isVisible(joinForm)) {
+      const link = isVisible(registerForm)
+        ? document.getElementById('register-back-link')
+        : document.getElementById('join-back-link');
+      if (link) link.click();
+      return;
+    }
+    const chooser = document.getElementById('signup-chooser');
+    if (isVisible(chooser)) {
+      const signin = document.getElementById('chooser-signin-link');
+      if (signin) signin.click();
+      return;
+    }
+
+    // 3. A sub-page is open — trigger its own back control. Prefer a visible
+    //    "← Back" button inside it (handles drilled-in scorecards), else fall
+    //    back to returning to the dashboard.
+    for (const id of PAGE_IDS) {
+      const page = document.getElementById(id);
+      if (isVisible(page)) {
+        const backBtn = [...page.querySelectorAll('.history-back-btn')].find(isVisible);
+        if (backBtn) backBtn.click();
+        else returnToDashboard();
+        return;
+      }
+    }
+
+    // 4. Dashboard / login root — minimize to home instead of killing the app.
+    if (typeof AppPlugin.minimizeApp === 'function') {
+      AppPlugin.minimizeApp();
+    } else if (typeof AppPlugin.exitApp === 'function') {
+      AppPlugin.exitApp();
+    }
+  });
 }
 
 // ── Offline score save helper ─────────────────────────────────────────────────
