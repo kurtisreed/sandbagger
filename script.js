@@ -559,7 +559,7 @@ function loadBestBallSetup(preserveSelections = false) {
       document.getElementById('start-best-ball').addEventListener('click', startBestBallRound);
       document.getElementById('cancel-best-ball').addEventListener('click', () => {
         setupContainer.style.display = 'none';
-        document.getElementById('user-dashboard').style.display = 'block';
+        showDashboard();
       });
 
       // Add listeners for "New Player" option
@@ -995,7 +995,7 @@ function loadRabbitSetup(preserveSelections = false) {
     document.getElementById('start-rabbit').addEventListener('click', startRabbitRound);
     document.getElementById('cancel-rabbit').addEventListener('click', () => {
       setupContainer.style.display = 'none';
-      document.getElementById('user-dashboard').style.display = 'block';
+      showDashboard();
     });
 
     // Add listeners for "New Player" option
@@ -1258,7 +1258,7 @@ function loadRollingSkinsSetup(preserveSelections = false) {
     document.getElementById('start-rolling-skins').addEventListener('click', startRollingSkinsRound);
     document.getElementById('cancel-rolling-skins').addEventListener('click', () => {
       setupContainer.style.display = 'none';
-      document.getElementById('user-dashboard').style.display = 'block';
+      showDashboard();
     });
 
     // Add listeners for "New Player" option
@@ -2030,7 +2030,7 @@ function loadWolfSetup(preserveSelections = false) {
     document.getElementById('start-wolf').addEventListener('click', startWolfRound);
     document.getElementById('cancel-wolf').addEventListener('click', () => {
       setupContainer.style.display = 'none';
-      document.getElementById('user-dashboard').style.display = 'block';
+      showDashboard();
     });
 
     // Add listeners for "New Player" option
@@ -8653,6 +8653,14 @@ function loadUserDashboard(golfer) {
   if (golfer.role === 'admin') loadAdminChecklist();
 }
 
+function showDashboard() {
+  document.getElementById('user-dashboard').style.display = 'block';
+  if (currentUser) {
+    loadActiveQuickRounds();
+    loadUserTournaments(currentUser.golfer_id);
+  }
+}
+
 function loadAdminChecklist() {
   const container = document.getElementById('admin-setup-checklist');
   if (!container) return;
@@ -9423,7 +9431,7 @@ async function saveEditTournament(tournament, teams, isRyderCup) {
     status.style.color = 'green';
     setTimeout(() => {
       document.getElementById('edit-tournament-container').style.display = 'none';
-      document.getElementById('user-dashboard').style.display = 'block';
+      showDashboard();
       loadUserTournaments(currentUser.golfer_id);
     }, 800);
 
@@ -9575,7 +9583,7 @@ async function editRound(tournamentId, roundId) {
     console.error('Error loading round data:', err);
     alert('Error loading round data. Please try again.');
     document.getElementById('add-round-container').style.display = 'none';
-    document.getElementById('user-dashboard').style.display = 'block';
+    showDashboard();
   }
 }
 
@@ -10299,7 +10307,7 @@ function loadQuickRoundFromTournament(tournamentId, roundName) {
         alert('Could not load match data');
         // Restore whichever container was visible before
         if (dashboardWasVisible) {
-          document.getElementById('user-dashboard').style.display = 'block';
+          showDashboard();
         } else if (historyWasVisible) {
           document.getElementById('tournament-history-container').style.display = 'block';
         }
@@ -10310,7 +10318,7 @@ function loadQuickRoundFromTournament(tournamentId, roundName) {
       alert('Error loading quick round');
       // Restore whichever container was visible before
       if (dashboardWasVisible) {
-        document.getElementById('user-dashboard').style.display = 'block';
+        showDashboard();
       } else if (historyWasVisible) {
         document.getElementById('tournament-history-container').style.display = 'block';
       }
@@ -10509,7 +10517,7 @@ function cancelNewTournament() {
   window._newTournamentData = null;
   ['create-tournament-container', 'create-tournament-step2', 'create-tournament-step3', 'create-tournament-gt-step2']
     .forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
-  document.getElementById('user-dashboard').style.display = 'block';
+  showDashboard();
 }
 
 // ── New Tournament — Step 1 ───────────────────────────────────────────────────
@@ -10790,7 +10798,7 @@ async function showGuysTripStep2() {
       window._newTournamentData = null;
       ['create-tournament-container', 'create-tournament-step2', 'create-tournament-step3', 'create-tournament-gt-step2']
         .forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
-      document.getElementById('user-dashboard').style.display = 'block';
+      showDashboard();
       loadUserTournaments(currentUser.golfer_id);
 
     } catch (err) {
@@ -11551,7 +11559,7 @@ async function showEditGroupPage() {
   document.getElementById('back-from-edit-group-btn').onclick = () => {
     container.dataset.open = 'false';
     container.style.display = 'none';
-    document.getElementById('user-dashboard').style.display = 'block';
+    showDashboard();
   };
 }
 
@@ -11932,7 +11940,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (editGroupContainer && editGroupContainer.dataset.open === 'true') {
         editGroupContainer.style.display = 'block';
       } else {
-        document.getElementById('user-dashboard').style.display = 'block';
+        showDashboard();
       }
     });
   }
@@ -12059,7 +12067,7 @@ function returnToDashboard() {
     const h2 = editGroupContainer.querySelector('h2');
     if (h2) h2.textContent = 'Edit Group';
   }
-  document.getElementById('user-dashboard').style.display = 'block';
+  showDashboard();
 }
 
 // ── Help system ─────────────────────────────────────────────────────────────
@@ -12295,7 +12303,7 @@ function showDeleteTournamentModal(tournamentId, tournamentName) {
       closeModal();
       if (data.success) {
         document.getElementById('edit-tournament-container').style.display = 'none';
-        document.getElementById('user-dashboard').style.display = 'block';
+        showDashboard();
         loadUserTournaments(currentUser.golfer_id);
       } else {
         alert(data.error || 'Failed to delete tournament.');
@@ -12348,7 +12356,7 @@ function showDeleteRoundModal(roundId, tournamentId, roundName) {
       if (data.success) {
         // Return to dashboard and refresh
         document.getElementById('add-round-container').style.display = 'none';
-        document.getElementById('user-dashboard').style.display = 'block';
+        showDashboard();
         loadUserTournaments(currentUser.golfer_id);
       } else {
         alert(data.error || 'Failed to delete round.');
@@ -13439,7 +13447,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('create-tournament-back-btn').addEventListener('click', () => {
     document.getElementById('create-tournament-container').style.display = 'none';
-    document.getElementById('user-dashboard').style.display = 'block';
+    showDashboard();
   });
   document.getElementById('nt-cancel-btn').addEventListener('click', cancelNewTournament);
   document.getElementById('nt-step2-cancel-btn').addEventListener('click', cancelNewTournament);
@@ -13520,7 +13528,7 @@ document.addEventListener('DOMContentLoaded', () => {
       window._newTournamentData = null;
       ['create-tournament-container', 'create-tournament-step2', 'create-tournament-step3']
         .forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
-      document.getElementById('user-dashboard').style.display = 'block';
+      showDashboard();
       loadUserTournaments(currentUser.golfer_id);
 
     } catch (err) {
@@ -13610,7 +13618,7 @@ document.addEventListener('DOMContentLoaded', () => {
       sessionStorage.removeItem('wolf_match_id');
       document.getElementById('round-history-container').style.display = 'none';
       if (currentUser) {
-        document.getElementById('user-dashboard').style.display = 'block';
+        showDashboard();
       } else {
         document.getElementById('auth-container').style.display = 'flex';
       }
@@ -13623,7 +13631,7 @@ document.addEventListener('DOMContentLoaded', () => {
     backFromTournamentHistoryBtn.addEventListener('click', () => {
       document.getElementById('tournament-history-container').style.display = 'none';
       if (currentUser) {
-        document.getElementById('user-dashboard').style.display = 'block';
+        showDashboard();
       } else {
         document.getElementById('auth-container').style.display = 'flex';
       }
@@ -13636,7 +13644,7 @@ document.addEventListener('DOMContentLoaded', () => {
     backFromEditUserBtn.addEventListener('click', () => {
       document.getElementById('edit-user-container').style.display = 'none';
       if (currentUser) {
-        document.getElementById('user-dashboard').style.display = 'block';
+        showDashboard();
       } else {
         document.getElementById('auth-container').style.display = 'flex';
       }
@@ -13856,7 +13864,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (cancelRoundTypeBtn) {
     cancelRoundTypeBtn.addEventListener('click', () => {
       document.getElementById('quick-round-type-selector').style.display = 'none';
-      document.getElementById('user-dashboard').style.display = 'block';
+      showDashboard();
     });
   }
 
@@ -13864,7 +13872,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (backFromRoundTypeBtn) {
     backFromRoundTypeBtn.addEventListener('click', () => {
       document.getElementById('quick-round-type-selector').style.display = 'none';
-      document.getElementById('user-dashboard').style.display = 'block';
+      showDashboard();
     });
   }
 
@@ -14014,7 +14022,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         setTimeout(() => {
           document.getElementById('add-round-container').style.display = 'none';
-          document.getElementById('user-dashboard').style.display = 'block';
+          showDashboard();
           sessionStorage.removeItem('add_round_tournament_id');
           isEditingRound = false;
           editingRoundId = null;
@@ -14038,7 +14046,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (backFromEditTournamentBtn) {
     backFromEditTournamentBtn.addEventListener('click', () => {
       document.getElementById('edit-tournament-container').style.display = 'none';
-      document.getElementById('user-dashboard').style.display = 'block';
+      showDashboard();
     });
   }
 
@@ -14046,7 +14054,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (backFromAddRoundBtn) {
     backFromAddRoundBtn.addEventListener('click', () => {
       document.getElementById('add-round-container').style.display = 'none';
-      document.getElementById('user-dashboard').style.display = 'block';
+      showDashboard();
       sessionStorage.removeItem('add_round_tournament_id');
     });
   }
@@ -14055,7 +14063,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (cancelAddRoundBtn) {
     cancelAddRoundBtn.addEventListener('click', () => {
       document.getElementById('add-round-container').style.display = 'none';
-      document.getElementById('user-dashboard').style.display = 'block';
+      showDashboard();
       sessionStorage.removeItem('add_round_tournament_id');
       // Reset editing flags
       isEditingRound = false;
@@ -14112,7 +14120,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (cancelMatchesBtn) {
     cancelMatchesBtn.addEventListener('click', () => {
       document.getElementById('add-matches-container').style.display = 'none';
-      document.getElementById('user-dashboard').style.display = 'block';
+      showDashboard();
       sessionStorage.removeItem('add_round_tournament_id');
       sessionStorage.removeItem('pending_round_data');
       // Reset editing flags
@@ -14283,7 +14291,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         setTimeout(() => {
           document.getElementById('add-tee-times-container').style.display = 'none';
-          document.getElementById('user-dashboard').style.display = 'block';
+          showDashboard();
           sessionStorage.removeItem('add_round_tournament_id');
           sessionStorage.removeItem('pending_round_data');
           isEditingRound = false;
@@ -14336,7 +14344,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         setTimeout(() => {
           document.getElementById('add-matches-container').style.display = 'none';
-          document.getElementById('user-dashboard').style.display = 'block';
+          showDashboard();
           sessionStorage.removeItem('add_round_tournament_id');
           sessionStorage.removeItem('pending_round_data');
           isEditingRound = false;
@@ -14369,7 +14377,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (cancelTeeTimesBtn) {
     cancelTeeTimesBtn.addEventListener('click', () => {
       document.getElementById('add-tee-times-container').style.display = 'none';
-      document.getElementById('user-dashboard').style.display = 'block';
+      showDashboard();
       sessionStorage.removeItem('add_round_tournament_id');
       sessionStorage.removeItem('pending_round_data');
       // Reset editing flags
