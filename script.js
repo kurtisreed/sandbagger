@@ -9124,24 +9124,20 @@ async function showEditTournamentForm(tournament) {
   // Build teams section (Ryder Cup only)
   let teamsHtml = '';
   if (isRyderCup && teams.length > 0) {
-    teamsHtml = `<div style="margin-bottom:1.5rem;">
-      <h3 style="margin:0 0 0.75rem 0; font-size:1rem; border-bottom:1px solid #eee; padding-bottom:0.4rem;">Teams</h3>`;
+    teamsHtml = `<div class="card">
+      <h3 class="edit-card-title">Teams</h3>`;
     teams.forEach(team => {
       teamsHtml += `
-        <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
-          <input type="text" class="team-name-input" data-team-id="${team.team_id}" value="${team.name}"
-            style="flex:1; padding:0.5rem; font-size:0.95rem; border:1px solid #ccc; border-radius:4px;">
+        <div style="display:flex; align-items:center; gap:var(--space-2); margin-bottom:var(--space-2);">
+          <input type="text" class="team-name-input form-input" data-team-id="${team.team_id}" value="${team.name}" style="flex:1;">
           <input type="color" class="team-color-input" data-team-id="${team.team_id}" value="${team.color_hex}"
-            style="width:2.5rem; height:2.2rem; padding:0.1rem; border:1px solid #ccc; border-radius:4px; cursor:pointer;">
+            style="width:2.75rem; height:2.75rem; padding:0.15rem; border:1px solid var(--color-border-strong); border-radius:var(--radius-sm); cursor:pointer; flex-shrink:0;">
         </div>`;
     });
     teamsHtml += '</div>';
   }
 
   // Build golfer roster table
-  const thStyle = 'padding:0.4rem 0.5rem; font-size:0.78rem; color:#888; font-weight:600; text-align:left; border-bottom:2px solid #eee; white-space:nowrap; line-height:1.2;';
-  const tdStyle = 'padding:0.45rem 0.5rem; font-size:0.88rem; vertical-align:middle;';
-
   let rosterRows = '';
   allGolfers.forEach(g => {
     const isChecked = g.golfer_id in assignedMap;
@@ -9152,51 +9148,51 @@ async function showEditTournamentForm(tournament) {
 
     const lockedCell = isChecked
       ? (lockedHcp !== null && lockedHcp !== undefined
-          ? `<span style="font-weight:bold;${lockedHcp !== liveHcp ? ' color:#b8860b;' : ''}">${lockedHcp}</span>`
-          : `<span style="color:#aaa;">—</span>`)
-      : `<span style="color:#ddd;">—</span>`;
+          ? `<span class="hcp-pill${lockedHcp !== liveHcp ? ' locked-diff' : ''}">${lockedHcp}</span>`
+          : `<span class="hcp-pill" style="opacity:0.5;">—</span>`)
+      : `<span class="hcp-pill" style="opacity:0.35;">—</span>`;
 
-    let teamCell = '—';
+    let teamCell = '';
     if (isRyderCup && teams.length > 0) {
       const opts = teams.map(t =>
         `<option value="${t.team_id}" ${teamId == t.team_id ? 'selected' : ''}>${t.name}</option>`
       ).join('');
-      teamCell = `<select class="golfer-team-select" data-golfer-id="${g.golfer_id}"
-        style="padding:0.2rem 0.3rem; font-size:0.82rem; border:1px solid #ccc; border-radius:4px; ${isChecked ? '' : 'display:none;'}">
+      teamCell = `<select class="golfer-team-select form-input form-select" data-golfer-id="${g.golfer_id}"
+        style="padding:var(--space-1) var(--space-6) var(--space-1) var(--space-2); font-size:var(--font-size-sm); ${isChecked ? '' : 'display:none;'}">
         <option value="">— no team —</option>${opts}
       </select>`;
     }
 
     rosterRows += `
-      <tr style="border-bottom:1px solid #f2f2f2;${isChecked ? '' : ' opacity:0.5;'}">
-        <td style="${tdStyle}">
-          <label style="display:flex; align-items:center; gap:0.4rem; cursor:pointer; margin:0;">
+      <tr${isChecked ? '' : ' class="row-off"'}>
+        <td>
+          <label style="display:flex; align-items:center; gap:var(--space-2); cursor:pointer; margin:0;">
             <input type="checkbox" class="golfer-checkbox" data-golfer-id="${g.golfer_id}" ${isChecked ? 'checked' : ''}
-              style="width:1rem; height:1rem; cursor:pointer; flex-shrink:0;">
-            <span>${g.first_name} ${g.last_name}</span>
+              style="width:1.1rem; height:1.1rem; cursor:pointer; flex-shrink:0; accent-color:var(--color-action-primary);">
+            <span style="font-weight:600;">${g.first_name} ${g.last_name}</span>
           </label>
         </td>
-        <td style="${tdStyle} text-align:center; color:#555;">${liveHcp}</td>
-        <td style="${tdStyle} text-align:center;">${
+        <td style="text-align:center;"><span class="hcp-pill">${liveHcp}</span></td>
+        <td style="text-align:center;">${
           isQuickRound
-            ? `<input type="number" step="0.1" class="manual-hcp-input" data-golfer-id="${g.golfer_id}" data-live="${liveHcp}" value="${lockedHcp ?? liveHcp}" style="width:4rem; padding:0.25rem; font-size:0.85rem; border:1px solid #ccc; border-radius:4px; text-align:center;">`
+            ? `<input type="number" step="0.1" class="manual-hcp-input form-input" data-golfer-id="${g.golfer_id}" data-live="${liveHcp}" value="${lockedHcp ?? liveHcp}" style="width:4.5rem; padding:var(--space-1) var(--space-2); text-align:center; display:inline-block;">`
             : lockedCell
         }</td>
-        <td style="${tdStyle}">${teamCell}</td>
+        ${isRyderCup ? `<td style="text-align:center;">${teamCell}</td>` : ''}
       </tr>`;
   });
 
-  const teamHeader = isRyderCup ? `<th style="${thStyle}">Team</th>` : '';
+  const teamHeader = isRyderCup ? `<th style="text-align:center;">Team</th>` : '';
 
-  let rosterHtml = `<div style="margin-bottom:1.5rem;">
-    <h3 style="margin:0 0 0.75rem 0; font-size:1rem; border-bottom:1px solid #eee; padding-bottom:0.4rem;">Golfers</h3>
-    <div style="max-height:360px; overflow-y:auto; border:1px solid #eee; border-radius:6px;">
-      <table style="width:100%; border-collapse:collapse;">
-        <thead style="position:sticky; top:0; background:#fafafa; z-index:1;">
+  let rosterHtml = `<div class="card">
+    <h3 class="edit-card-title">Golfers</h3>
+    <div class="roster-wrap">
+      <table class="roster-table">
+        <thead>
           <tr>
-            <th style="${thStyle}">Name</th>
-            <th style="${thStyle} text-align:center; white-space:normal; width:4rem;">Current<br>Hdcp</th>
-            <th style="${thStyle} text-align:center; white-space:normal; width:4rem;">Locked<br>Hdcp</th>
+            <th>Name</th>
+            <th style="text-align:center;">Current</th>
+            <th style="text-align:center;">${isQuickRound ? 'Handicap' : 'Locked'}</th>
             ${teamHeader}
           </tr>
         </thead>
@@ -9205,65 +9201,60 @@ async function showEditTournamentForm(tournament) {
     </div>
   </div>`;
 
+  const titleEl = container.querySelector('.page-title');
+  if (titleEl) titleEl.textContent = isQuickRound ? 'Edit Quick Round' : 'Edit Tournament';
+
   content.innerHTML = `
-    <div style="margin-bottom:1rem;">
-      <label style="display:block; margin-bottom:0.4rem; font-weight:bold;">Tournament Name</label>
-      <input type="text" id="edit-tournament-name" value="${tournament.tournament_name}"
-        style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
-    </div>
-    <div style="display:flex; gap:0.75rem; margin-bottom:1rem;">
-      <div style="flex:1;">
-        <label style="display:block; margin-bottom:0.4rem; font-weight:bold;">Start Date</label>
-        <input type="date" id="edit-tournament-start" value="${tournament.start_date}"
-          style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
+    <div class="card">
+      <h3 class="edit-card-title">Details</h3>
+      <div class="field">
+        <label class="form-label" for="edit-tournament-name">${isQuickRound ? 'Round Name' : 'Tournament Name'}</label>
+        <input type="text" id="edit-tournament-name" class="form-input" value="${tournament.tournament_name}">
       </div>
-      <div style="flex:1;">
-        <label style="display:block; margin-bottom:0.4rem; font-weight:bold;">End Date</label>
-        <input type="date" id="edit-tournament-end" value="${tournament.end_date}"
-          style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
+      <div class="field-row">
+        <div class="field">
+          <label class="form-label" for="edit-tournament-start">Start Date</label>
+          <input type="date" id="edit-tournament-start" class="form-input" value="${tournament.start_date}">
+        </div>
+        <div class="field">
+          <label class="form-label" for="edit-tournament-end">End Date</label>
+          <input type="date" id="edit-tournament-end" class="form-input" value="${tournament.end_date}">
+        </div>
       </div>
+      ${isQuickRound ? `
+      <div class="field">
+        <label class="form-label" for="edit-handicap-mode-select">Handicap Type</label>
+        <select id="edit-handicap-mode-select" class="form-input form-select">
+          <option value="calculated">Calculated Handicaps</option>
+          <option value="manual">Manual Handicaps</option>
+        </select>
+      </div>
+      <div class="field" id="edit-handicap-pct-wrap">
+        <label class="form-label" for="edit-tournament-handicap">Handicap % <button type="button" class="help-icon" data-help="handicap-pct" aria-label="What is Handicap %?">?</button></label>
+        <input type="number" id="edit-tournament-handicap" class="form-input" value="${isManualMode ? 100 : (tournament.handicap_pct ?? 80)}" min="0" max="100">
+      </div>
+      <p id="edit-manual-hint" class="field" style="display:none; font-size:var(--font-size-sm); color:var(--color-text-secondary);">Enter each player's handicap in the Handicap column below.</p>
+      ` : `
+      <div class="field">
+        <label class="form-label" for="edit-tournament-handicap">Handicap % <button type="button" class="help-icon" data-help="handicap-pct" aria-label="What is Handicap %?">?</button></label>
+        <input type="number" id="edit-tournament-handicap" class="form-input" value="${tournament.handicap_pct ?? 80}" min="0" max="100">
+      </div>
+      `}
     </div>
-    ${isQuickRound ? `
-    <div style="margin-bottom:1rem;">
-      <label style="display:block; margin-bottom:0.4rem; font-weight:bold;">Handicap Type</label>
-      <select id="edit-handicap-mode-select" style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
-        <option value="calculated">Calculated Handicaps</option>
-        <option value="manual">Manual Handicaps</option>
-      </select>
-    </div>
-    <div id="edit-handicap-pct-wrap" style="margin-bottom:1.5rem;">
-      <label style="display:block; margin-bottom:0.4rem; font-weight:bold;">Handicap % <button type="button" class="help-icon" data-help="handicap-pct" aria-label="What is Handicap %?">?</button></label>
-      <input type="number" id="edit-tournament-handicap" value="${isManualMode ? 100 : (tournament.handicap_pct ?? 80)}" min="0" max="100"
-        style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
-    </div>
-    <p id="edit-manual-hint" style="display:none; margin:0 0 1.5rem; font-size:0.85rem; color:#666;">Enter each player's handicap in the Hdcp column below.</p>
-    ` : `
-    <div style="margin-bottom:1.5rem;">
-      <label style="display:block; margin-bottom:0.4rem; font-weight:bold;">Handicap % <button type="button" class="help-icon" data-help="handicap-pct" aria-label="What is Handicap %?">?</button></label>
-      <input type="number" id="edit-tournament-handicap" value="${tournament.handicap_pct ?? 80}" min="0" max="100"
-        style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
-    </div>
-    `}
     ${teamsHtml}
     ${rosterHtml}
-    <button id="save-edit-tournament-btn" style="width:100%; padding:0.75rem; background:#4F2185; color:white; border:none; border-radius:4px; font-size:1rem; font-weight:bold; cursor:pointer; margin-bottom:0.5rem;">
-      Save Changes
-    </button>
-    ${isQuickRound ? '' : `
-    <button id="lock-handicaps-btn" style="width:100%; padding:0.75rem; background:white; color:#4F2185; border:2px solid #4F2185; border-radius:4px; font-size:1rem; font-weight:bold; cursor:pointer; margin-top:0.5rem;">
-      Lock Handicaps for Tournament
-    </button>
-    `}
-    <div id="edit-tournament-status" style="margin-top:0.5rem; font-size:0.9rem; text-align:center;"></div>
+    <button id="save-edit-tournament-btn" class="btn btn-primary">Save Changes</button>
+    ${isQuickRound ? '' : `<button id="lock-handicaps-btn" class="btn btn-ghost">🔒 Lock Handicaps for Tournament</button>`}
+    <div id="edit-tournament-status" style="margin-top:var(--space-3); font-size:var(--font-size-sm); text-align:center;"></div>
     <hr style="border:none; border-top:1px solid var(--color-border); margin:var(--space-5) 0;">
-    <button id="delete-tournament-btn" class="btn btn-danger">🗑 Delete This Tournament</button>
+    <button id="delete-tournament-btn" class="btn btn-danger">🗑 Delete This ${isQuickRound ? 'Quick Round' : 'Tournament'}</button>
   `;
 
   // Checkbox toggles row dim + team dropdown visibility
   content.querySelectorAll('.golfer-checkbox').forEach(cb => {
     cb.addEventListener('change', function() {
       const row = this.closest('tr');
-      if (row) row.style.opacity = this.checked ? '1' : '0.5';
+      if (row) row.classList.toggle('row-off', !this.checked);
       if (isRyderCup) {
         const sel = content.querySelector(`.golfer-team-select[data-golfer-id="${this.dataset.golferId}"]`);
         if (sel) sel.style.display = this.checked ? '' : 'none';
