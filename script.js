@@ -115,8 +115,6 @@ async function saveScore(payload, onSuccess) {
 }
 
 if ('serviceWorker' in navigator && !API_BASE_URL) {
-  // Only register service worker in web, not in native app
-  // Wait for the page to fully load
   window.addEventListener('load', () => {
     navigator.serviceWorker
       .register('service-worker.js')
@@ -165,28 +163,6 @@ if ('serviceWorker' in navigator && !API_BASE_URL) {
     _expiredNotified = false;
   };
 })();
-
-
-let deferredPrompt;
-
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();     // Prevent automatic prompt
-  deferredPrompt = e;      // Save for later
-  document.getElementById('btnInstall').style.display = 'block';
-});
-
-document.getElementById('btnInstall').addEventListener('click', () => {
-  if (!deferredPrompt) return;
-  deferredPrompt.prompt();
-  deferredPrompt.userChoice.then(choice => {
-    if (choice.outcome === 'accepted') {
-      console.log('User installed the app');
-    }
-    deferredPrompt = null;
-    document.getElementById('btnInstall').style.display = 'none';
-  });
-});
-
 
 
 
