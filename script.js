@@ -13273,13 +13273,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── Register form submission ────────────────────────────────────────────────
   document.getElementById('register-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const firstName = document.getElementById('reg-first-name').value.trim();
-    const lastName  = document.getElementById('reg-last-name').value.trim();
-    const email     = document.getElementById('reg-email').value.trim();
-    const password  = document.getElementById('reg-password').value.trim();
-    const groupName = document.getElementById('reg-group-name').value.trim();
-    const errorEl   = document.getElementById('register-error');
-    const btn       = document.getElementById('register-submit-btn');
+    const firstName   = document.getElementById('reg-first-name').value.trim();
+    const lastName    = document.getElementById('reg-last-name').value.trim();
+    const email       = document.getElementById('reg-email').value.trim();
+    const password    = document.getElementById('reg-password').value.trim();
+    const groupName   = document.getElementById('reg-group-name').value.trim();
+    const handicapVal = document.getElementById('reg-handicap').value.trim();
+    const errorEl     = document.getElementById('register-error');
+    const btn         = document.getElementById('register-submit-btn');
 
     errorEl.style.display = 'none';
     btn.disabled = true;
@@ -13289,7 +13290,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const res  = await fetch(`${API_BASE_URL}/api/register.php`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ first_name: firstName, last_name: lastName, email, password, group_name: groupName }),
+        body: JSON.stringify({ first_name: firstName, last_name: lastName, email, password, group_name: groupName, handicap_index: handicapVal !== '' ? parseFloat(handicapVal) : null }),
         credentials: 'include'
       });
       const data = await res.json();

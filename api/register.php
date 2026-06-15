@@ -16,8 +16,9 @@ $firstName = trim($data['first_name'] ?? '');
 $lastName  = trim($data['last_name']  ?? '');
 $email     = trim($data['email']      ?? '');
 $password  = trim($data['password']   ?? '');
-$groupName = trim($data['group_name'] ?? '');
-$name      = trim("$firstName $lastName");
+$groupName      = trim($data['group_name'] ?? '');
+$handicapIndex  = isset($data['handicap_index']) && $data['handicap_index'] !== null ? floatval($data['handicap_index']) : 0.0;
+$name           = trim("$firstName $lastName");
 
 // Basic validation
 if (!$firstName || !$lastName || !$email || !$password || !$groupName) {
@@ -101,12 +102,11 @@ try {
     $stmt->close();
 
     // Create a golfer record for the admin (they're a player too)
-    $handicap = 0.0;
     $stmt = $conn->prepare("
         INSERT INTO golfers (first_name, last_name, handicap, org_id, user_id, active)
         VALUES (?, ?, ?, ?, ?, 1)
     ");
-    $stmt->bind_param('ssdii', $firstName, $lastName, $handicap, $orgId, $userId);
+    $stmt->bind_param('ssdii', $firstName, $lastName, $handicapIndex, $orgId, $userId);
     $stmt->execute();
     $golferId = $conn->insert_id;
     $stmt->close();
@@ -134,7 +134,7 @@ try {
             'golfer_id'  => $golferId,
             'first_name' => $firstName,
             'last_name'  => $lastName,
-            'handicap'   => $handicap,
+            'handicap'   => $handicapIndex,
             'role'       => null
         ]
     ]);
