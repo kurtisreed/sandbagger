@@ -13886,10 +13886,9 @@ document.addEventListener('DOMContentLoaded', () => {
       deleteAccountConfirmBtn.disabled = true;
       deleteAccountConfirmBtn.textContent = 'Deleting…';
 
-      fetch(`${API_BASE_URL}/api/delete_golfer.php`, {
+      fetch(`${API_BASE_URL}/api/delete_account.php`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ golfer_id: currentUser.golfer_id }),
         credentials: 'include'
       })
         .then(res => res.json())

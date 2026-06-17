@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Delete Your Account — Sandbagger Scoring</title>
+  <meta name="description" content="How to delete your Sandbagger Scoring account and what happens to your data.">
+  <meta name="robots" content="index, follow">
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --purple: #4F2185;
+      --purple-dark: #3a1764;
+      --gold: #FFC62F;
+      --white: #ffffff;
+      --off-white: #f8f6ff;
+      --text: #1a1c23;
+      --text-muted: #6b7280;
+      --border: #e2e4e8;
+      --danger: #c0392b;
+      --radius: 16px;
+      --font: 'Nunito', system-ui, sans-serif;
+    }
+
+    body {
+      font-family: var(--font);
+      color: var(--text);
+      background: var(--off-white);
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.6;
+    }
+
+    /* ── Header ───────────────────────────────────────────────────────────── */
+    header {
+      background: linear-gradient(135deg, var(--purple-dark) 0%, var(--purple) 100%);
+      color: var(--white);
+      padding: 2.5rem 1.5rem 3rem;
+      text-align: center;
+    }
+    header img { width: 84px; height: 84px; border-radius: 20px; margin-bottom: 1rem; }
+    header .brand {
+      font-family: var(--font);
+      font-size: 1rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      opacity: 0.85;
+      margin-bottom: 0.25rem;
+    }
+    header h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.75rem;
+      font-weight: 400;
+      letter-spacing: 0.04em;
+      line-height: 1.05;
+    }
+
+    /* ── Content ──────────────────────────────────────────────────────────── */
+    main {
+      max-width: 680px;
+      margin: -1.5rem auto 3rem;
+      padding: 0 1.25rem;
+    }
+    .card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 4px 24px rgba(79,33,133,0.08);
+      padding: 1.75rem 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+    .intro { font-size: 1.05rem; color: var(--text-muted); }
+    .intro strong { color: var(--text); }
+
+    h2 {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--purple);
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--gold);
+    }
+
+    /* ── Steps ────────────────────────────────────────────────────────────── */
+    ol.steps { list-style: none; counter-reset: step; }
+    ol.steps li {
+      counter-increment: step;
+      position: relative;
+      padding: 0.6rem 0 0.6rem 3rem;
+      border-bottom: 1px solid var(--border);
+    }
+    ol.steps li:last-child { border-bottom: none; }
+    ol.steps li::before {
+      content: counter(step);
+      position: absolute;
+      left: 0; top: 0.55rem;
+      width: 2rem; height: 2rem;
+      background: var(--purple);
+      color: var(--white);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.95rem;
+    }
+    ol.steps li b { color: var(--purple); }
+
+    /* ── Data lists ───────────────────────────────────────────────────────── */
+    .data-list { list-style: none; }
+    .data-list li {
+      position: relative;
+      padding: 0.4rem 0 0.4rem 1.75rem;
+    }
+    .data-list li::before {
+      position: absolute;
+      left: 0; top: 0.4rem;
+      font-weight: 900;
+    }
+    .data-list.removed li::before { content: "✕"; color: var(--danger); }
+    .data-list.kept li::before { content: "✓"; color: var(--purple); }
+
+    .note {
+      background: var(--off-white);
+      border-left: 4px solid var(--gold);
+      border-radius: 0 8px 8px 0;
+      padding: 0.9rem 1.1rem;
+      margin-top: 1rem;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+    .note strong { color: var(--text); }
+
+    footer {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      padding: 1rem 1.25rem 2.5rem;
+    }
+    footer a { color: var(--purple); }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="images/cartoon.png" alt="Sandbagger Scoring logo">
+    <div class="brand">Sandbagger Scoring</div>
+    <h1>Delete Your Account</h1>
+  </header>
+
+  <main>
+    <div class="card">
+      <p class="intro">
+        This page explains how to delete your <strong>Sandbagger Scoring</strong> account
+        and what happens to your data. You can permanently delete your account at any time,
+        directly from within the app — no request or waiting period is required.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>How to delete your account</h2>
+      <ol class="steps">
+        <li>Open the <b>Sandbagger Scoring</b> app and sign in to your account.</li>
+        <li>Tap the <b>menu</b> (your name in the top bar).</li>
+        <li>Select <b>My Account</b>.</li>
+        <li>Scroll to the bottom and tap <b>Delete Account</b>.</li>
+        <li>Confirm by tapping <b>Yes, Delete My Account</b>.</li>
+      </ol>
+      <div class="note">
+        Your account is deleted <strong>immediately</strong> upon confirmation and you are
+        signed out. There is no additional grace period or retention window for your
+        personal account data.
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>What data is deleted</h2>
+      <p style="margin-bottom:0.75rem; color:var(--text-muted);">
+        When you delete your account, the following personal data is permanently removed:
+      </p>
+      <ul class="data-list removed">
+        <li>Your name</li>
+        <li>Your email address and sign-in credentials (password)</li>
+        <li>Your handicap index and player profile</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>What data is kept</h2>
+      <p style="margin-bottom:0.75rem; color:var(--text-muted);">
+        Sandbagger Scoring is a group app. To keep shared results accurate for the other
+        members of your golf groups, the following is retained:
+      </p>
+      <ul class="data-list kept">
+        <li>Scores and round results you recorded in shared group tournaments remain part
+            of those groups' historical leaderboards.</li>
+      </ul>
+      <div class="note">
+        Retained scoring records are kept only as part of each group's shared history and are
+        <strong>no longer linked to your personal account</strong>. They contain no contact
+        information or sign-in credentials.
+      </div>
+    </div>
+
+    <footer>
+      Sandbagger Scoring · <a href="/">sandbaggerscoring.com</a>
+    </footer>
+  </main>
+</body>
+</html>
