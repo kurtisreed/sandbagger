@@ -67,7 +67,15 @@
       "Bash(awk '/^function [a-zA-Z]+/ {fn=$2} /adjustHandicapsForMatch\\\\\\(/ && !/^function/ {print NR\": \"fn}' script.js)",
       "Bash(awk 'NR>=1380 && NR<=1520 && /golfers = /' script.js)",
       "Bash(sed -n '/function loadWolfScoring/,/Build stroke maps/p' script.js)",
-      "Bash(awk 'NR>=1331 && NR<=1460 && \\(/golfers = Array/ || /golferMap.set/ || /handicap:/ || /sort\\\\\\(/\\)' script.js)"
+      "Bash(awk 'NR>=1331 && NR<=1460 && \\(/golfers = Array/ || /golferMap.set/ || /handicap:/ || /sort\\\\\\(/\\)' script.js)",
+      "Bash(awk 'NR>=8067 && NR<=8260 && /isSkinsFormat/' script.js)",
+      "Bash(awk 'NR>=4690 && NR<=4810 && /^function |function load/ {print NR\": \"$0}' script.js)",
+      "Bash(sed -n '280,320p' script.js)",
+      "Bash(sed -n '504,545p' style.css)",
+      "Bash(sed -n '2013,2030p' style.css)",
+      "Bash(awk '/function checkAllScoresEntered/,/^}/' script.js)",
+      "Bash(sed -n '8678,8690p' script.js)",
+      "Bash(sed -n '10372,10385p' script.js)"
     ]
   }
 }

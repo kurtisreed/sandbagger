@@ -1725,7 +1725,11 @@ function loadRollingSkinsScoring() {
       ).join("");
       table.appendChild(totalsRow);
 
-      container.appendChild(table);
+      // Wrap in scroll container so the golfer-name header stays sticky
+      const tableWrapper = document.createElement("div");
+      tableWrapper.className = "skins-table-wrapper";
+      tableWrapper.appendChild(table);
+      container.appendChild(tableWrapper);
 
       // Skins summary panel (re-rendered live as scores change)
       const summaryDiv = document.createElement("div");
@@ -1742,6 +1746,35 @@ function loadRollingSkinsScoring() {
       `;
       container.appendChild(explanation);
 
+      // Finalize button — appears at the bottom once every score is entered
+      const finalizeButton = document.createElement("button");
+      finalizeButton.id = "finalize-results-btn";
+      finalizeButton.textContent = "Finalize Round";
+      finalizeButton.style.display = "none";
+      finalizeButton.onclick = function () {
+        if (!confirm("Finalize this round? Scores can no longer be edited.")) return;
+        fetch(`${API_BASE_URL}/api/finalize_match_result.php`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ match_id: matchId, points: [] })
+        })
+          .then(res => res.json())
+          .then(result => {
+            if (result.success) {
+              sessionStorage.setItem("quick_round_read_only", "true");
+              loadRollingSkinsScorecardReadOnly();
+            } else {
+              alert("Error finalizing: " + (result.error || "Unknown error"));
+            }
+          })
+          .catch(err => {
+            console.error("Error finalizing round:", err);
+            alert("Connection error. Please try again.");
+          });
+      };
+      container.appendChild(finalizeButton);
+
       // Load existing scores
       fetch(`${API_BASE_URL}/api/get_scores.php?match_id=${matchId}`, { credentials: 'include' })
         .then(res => res.json())
@@ -1754,6 +1787,7 @@ function loadRollingSkinsScoring() {
           applyPendingScores(matchId);
           updateTotalScores();
           refreshRollingSkinsSummary();
+          updateFinalizeButtonVisibility();
         });
 
       // Save + recompute on change
@@ -1773,6 +1807,7 @@ function loadRollingSkinsScoring() {
             updateTotalScores();
             updateScoreCellClasses();
             refreshRollingSkinsSummary();
+            updateFinalizeButtonVisibility();
           });
         });
       });
@@ -10071,7 +10106,7 @@ function renderTeeTimes() {
   teeTimesList.innerHTML = '';
 
   const _ttFormatId = parseInt(sessionStorage.getItem('add_round_format_id'));
-  const _isSkinsTT  = _ttFormatId === 5;
+  const _isSkinsTT  = _ttFormatId === 5 || _ttFormatId === 6;
   const _matchLabel = _isSkinsTT ? 'Group' : 'Match';
 
   // Build set of all assigned match IDs across all tee times
@@ -14167,7 +14202,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const _checkFormatId = parseInt(sessionStorage.getItem('add_round_format_id'));
       const allPlayers = [];
       matchesData.forEach(match => {
-        const slots = _checkFormatId === 5
+        const slots = (_checkFormatId === 5 || _checkFormatId === 6)
           ? (match.players || [])
           : [match.team1_player1, match.team1_player2, match.team2_player1, match.team2_player2];
         slots.filter(p => p).forEach(p => allPlayers.push(p));
@@ -14269,7 +14304,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Step 2: Save matches (always call when editing so removed matches get deleted)
     if (isEditingRound || matchesData.length > 0) {
       const saveFormatId = parseInt(sessionStorage.getItem('add_round_format_id'));
-      const isSkinsSave  = saveFormatId === 5;
+      const isSkinsSave  = saveFormatId === 5 || saveFormatId === 6; // groups-style setup (Stroke Play / Scramble)
 
       const matchesPayload = matchesData.map((match, index) => ({
         match_id: match.match_id || null,
@@ -14401,7 +14436,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (matchesData.length > 1) {
         const _fmt = parseInt(sessionStorage.getItem('add_round_format_id'));
         const allPlayers = matchesData.flatMap(m =>
-          _fmt === 5
+          (_fmt === 5 || _fmt === 6)
             ? (m.players || []).filter(p => p)
             : [m.team1_player1, m.team1_player2, m.team2_player1, m.team2_player2].filter(p => p)
         );
