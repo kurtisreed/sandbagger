@@ -75,7 +75,9 @@
       "Bash(sed -n '2013,2030p' style.css)",
       "Bash(awk '/function checkAllScoresEntered/,/^}/' script.js)",
       "Bash(sed -n '8678,8690p' script.js)",
-      "Bash(sed -n '10372,10385p' script.js)"
+      "Bash(sed -n '10372,10385p' script.js)",
+      "Bash(grep -n \"^#app-content\\\\|^#content\\\\|^main\\\\b\\\\|^main {\\\\|^body\\\\|html, body\\\\|^html\" style.css)",
+      "mcp__Claude_Preview__preview_start"
     ]
   }
 }

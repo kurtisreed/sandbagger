@@ -2023,3 +2023,33 @@ h3 {
   top: 0;
   z-index: 3;
 }
+
+/* ── Quick-round scoreboard: one scroll region so the golfer-name header
+   stays pinned. The app header + match-title stay fixed; everything below
+   (table, summary, finalize) scrolls inside the wrapper, and the sticky
+   table header rides the top of that single scroll region. ─────────────── */
+#app-content.qr-scoreboard {
+  display: flex !important; /* beat the inline display:block used to show #app-content */
+  flex-direction: column;
+  height: 100dvh;
+}
+#app-content.qr-scoreboard > header { flex-shrink: 0; }
+#app-content.qr-scoreboard #content {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#app-content.qr-scoreboard #score-entry-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+#app-content.qr-scoreboard .qr-fixed-title { flex-shrink: 0; }
+#app-content.qr-scoreboard .skins-table-wrapper {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+}

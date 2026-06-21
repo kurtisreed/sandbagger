@@ -1623,6 +1623,7 @@ function loadRollingSkinsScoring() {
     return;
   }
   appContent.style.display = 'block';
+  appContent.classList.add('qr-scoreboard'); // single-scroll layout w/ pinned header
 
   const navElement = appContent.querySelector('nav');
   if (navElement) navElement.style.display = 'none';
@@ -1661,6 +1662,7 @@ function loadRollingSkinsScoring() {
       tournamentHandicapPct = parseFloat(match.tournament_handicap_pct || 100);
 
       const headerDiv = document.createElement('div');
+      headerDiv.className = 'qr-fixed-title'; // stays pinned above the scroll region
       headerDiv.style.cssText = 'background: #4F2185; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; text-align: center; color: white;';
       headerDiv.innerHTML = `<h2 style="margin: 0; color: white;">${match.match_name}</h2>`;
       container.appendChild(headerDiv);
@@ -1731,11 +1733,13 @@ function loadRollingSkinsScoring() {
       tableWrapper.appendChild(table);
       container.appendChild(tableWrapper);
 
-      // Skins summary panel (re-rendered live as scores change)
+      // Skins summary panel (re-rendered live as scores change).
+      // Appended inside the scroll wrapper so the whole scoreboard is one
+      // scroll region and the golfer-name header stays pinned.
       const summaryDiv = document.createElement("div");
       summaryDiv.id = "rolling-skins-summary";
       summaryDiv.style.cssText = "margin-top: 2rem;";
-      container.appendChild(summaryDiv);
+      tableWrapper.appendChild(summaryDiv);
 
       const explanation = document.createElement("div");
       explanation.style.cssText = "margin-top: 2rem; padding: 1rem; background: #f5f5f5; border-radius: 4px; font-size: 0.9rem;";
@@ -1744,7 +1748,7 @@ function loadRollingSkinsScoring() {
         Win a hole outright (lowest net) to take the skin. Tie a hole and the skin rolls onto the next, which is then worth 2 (and so on). Unclaimed skins at the end are void.<br><br>
         ${handicapExplanationHTML()}
       `;
-      container.appendChild(explanation);
+      tableWrapper.appendChild(explanation);
 
       // Finalize button — appears at the bottom once every score is entered
       const finalizeButton = document.createElement("button");
@@ -1773,7 +1777,7 @@ function loadRollingSkinsScoring() {
             alert("Connection error. Please try again.");
           });
       };
-      container.appendChild(finalizeButton);
+      tableWrapper.appendChild(finalizeButton);
 
       // Load existing scores
       fetch(`${API_BASE_URL}/api/get_scores.php?match_id=${matchId}`, { credentials: 'include' })
@@ -1832,6 +1836,7 @@ function loadRollingSkinsScorecardReadOnly() {
 
   const appContent = document.getElementById('app-content');
   appContent.style.display = 'block';
+  appContent.classList.remove('qr-scoreboard'); // read-only view uses normal page flow
 
   const navElement = appContent.querySelector('nav');
   if (navElement) navElement.style.display = 'none';
@@ -8779,6 +8784,8 @@ function loadUserDashboard(golfer) {
 }
 
 function showDashboard() {
+  // Drop the quick-round single-scroll layout so it can't leak into other views
+  document.getElementById('app-content')?.classList.remove('qr-scoreboard');
   document.getElementById('user-dashboard').style.display = 'block';
   if (currentUser) {
     loadActiveQuickRounds();
@@ -10347,6 +10354,8 @@ function loadTournamentHistory(golferId) {
 }
 
 function loadQuickRoundFromTournament(tournamentId, roundName) {
+  // Reset any lingering quick-round scoreboard layout before routing
+  document.getElementById('app-content')?.classList.remove('qr-scoreboard');
   // Determine which container was visible (dashboard or history)
   const dashboardWasVisible = document.getElementById('user-dashboard').style.display !== 'none';
   const historyWasVisible = document.getElementById('tournament-history-container').style.display !== 'none';
