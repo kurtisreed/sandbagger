@@ -9066,8 +9066,8 @@ function loadUserTournaments(golferId) {
           const roundName = this.dataset.roundName;
           const formatId = this.dataset.formatId ? parseInt(this.dataset.formatId) : null;
 
-          // Check if this is a Quick Round (Best Ball, Rabbit, Wolf)
-          const isQuickRound = ['Best Ball', 'Rabbit', 'Wolf'].includes(roundName);
+          // Check if this is a Quick Round (Best Ball, Rabbit, Wolf, Rolling Skins)
+          const isQuickRound = ['Best Ball', 'Rabbit', 'Wolf', 'Rolling Skins'].includes(roundName);
 
           sessionStorage.setItem('selected_golfer_id', currentUser.golfer_id);
           sessionStorage.setItem('selected_round_id', roundId);
@@ -10251,9 +10251,9 @@ function loadTournamentHistory(golferId) {
       let html = '<div style="display: flex; flex-direction: column; gap: 1rem;">';
 
       data.tournaments.forEach(tournament => {
-        // Check if this is a Quick Round (Best Ball, Rabbit, Wolf)
+        // Check if this is a Quick Round (Best Ball, Rabbit, Wolf, Rolling Skins)
         const isQuickRound = tournament.rounds && tournament.rounds.length > 0 &&
-                            ['Best Ball', 'Rabbit', 'Wolf'].includes(tournament.rounds[0].round_name);
+                            ['Best Ball', 'Rabbit', 'Wolf', 'Rolling Skins'].includes(tournament.rounds[0].round_name);
 
         const cardClass = isQuickRound ? 'tournament-history-quick-round' : 'tournament-history-tournament';
 
@@ -10323,7 +10323,7 @@ function loadTournamentHistory(golferId) {
           const formatId = this.dataset.formatId ? parseInt(this.dataset.formatId) : null;
 
           // Check if this is a Quick Round
-          const isQuickRound = ['Best Ball', 'Rabbit', 'Wolf'].includes(roundName);
+          const isQuickRound = ['Best Ball', 'Rabbit', 'Wolf', 'Rolling Skins'].includes(roundName);
 
           sessionStorage.setItem('selected_golfer_id', currentUser.golfer_id);
           sessionStorage.setItem('selected_round_id', roundId);
