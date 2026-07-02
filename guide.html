@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Guide — Sandbagger Scoring</title>
+  <meta name="description" content="Step-by-step guide to Sandbagger Scoring: create your group, set up tournaments and quick rounds, enter scores, and understand handicaps.">
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --purple: #4F2185;
+      --purple-dark: #3a1764;
+      --gold: #FFC62F;
+      --green: #1e8a44;
+      --white: #ffffff;
+      --off-white: #f8f6ff;
+      --text: #1a1c23;
+      --text-muted: #6b7280;
+      --border: #e2e4e8;
+      --radius: 14px;
+      --font: 'Nunito', system-ui, sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font);
+      color: var(--text);
+      background: var(--off-white);
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.65;
+    }
+
+    /* ── Header ─────────────────────────────────────────────────────────── */
+    .hero {
+      background: linear-gradient(135deg, var(--purple-dark) 0%, var(--purple) 100%);
+      color: var(--white);
+      padding: 2.5rem 1.5rem 2.75rem;
+      text-align: center;
+    }
+    .hero img { width: 76px; height: 76px; border-radius: 18px; margin-bottom: 0.75rem; }
+    .hero .brand {
+      font-size: 0.95rem; font-weight: 800; letter-spacing: 0.12em;
+      text-transform: uppercase; opacity: 0.85; margin-bottom: 0.2rem;
+    }
+    .hero h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(2.4rem, 8vw, 3.4rem);
+      font-weight: 400; letter-spacing: 0.04em; line-height: 1.02;
+    }
+    .hero p.tagline { margin-top: 0.5rem; opacity: 0.85; font-size: 1rem; }
+
+    /* ── Layout: sidebar TOC + content ──────────────────────────────────── */
+    .layout {
+      display: grid;
+      grid-template-columns: 250px minmax(0, 1fr);
+      gap: 2rem;
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 4rem;
+    }
+    nav.toc {
+      position: sticky; top: 1rem;
+      align-self: start;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem 1rem;
+      font-size: 0.92rem;
+      max-height: calc(100vh - 2rem);
+      overflow-y: auto;
+    }
+    nav.toc .toc-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.35rem; letter-spacing: 0.05em;
+      color: var(--purple); margin-bottom: 0.5rem;
+    }
+    nav.toc a {
+      display: block; color: var(--text);
+      text-decoration: none; padding: 0.28rem 0.4rem;
+      border-radius: 6px; font-weight: 600;
+    }
+    nav.toc a:hover { background: var(--off-white); color: var(--purple); }
+    nav.toc a.sub { padding-left: 1.2rem; font-weight: 400; color: var(--text-muted); font-size: 0.88rem; }
+    nav.toc a.sub:hover { color: var(--purple); }
+
+    /* Mobile TOC */
+    details.toc-mobile { display: none; }
+
+    @media (max-width: 800px) {
+      .layout { display: block; padding: 1.25rem 1rem 3rem; }
+      nav.toc { display: none; }
+      details.toc-mobile {
+        display: block;
+        background: var(--white);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 0.9rem 1rem;
+        margin-bottom: 1.25rem;
+      }
+      details.toc-mobile summary {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 1.3rem; letter-spacing: 0.05em;
+        color: var(--purple); cursor: pointer;
+      }
+      details.toc-mobile a { display: block; padding: 0.35rem 0.25rem; color: var(--text); text-decoration: none; font-weight: 600; }
+      details.toc-mobile a.sub { padding-left: 1.2rem; font-weight: 400; color: var(--text-muted); }
+    }
+
+    /* ── Sections ───────────────────────────────────────────────────────── */
+    section.guide-section {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 3px 18px rgba(79,33,133,0.06);
+      padding: 1.75rem 1.5rem;
+      margin-bottom: 1.75rem;
+      scroll-margin-top: 1rem;
+    }
+    section.guide-section > h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.1rem; font-weight: 400; letter-spacing: 0.04em;
+      color: var(--purple);
+      border-bottom: 3px solid var(--gold);
+      padding-bottom: 0.4rem; margin-bottom: 1rem;
+    }
+    section.guide-section h3 {
+      font-size: 1.15rem; font-weight: 800; color: var(--purple);
+      margin: 1.75rem 0 0.6rem;
+      scroll-margin-top: 1rem;
+    }
+    section.guide-section h3:first-of-type { margin-top: 1rem; }
+    section.guide-section p { margin-bottom: 0.85rem; }
+    section.guide-section p.lead { color: var(--text-muted); font-size: 1.02rem; }
+
+    /* Numbered steps */
+    ol.steps { list-style: none; counter-reset: step; margin: 0.75rem 0 1rem; }
+    ol.steps li {
+      counter-increment: step;
+      position: relative;
+      padding: 0.5rem 0 0.5rem 2.9rem;
+      border-bottom: 1px solid var(--off-white);
+    }
+    ol.steps li:last-child { border-bottom: none; }
+    ol.steps li::before {
+      content: counter(step);
+      position: absolute; left: 0; top: 0.5rem;
+      width: 1.9rem; height: 1.9rem;
+      background: var(--purple); color: var(--white);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 0.9rem;
+    }
+    ol.steps li b { color: var(--purple); }
+
+    /* Screenshot figures */
+    .shots {
+      display: flex; flex-wrap: wrap; gap: 1.25rem;
+      justify-content: center; margin: 1.25rem 0 0.75rem;
+    }
+    figure.shot { width: min(290px, 100%); text-align: center; }
+    figure.shot img {
+      width: 100%; display: block;
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      box-shadow: 0 8px 28px rgba(26,28,35,0.16);
+    }
+    figure.shot figcaption {
+      font-size: 0.85rem; color: var(--text-muted);
+      margin-top: 0.5rem; line-height: 1.4;
+    }
+
+    /* Tip / note boxes */
+    .tip {
+      background: var(--off-white);
+      border-left: 4px solid var(--gold);
+      border-radius: 0 8px 8px 0;
+      padding: 0.8rem 1rem;
+      margin: 1rem 0;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+    .tip strong { color: var(--text); }
+    .tip.green { border-left-color: var(--green); }
+
+    /* Format cards */
+    table.info-table {
+      width: 100%; border-collapse: collapse; margin: 0.75rem 0 1rem;
+      font-size: 0.95rem;
+    }
+    table.info-table th, table.info-table td {
+      text-align: left; padding: 0.55rem 0.7rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    table.info-table th {
+      font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em;
+      color: var(--text-muted);
+    }
+    table.info-table td:first-child { font-weight: 800; color: var(--purple); white-space: nowrap; }
+
+    footer {
+      text-align: center; color: var(--text-muted);
+      font-size: 0.85rem; padding: 0 1.25rem 2.5rem;
+    }
+    footer a { color: var(--purple); }
+  </style>
+</head>
+<body>
+
+<header class="hero">
+  <img src="images/cartoon.png" alt="Sandbagger Scoring logo">
+  <div class="brand">Sandbagger Scoring</div>
+  <h1>User Guide</h1>
+  <p class="tagline">Everything you need to run your group's golf — from first sign-in to final leaderboard.</p>
+</header>
+
+<div class="layout">
+
+  <!-- Desktop TOC -->
+  <nav class="toc" aria-label="Guide contents">
+    <div class="toc-title">Contents</div>
+    <a href="#getting-started">Getting Started</a>
+    <a class="sub" href="#create-group">Start a new group</a>
+    <a class="sub" href="#join-group">Join with an invite code</a>
+    <a href="#dashboard">The Dashboard</a>
+    <a href="#group-setup">Group Setup (Admins)</a>
+    <a href="#quick-rounds">Quick Rounds</a>
+    <a href="#tournaments">Tournaments (Admins)</a>
+    <a href="#scoring">Entering Scores</a>
+    <a href="#handicaps">Handicaps Explained</a>
+    <a href="#history">History</a>
+    <a href="#account">My Account</a>
+  </nav>
+
+  <!-- Mobile TOC -->
+  <main>
+    <details class="toc-mobile">
+      <summary>Contents</summary>
+      <a href="#getting-started">Getting Started</a>
+      <a class="sub" href="#create-group">Start a new group</a>
+      <a class="sub" href="#join-group">Join with an invite code</a>
+      <a href="#dashboard">The Dashboard</a>
+      <a href="#group-setup">Group Setup (Admins)</a>
+      <a href="#quick-rounds">Quick Rounds</a>
+      <a href="#tournaments">Tournaments (Admins)</a>
+      <a href="#scoring">Entering Scores</a>
+      <a href="#handicaps">Handicaps Explained</a>
+      <a href="#history">History</a>
+      <a href="#account">My Account</a>
+    </details>
+
+    <!-- ═══════════════════ GETTING STARTED ═══════════════════ -->
+    <section class="guide-section" id="getting-started">
+      <h2>Getting Started</h2>
+      <p class="lead">Sandbagger is built around <strong>groups</strong> — your golf crew. One person starts the
+      group and becomes its admin; everyone else joins with an invite code. You only do this once.</p>
+
+      <h3 id="create-group">Start a new group</h3>
+      <p>If you're the organizer, create the group. You'll automatically be its admin — that means you
+      can add golfers and courses, create tournaments, and manage rounds.</p>
+      <ol class="steps">
+        <li>Open the app. On the sign-in screen, tap <b>Sign up</b>.</li>
+        <li>Choose <b>🏌️ Start a new group</b>.</li>
+        <li>Fill in your name, email, and a password (8+ characters).</li>
+        <li>Give your group a name — this is what your whole crew will see.</li>
+        <li>Enter your <b>Handicap Index</b> if you know it (you can change it any time). Not sure what
+          this is? See <a href="#handicaps">Handicaps Explained</a>.</li>
+        <li>Tap <b>Create Group</b> — you'll land on your new dashboard, signed in and ready to go.</li>
+      </ol>
+      <div class="shots">
+        <figure class="shot">
+          <img src="guide-assets/signup-chooser.png" alt="Sign up chooser screen" loading="lazy">
+          <figcaption>Tap <strong>Sign up</strong>, then choose how you're getting started.</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="guide-assets/create-group-form.png" alt="Start a new group form, filled in" loading="lazy">
+          <figcaption>Name, email, password, group name — done in under a minute.</figcaption>
+        </figure>
+      </div>
+
+      <h3 id="join-group">Join an existing group</h3>
+      <p>Already have a crew using Sandbagger? Ask your group's admin for the <strong>invite code</strong>
+      (or invite link), then:</p>
+      <ol class="steps">
+        <li>On the sign-in screen, tap <b>Sign up</b> → <b>🔗 Join an existing group</b>.</li>
+        <li>Enter the invite code. When it's valid, the group's name appears with a green check —
+          so you know you're joining the right crew.</li>
+        <li>Fill in your name, email, password, and (optionally) your Handicap Index.</li>
+        <li>Tap <b>Join Group</b>.</li>
+      </ol>
+      <div class="shots">
+        <figure class="shot">
+          <img src="guide-assets/join-group-form.png" alt="Join a group form with valid invite code" loading="lazy">
+          <figcaption>A valid code shows the group name before you commit.</figcaption>
+        </figure>
+      </div>
+      <div class="tip"><strong>Tip:</strong> If the admin already added you to the roster by name,
+      the app will match you to your existing profile when you join — your scoring history comes with you.</div>
+
+      <h3 id="sign-in">Signing in later</h3>
+      <p>Use the email and password you registered with. The app keeps you signed in on your phone,
+      so day-to-day you'll skip this screen entirely.</p>
+      <div class="shots">
+        <figure class="shot">
+          <img src="guide-assets/signin.png" alt="Sign in screen" loading="lazy">
+          <figcaption>The sign-in screen — you'll rarely see it after the first time.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- ═══════════════════ DASHBOARD ═══════════════════ -->
+    <section class="guide-section" id="dashboard">
+      <h2>The Dashboard</h2>
+      <p class="lead">Home base. Everything starts here: live rounds you can jump back into,
+      your tournaments, and the buttons to start something new.</p>
+
+      <h3>What you'll see</h3>
+      <ol class="steps">
+        <li><b>Current Matches</b> — active tournaments and any in-progress quick rounds, each with a
+          <b>Resume</b> button. Tap a round to open its scoreboard right where you left off.</li>
+        <li><b>New Matches</b> — <b>+ New Quick Round</b> for a casual game today, and (admins only)
+          <b>+ New Tournament</b> for multi-round events.</li>
+        <li><b>Setup checklist</b> — brand-new groups get a short checklist (add golfers, add a course,
+          create a tournament). It disappears once you're set up.</li>
+      </ol>
+      <div class="shots">
+        <figure class="shot">
+          <img src="guide-assets/dashboard-new-group.png" alt="Dashboard for a new group with setup checklist" loading="lazy">
+          <figcaption>A fresh group's dashboard walks you through setup.</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="guide-assets/menu-open.png" alt="Dashboard menu open" loading="lazy">
+          <figcaption>The ☰ menu: History, Account, Admin tools, and Help.</figcaption>
+        </figure>
+      </div>
+
+      <h3>The menu</h3>
+      <p>Tap the <b>☰</b> button (or your name) in the top bar:</p>
+      <table class="info-table">
+        <tr><td>Dashboard</td><td>Back to home base from anywhere.</td></tr>
+        <tr><td>My History</td><td>Every round you've played, with scorecards.</td></tr>
+        <tr><td>My Account</td><td>Profile, handicap, groups, password.</td></tr>
+        <tr><td>Admin</td><td>Group management — admins only. Golfers, courses, invites.</td></tr>
+        <tr><td>Help</td><td>Built-in explanations of formats and handicap terms.</td></tr>
+      </table>
+    </section>
+
+    <!-- ═══════════════════ GROUP SETUP ═══════════════════ -->
+    <section class="guide-section" id="group-setup">
+      <h2>Group Setup (Admins)</h2>
+      <p class="lead">Before the first round: add your golfers, add the course you're playing,
+      and invite the crew. All of this lives under <strong>☰ → Admin</strong>.</p>
+      <p><em>Full walkthrough with screenshots coming in this section: adding golfers,
+      adding courses with scorecard data, and sharing your invite link.</em></p>
+    </section>
+
+    <!-- ═══════════════════ QUICK ROUNDS ═══════════════════ -->
+    <section class="guide-section" id="quick-rounds">
+      <h2>Quick Rounds</h2>
+      <p class="lead">A quick round is exactly that — pick a game, pick the players, and tee off.
+      No tournament setup required. Anyone in the group can start one.</p>
+      <table class="info-table">
+        <tr><th>Format</th><th>The game</th></tr>
+        <tr><td>Best Ball</td><td>2v2 — each side counts its best net score on every hole.</td></tr>
+        <tr><td>Rabbit</td><td>Win a hole outright to catch the rabbit; hold it when the 9 ends to win.</td></tr>
+        <tr><td>Wolf</td><td>Rotating Wolf picks a partner after tee shots — or goes lone wolf for more points.</td></tr>
+        <tr><td>Rolling Skins</td><td>Win a hole outright for the skin; ties roll the value onto the next hole.</td></tr>
+      </table>
+      <p><em>Step-by-step setup and scoring for each format coming in this section.</em></p>
+    </section>
+
+    <!-- ═══════════════════ TOURNAMENTS ═══════════════════ -->
+    <section class="guide-section" id="tournaments">
+      <h2>Tournaments (Admins)</h2>
+      <p class="lead">Tournaments are multi-round events with rosters, teams, tee times, and standings —
+      built for the annual trip. Only admins create and manage them.</p>
+      <table class="info-table">
+        <tr><th>Format</th><th>The event</th></tr>
+        <tr><td>Ryder Cup</td><td>Two teams, match-play points across multiple rounds.</td></tr>
+        <tr><td>Guys Trip</td><td>2v2 partnerships each round with team points.</td></tr>
+        <tr><td>Stroke Play</td><td>Individual + team best ball standings from grouped tee times.</td></tr>
+        <tr><td>Scramble</td><td>Each foursome plays one team ball; lowest team score wins.</td></tr>
+      </table>
+      <p><em>Create-a-tournament walkthrough, player/team assignment, rounds, groups, and tee times
+      coming in this section.</em></p>
+    </section>
+
+    <!-- ═══════════════════ SCORING ═══════════════════ -->
+    <section class="guide-section" id="scoring">
+      <h2>Entering Scores</h2>
+      <p class="lead">One person per foursome (or everyone — it's up to you) enters gross strokes
+      hole by hole. Sandbagger applies handicaps and updates every leaderboard live.</p>
+      <p><em>Score entry, stroke dots, the Match / Round / Tournament tabs, and finalizing —
+      coming in this section.</em></p>
+    </section>
+
+    <!-- ═══════════════════ HANDICAPS ═══════════════════ -->
+    <section class="guide-section" id="handicaps">
+      <h2>Handicaps Explained</h2>
+      <p class="lead">The 30-second version of how Sandbagger levels the playing field.</p>
+      <table class="info-table">
+        <tr><td>Handicap Index</td><td>Your portable skill number (e.g. 12.4) — set it in My Account.</td></tr>
+        <tr><td>Playing Handicap</td><td>Your index adjusted for the course's difficulty (slope) and the event's Handicap&nbsp;%.</td></tr>
+        <tr><td>Handicap %</td><td>How much of the handicap the event uses — 80% is a common trip setting.</td></tr>
+        <tr><td>Stroke dots</td><td>Dots on the scorecard mark holes where a player receives strokes.</td></tr>
+      </table>
+      <p><em>Fuller explanations, calculated vs. manual handicaps, and locking coming in this section.</em></p>
+    </section>
+
+    <!-- ═══════════════════ HISTORY ═══════════════════ -->
+    <section class="guide-section" id="history">
+      <h2>History</h2>
+      <p class="lead">Every finalized round and tournament is preserved — scorecards, results, and standings.</p>
+      <p><em>Round history and tournament history walkthrough coming in this section.</em></p>
+    </section>
+
+    <!-- ═══════════════════ ACCOUNT ═══════════════════ -->
+    <section class="guide-section" id="account">
+      <h2>My Account</h2>
+      <p class="lead">Your profile, your handicap index, your groups, and your credentials.</p>
+      <p><em>Profile editing, joining/creating additional groups, password changes, and account
+      deletion coming in this section. To delete your account, see the short version at
+      <a href="deleteaccount.html">the account deletion page</a>.</em></p>
+    </section>
+
+  </main>
+</div>
+
+<footer>
+  Sandbagger Scoring · <a href="/">sandbaggerscoring.com</a> · <a href="deleteaccount.html">Delete account</a>
+</footer>
+
+</body>
+</html>

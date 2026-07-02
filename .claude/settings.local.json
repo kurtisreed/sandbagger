@@ -77,7 +77,13 @@
       "Bash(sed -n '8678,8690p' script.js)",
       "Bash(sed -n '10372,10385p' script.js)",
       "Bash(grep -n \"^#app-content\\\\|^#content\\\\|^main\\\\b\\\\|^main {\\\\|^body\\\\|html, body\\\\|^html\" style.css)",
-      "mcp__Claude_Preview__preview_start"
+      "mcp__Claude_Preview__preview_start",
+      "Bash(ls \"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\" 2>&1; node --version; cat /Applications/XAMPP/xamppfiles/htdocs/sandbagger/.claude/launch.json 2>/dev/null)",
+      "Bash(ls /Applications/ | grep -iE \"chrome|edge|brave|firefox|chromium|arc\"; ls ~/Applications 2>/dev/null | grep -iE \"chrome|edge|brave|chromium\")",
+      "Bash(npm install *)",
+      "Bash(node -e \"console.log\\(require\\('puppeteer-core/package.json'\\).version\\)\")",
+      "Bash(node tools/capture-guide.js auth)",
+      "Bash(INVITE_CODE=GOLF2026 node tools/capture-guide.js join dashboard)"
     ]
   }
 }
