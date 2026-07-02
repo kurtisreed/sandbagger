@@ -54,13 +54,16 @@ async function type(sel, text) {
   await page.type(sel, text, { delay: 15 });
 }
 
-/** Fresh load, logged out (clears stored login). */
+/** Fresh load, logged out (clears stored login AND the PHP session cookie). */
 async function freshLoggedOut() {
   await page.goto(BASE_URL, { waitUntil: 'networkidle2' });
   await page.evaluate(() => {
     localStorage.clear();
     sessionStorage.clear();
   });
+  const cdp = await page.createCDPSession();
+  await cdp.send('Network.clearBrowserCookies');
+  await cdp.detach();
   await page.goto(BASE_URL, { waitUntil: 'networkidle2' });
   await visible('#login-form');
 }
@@ -137,7 +140,158 @@ const scenes = {
     await sleep(300);
     await shot('menu-open');
   },
+
+  /** Admin pages: group overview (invite code), golfer roster, courses. */
+  async admin() {
+    await signInDemo();
+    await page.click('#hamburger-menu-btn');
+    await sleep(250);
+    await page.click('#menu-edit-group');
+    await visible('#edit-group-golfers-btn');
+    // Show the production domain in the invite link instead of localhost
+    await page.waitForFunction(() => {
+      const el = document.getElementById('group-invite-link-display');
+      return el && el.value.includes('join=');
+    }, { timeout: 10000 });
+    await page.evaluate(() => {
+      const el = document.getElementById('group-invite-link-display');
+      el.value = el.value.replace(window.location.origin, 'https://sandbaggerscoring.com');
+    });
+    await shot('admin-group');
+
+    await page.click('#edit-group-golfers-btn');
+    await visible('#edit-golfers-list');
+    await sleep(600);
+    await shot('admin-golfers');
+    await page.click('#add-golfer-btn');
+    await sleep(400);
+    await shot('admin-add-golfer');
+
+    // back to admin, then courses
+    await page.click('#back-from-edit-golfers-btn');
+    await visible('#edit-group-golfers-btn');
+    await page.click('#manage-courses-btn');
+    await visible('#courses-list');
+    await sleep(600);
+    await shot('admin-courses');
+  },
+
+  async 'qr-bestball'() {
+    await signInDemo();
+    await openQuickRoundSetup('best-ball', 'quickround-type');
+    await visible('#start-best-ball');
+    await pickFourPlayers(['team1-player1', 'team1-player2', 'team2-player1', 'team2-player2']);
+    await pickCourseAndTee();
+    await shot('bestball-setup', { fullPage: false });
+    await page.click('#start-best-ball');
+    await visible('select[data-hole]', 20000);
+    await enterScores(9);
+    await shot('bestball-scoring');
+  },
+
+  async 'qr-rollingskins'() {
+    await signInDemo();
+    await openQuickRoundSetup('rolling-skins');
+    await visible('#start-rolling-skins');
+    await pickFourPlayers(['rs-player1', 'rs-player2', 'rs-player3', 'rs-player4']);
+    await pickCourseAndTee();
+    await page.click('#start-rolling-skins');
+    await visible('select[data-hole]', 20000);
+    await enterScores(9);
+    await shot('rollingskins-scoring');
+    await page.evaluate(() => {
+      const el = document.getElementById('rolling-skins-summary');
+      if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
+      const wrap = document.querySelector('.skins-table-wrapper');
+      if (wrap && el) wrap.scrollTop = el.offsetTop - 60;
+    });
+    await shot('rollingskins-summary');
+  },
+
+  async 'qr-wolf'() {
+    await signInDemo();
+    await openQuickRoundSetup('wolf');
+    await visible('#start-wolf');
+    await pickFourPlayers(['wolf-player1', 'wolf-player2', 'wolf-player3', 'wolf-player4']);
+    await pickCourseAndTee();
+    await page.click('#start-wolf');
+    await visible('select[data-hole]', 20000);
+    await shot('wolf-scoring');
+  },
+
+  async 'qr-rabbit'() {
+    await signInDemo();
+    await openQuickRoundSetup('rabbit');
+    await visible('#start-rabbit');
+    await pickFourPlayers(['rabbit-player1', 'rabbit-player2', 'rabbit-player3', 'rabbit-player4']);
+    await pickCourseAndTee();
+    await page.click('#start-rabbit');
+    await visible('select[data-hole]', 20000);
+    await shot('rabbit-scoring');
+  },
+
+  /** Dashboard again once quick rounds exist — shows the Resume cards. */
+  async 'dashboard-active'() {
+    await signInDemo();
+    await shot('dashboard-active');
+  },
 };
+
+// ── Quick-round helpers ─────────────────────────────────────────────────────
+
+/** Dashboard → + New Quick Round → pick a type. Optionally screenshots the selector. */
+async function openQuickRoundSetup(type, shotName) {
+  await page.click('#create-quick-round-btn');
+  await visible('#round-type-select');
+  await page.select('#round-type-select', type);
+  if (shotName) await shot(shotName);
+  await page.click('#continue-round-type-btn');
+}
+
+/** Fill four distinct golfers into the given select ids. */
+async function pickFourPlayers(selectIds) {
+  const values = await page.$eval(`#${selectIds[0]}`, (sel) =>
+    [...sel.options].map((o) => o.value).filter((v) => v && v !== 'new-player')
+  );
+  for (let i = 0; i < selectIds.length; i++) {
+    await page.select(`#${selectIds[i]}`, values[i]);
+    await sleep(120);
+  }
+}
+
+/** Pick the first course, then a middle tee once the tee select populates. */
+async function pickCourseAndTee() {
+  const course = await page.$eval('#select-course', (sel) =>
+    [...sel.options].map((o) => o.value).find((v) => v)
+  );
+  await page.select('#select-course', course);
+  await page.waitForFunction(
+    () => document.querySelectorAll('#select-tee option[value]:not([value=""])').length > 0,
+    { timeout: 10000 }
+  );
+  const tees = await page.$eval('#select-tee', (sel) =>
+    [...sel.options].map((o) => o.value).filter((v) => v)
+  );
+  await page.select('#select-tee', tees[Math.min(2, tees.length - 1)]);
+  await sleep(200);
+}
+
+/** Enter plausible scores for holes 1..n for every golfer on the card. */
+async function enterScores(n) {
+  const pattern = [4, 5, 3, 4, 6, 4, 5, 4, 3, 4, 4, 5, 3, 5, 4, 4, 6, 4];
+  const selects = await page.$$eval('select[data-hole][data-golfer]', (els) =>
+    els.map((el) => ({ hole: +el.dataset.hole, golfer: el.dataset.golfer }))
+  );
+  const golfers = [...new Set(selects.map((s) => s.golfer))];
+  for (const { hole, golfer } of selects) {
+    if (hole > n) continue;
+    const gi = golfers.indexOf(golfer);
+    const score = Math.max(3, Math.min(7, pattern[(hole - 1 + gi * 3) % pattern.length] + (gi % 2)));
+    await page.select(`select[data-hole="${hole}"][data-golfer="${golfer}"]`, String(score));
+    await sleep(90); // let the save fire
+  }
+  await sleep(800); // final leaderboard refresh
+}
 
 // ── Runner ──────────────────────────────────────────────────────────────────
 

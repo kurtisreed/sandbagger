@@ -229,7 +229,14 @@
     <a class="sub" href="#join-group">Join with an invite code</a>
     <a href="#dashboard">The Dashboard</a>
     <a href="#group-setup">Group Setup (Admins)</a>
+    <a class="sub" href="#invite">Invite your crew</a>
+    <a class="sub" href="#add-golfers">Add golfers</a>
+    <a class="sub" href="#add-courses">Add courses</a>
     <a href="#quick-rounds">Quick Rounds</a>
+    <a class="sub" href="#best-ball">Best Ball</a>
+    <a class="sub" href="#rabbit">Rabbit</a>
+    <a class="sub" href="#wolf">Wolf</a>
+    <a class="sub" href="#rolling-skins">Rolling Skins</a>
     <a href="#tournaments">Tournaments (Admins)</a>
     <a href="#scoring">Entering Scores</a>
     <a href="#handicaps">Handicaps Explained</a>
@@ -246,7 +253,14 @@
       <a class="sub" href="#join-group">Join with an invite code</a>
       <a href="#dashboard">The Dashboard</a>
       <a href="#group-setup">Group Setup (Admins)</a>
+      <a class="sub" href="#invite">Invite your crew</a>
+      <a class="sub" href="#add-golfers">Add golfers</a>
+      <a class="sub" href="#add-courses">Add courses</a>
       <a href="#quick-rounds">Quick Rounds</a>
+      <a class="sub" href="#best-ball">Best Ball</a>
+      <a class="sub" href="#rabbit">Rabbit</a>
+      <a class="sub" href="#wolf">Wolf</a>
+      <a class="sub" href="#rolling-skins">Rolling Skins</a>
       <a href="#tournaments">Tournaments (Admins)</a>
       <a href="#scoring">Entering Scores</a>
       <a href="#handicaps">Handicaps Explained</a>
@@ -334,6 +348,10 @@
           <figcaption>A fresh group's dashboard walks you through setup.</figcaption>
         </figure>
         <figure class="shot">
+          <img src="guide-assets/dashboard-active.png" alt="Dashboard with active rounds to resume" loading="lazy">
+          <figcaption>Rounds in progress show under <strong>Current Matches</strong> — tap to jump back in.</figcaption>
+        </figure>
+        <figure class="shot">
           <img src="guide-assets/menu-open.png" alt="Dashboard menu open" loading="lazy">
           <figcaption>The ☰ menu: History, Account, Admin tools, and Help.</figcaption>
         </figure>
@@ -355,8 +373,63 @@
       <h2>Group Setup (Admins)</h2>
       <p class="lead">Before the first round: add your golfers, add the course you're playing,
       and invite the crew. All of this lives under <strong>☰ → Admin</strong>.</p>
-      <p><em>Full walkthrough with screenshots coming in this section: adding golfers,
-      adding courses with scorecard data, and sharing your invite link.</em></p>
+      <div class="shots">
+        <figure class="shot">
+          <img src="guide-assets/admin-group.png" alt="Admin page with Golfers, Courses, and invite code" loading="lazy">
+          <figcaption>The Admin page: group card, Golfers &amp; Courses, and your invite code.</figcaption>
+        </figure>
+      </div>
+
+      <h3 id="invite">Invite your crew</h3>
+      <p>Your group has one invite code, shown right on the Admin page. Anyone with the code
+      (or link) can join your group.</p>
+      <ol class="steps">
+        <li>Open <b>☰ → Admin</b>.</li>
+        <li>Tap <b>Copy Code</b> or <b>Copy Link</b> and share it in your group chat.</li>
+        <li>Each buddy signs up with it — see <a href="#join-group">Join an existing group</a>.</li>
+      </ol>
+      <div class="tip"><strong>Code got out?</strong> <b>Generate New Code</b> deprecates the old
+      one instantly — existing members are unaffected.</div>
+
+      <h3 id="add-golfers">Add golfers</h3>
+      <p>Add everyone who'll be playing — even buddies who haven't downloaded the app yet.
+      You can enter scores for them, and they show up in tournaments and quick rounds like
+      anyone else.</p>
+      <ol class="steps">
+        <li>Go to <b>☰ → Admin → Golfers</b>.</li>
+        <li>Tap <b>+ Add Golfer</b>, enter their name and Handicap Index, and save.</li>
+        <li>Golfers marked <b>Pending</b> haven't created an account yet. When they join with
+          your invite code, they claim their profile — scoring history included.</li>
+        <li>Use <b>Edit</b> to update a golfer's handicap any time.</li>
+      </ol>
+      <div class="shots">
+        <figure class="shot">
+          <img src="guide-assets/admin-golfers.png" alt="Golfer roster with handicaps and pending badges" loading="lazy">
+          <figcaption>The roster. <strong>Pending</strong> = added by you, not signed up yet.</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="guide-assets/admin-add-golfer.png" alt="Add golfer form" loading="lazy">
+          <figcaption>Adding a golfer takes a name and a handicap.</figcaption>
+        </figure>
+      </div>
+
+      <h3 id="add-courses">Add courses</h3>
+      <p>Sandbagger needs the course's scorecard — par, handicap index (stroke ratings) per hole,
+      and tee data (slope/rating) — to calculate playing handicaps correctly. Add each course
+      you'll play once; it's saved for the whole group.</p>
+      <ol class="steps">
+        <li>Go to <b>☰ → Admin → Courses</b>.</li>
+        <li>Tap <b>+ Add New Course</b> and enter the course details, tees, and hole-by-hole
+          scorecard info.</li>
+        <li>Add every tee your group plays — each player's handicap adjusts to the tee
+          they're playing.</li>
+      </ol>
+      <div class="shots">
+        <figure class="shot">
+          <img src="guide-assets/admin-courses.png" alt="Courses list in admin" loading="lazy">
+          <figcaption>Your group's course library.</figcaption>
+        </figure>
+      </div>
     </section>
 
     <!-- ═══════════════════ QUICK ROUNDS ═══════════════════ -->
@@ -366,12 +439,98 @@
       No tournament setup required. Anyone in the group can start one.</p>
       <table class="info-table">
         <tr><th>Format</th><th>The game</th></tr>
-        <tr><td>Best Ball</td><td>2v2 — each side counts its best net score on every hole.</td></tr>
-        <tr><td>Rabbit</td><td>Win a hole outright to catch the rabbit; hold it when the 9 ends to win.</td></tr>
-        <tr><td>Wolf</td><td>Rotating Wolf picks a partner after tee shots — or goes lone wolf for more points.</td></tr>
-        <tr><td>Rolling Skins</td><td>Win a hole outright for the skin; ties roll the value onto the next hole.</td></tr>
+        <tr><td><a href="#best-ball">Best Ball</a></td><td>2v2 — each side counts its best net score on every hole.</td></tr>
+        <tr><td><a href="#rabbit">Rabbit</a></td><td>Win a hole outright to catch the rabbit; hold it when the 9 ends to win.</td></tr>
+        <tr><td><a href="#wolf">Wolf</a></td><td>Rotating Wolf picks a partner after tee shots — or goes lone wolf for more points.</td></tr>
+        <tr><td><a href="#rolling-skins">Rolling Skins</a></td><td>Win a hole outright for the skin; ties roll the value onto the next hole.</td></tr>
       </table>
-      <p><em>Step-by-step setup and scoring for each format coming in this section.</em></p>
+
+      <h3 id="qr-start">Starting a quick round</h3>
+      <p>Every format starts the same way:</p>
+      <ol class="steps">
+        <li>On the dashboard, tap <b>+ New Quick Round</b>.</li>
+        <li>Choose your game from the list and tap <b>Continue</b>. (Tap the <b>?</b> for a
+          refresher on any format's rules.)</li>
+        <li>Pick the players — 2v2 teams for Best Ball, four individuals for the rest.</li>
+        <li>Pick the <b>course</b> and the <b>tees</b> you're playing.</li>
+        <li>Choose your handicap settings (use the group's calculated handicaps, or set them
+          manually for today).</li>
+        <li>Tap <b>Start Round</b> — the live scorecard opens, and the round appears on
+          everyone's dashboard under <b>Current Matches</b>.</li>
+      </ol>
+      <div class="shots">
+        <figure class="shot">
+          <img src="guide-assets/quickround-type.png" alt="Select round type screen" loading="lazy">
+          <figcaption>Pick your game.</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="guide-assets/bestball-setup.png" alt="Best Ball setup with teams, course and tees" loading="lazy">
+          <figcaption>Teams, course, tees — then Start Round.</figcaption>
+        </figure>
+      </div>
+      <div class="tip green"><strong>Phones stay in pockets:</strong> one person can score the
+      whole round. Score changes save instantly and sync to everyone viewing the round.</div>
+
+      <h3 id="best-ball">Best Ball (2v2)</h3>
+      <p>Each hole, both players on a team play their own ball; the team's score is its
+      <strong>best net ball</strong>. The scorecard's left edge tracks the match: the color shows
+      who's up, the number shows by how many.</p>
+      <p>Reading the card: <strong>dots</strong> in a cell mark handicap strokes received on that
+      hole. Cell colors flag birdies (blue), pars (gray), and bogeys+ (red) at a glance.</p>
+      <div class="shots">
+        <figure class="shot">
+          <img src="guide-assets/bestball-scoring.png" alt="Best Ball live scorecard" loading="lazy">
+          <figcaption>Live Best Ball: match status on the left edge, stroke dots, and Out totals.</figcaption>
+        </figure>
+      </div>
+
+      <h3 id="rabbit">Rabbit</h3>
+      <p>Win a hole outright (lowest net, no ties) to <strong>catch the rabbit</strong>. Whoever
+      holds the rabbit when the 9th and 18th holes finish wins that side. Tie a hole and the
+      rabbit stays put; win one while someone else holds it and it goes <em>free</em> first.
+      The card shows the rabbit's status as the round unfolds.</p>
+      <div class="shots">
+        <figure class="shot">
+          <img src="guide-assets/rabbit-scoring.png" alt="Rabbit scorecard with rabbit status banners" loading="lazy">
+          <figcaption>Banner rows track where the rabbit stands.</figcaption>
+        </figure>
+      </div>
+
+      <h3 id="wolf">Wolf</h3>
+      <p>The 🐺 rotates every hole (tee order). After watching tee shots, the Wolf either picks a
+      partner for a 2v2 hole — or goes <strong>Lone Wolf</strong> against the other three for
+      triple the points. Use the <b>Partner</b> column to record the Wolf's choice each hole,
+      then enter scores normally; Sandbagger handles the points.</p>
+      <div class="shots">
+        <figure class="shot">
+          <img src="guide-assets/wolf-scoring.png" alt="Wolf scorecard with rotating wolf and partner column" loading="lazy">
+          <figcaption>The 🐺 marks each hole's Wolf; pick their partner (or Lone Wolf) in the Partner column.</figcaption>
+        </figure>
+      </div>
+
+      <h3 id="rolling-skins">Rolling Skins</h3>
+      <p>Every hole is worth one skin. Win the hole outright (lowest net) and it's yours; tie,
+      and the skin <strong>rolls</strong> — the next hole is now worth two. The live summary under
+      the scorecard shows skins won and a hole-by-hole breakdown, including carries.</p>
+      <ol class="steps">
+        <li>Enter gross scores; the summary recalculates instantly.</li>
+        <li>When all 18 holes are in, tap <b>Finalize Round</b> at the bottom — the round locks
+          and moves to your group's history.</li>
+      </ol>
+      <div class="shots">
+        <figure class="shot">
+          <img src="guide-assets/rollingskins-scoring.png" alt="Rolling Skins scorecard" loading="lazy">
+          <figcaption>Names stay pinned while you scroll the card.</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="guide-assets/rollingskins-summary.png" alt="Rolling Skins summary with skins won and carries" loading="lazy">
+          <figcaption>Skins won + hole-by-hole, with carries marked.</figcaption>
+        </figure>
+      </div>
+
+      <h3 id="qr-resume">Pausing &amp; resuming</h3>
+      <p>Quick rounds live on your dashboard until they're finalized. Close the app at the turn,
+      grab a hot dog, reopen — your round is right there under <b>Current Matches</b>.</p>
     </section>
 
     <!-- ═══════════════════ TOURNAMENTS ═══════════════════ -->

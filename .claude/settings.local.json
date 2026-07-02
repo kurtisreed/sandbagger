@@ -96,7 +96,11 @@
       "Bash(git fetch *)",
       "Bash(git rebase *)",
       "Bash(python3 -c \"import json; json.load\\(open\\('.claude/settings.local.json'\\)\\); print\\('valid json'\\)\")",
-      "Bash(GIT_EDITOR=true git rebase --continue)"
+      "Bash(GIT_EDITOR=true git rebase --continue)",
+      "Bash(node --check tools/capture-guide.js)",
+      "Bash(node tools/capture-guide.js admin qr-bestball qr-rollingskins qr-wolf qr-rabbit dashboard-active)",
+      "Bash(node tools/capture-guide.js qr-bestball qr-rollingskins qr-wolf qr-rabbit dashboard-active)",
+      "Bash(node tools/capture-guide.js admin)"
     ]
   }
 }
