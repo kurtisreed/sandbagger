@@ -135,7 +135,7 @@ try {
             'first_name' => $firstName,
             'last_name'  => $lastName,
             'handicap'   => $handicapIndex,
-            'role'       => null
+            'role'       => 'admin'
         ]
     ]);
 

@@ -83,7 +83,20 @@
       "Bash(npm install *)",
       "Bash(node -e \"console.log\\(require\\('puppeteer-core/package.json'\\).version\\)\")",
       "Bash(node tools/capture-guide.js auth)",
-      "Bash(INVITE_CODE=GOLF2026 node tools/capture-guide.js join dashboard)"
+      "Bash(INVITE_CODE=GOLF2026 node tools/capture-guide.js join dashboard)",
+      "Bash(php -v)",
+      "Read(//Applications/XAMPP/xamppfiles/htdocs/sandbagger/api/**)",
+      "Bash(git check-ignore *)",
+      "Bash(git -C /Applications/XAMPP/xamppfiles/htdocs/sandbagger check-ignore -v api/db_connect.php)",
+      "Bash(cp /Applications/XAMPP/xamppfiles/htdocs/sandbagger/api/db_connect.php api/db_connect.php && head -3 .gitignore && grep -n \"localhost\\\\|host\" api/db_connect.php | head -5)",
+      "Bash(/Applications/XAMPP/xamppfiles/bin/php -r 'new mysqli\\(\"localhost\",\"root\",\"\",\"test\"\\);')",
+      "Bash(curl -s http://localhost:8474/api/get_active_quick_rounds.php -b /dev/null)",
+      "Bash(cp /Applications/XAMPP/xamppfiles/htdocs/sandbagger/db_connect.php ./db_connect.php && echo copied)",
+      "Bash(git checkout *)",
+      "Bash(git fetch *)",
+      "Bash(git rebase *)",
+      "Bash(python3 -c \"import json; json.load\\(open\\('.claude/settings.local.json'\\)\\); print\\('valid json'\\)\")",
+      "Bash(GIT_EDITOR=true git rebase --continue)"
     ]
   }
 }
