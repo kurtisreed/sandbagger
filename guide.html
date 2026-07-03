@@ -545,17 +545,119 @@
         <tr><td>Stroke Play</td><td>Individual + team best ball standings from grouped tee times.</td></tr>
         <tr><td>Scramble</td><td>Each foursome plays one team ball; lowest team score wins.</td></tr>
       </table>
-      <p><em>Create-a-tournament walkthrough, player/team assignment, rounds, groups, and tee times
-      coming in this section.</em></p>
+
+      <h3 id="create-tournament">Create the tournament</h3>
+      <ol class="steps">
+        <li>On the dashboard, tap <b>+ New Tournament</b>.</li>
+        <li>Name it, set the <b>start and end dates</b>, and choose the <b>Handicap %</b>
+          (80% is a common trip setting — see <a href="#handicaps">Handicaps Explained</a>).</li>
+        <li>Pick the <b>format</b> and tap <b>Continue</b>.</li>
+      </ol>
+      <div class="shots">
+        <figure class="shot">
+          <img src="guide-assets/tournament-step1.png" alt="New tournament form" loading="lazy">
+          <figcaption>Name, dates, Handicap %, format — step one.</figcaption>
+        </figure>
+      </div>
+
+      <h3 id="teams-players">Teams &amp; players</h3>
+      <p><strong>Ryder Cup:</strong> name your two teams and pick their colors, then assign every
+      golfer to a side with one tap. Those colors follow the teams everywhere — scorecards,
+      leaderboards, the big scoreboard.</p>
+      <p><strong>Guys Trip / Stroke Play / Scramble:</strong> simpler — just check off who's
+      playing and create.</p>
+      <div class="shots">
+        <figure class="shot">
+          <img src="guide-assets/tournament-teams.png" alt="Team setup with names and colors" loading="lazy">
+          <figcaption>Team names + colors (Ryder Cup).</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="guide-assets/tournament-assign.png" alt="Assign players to teams" loading="lazy">
+          <figcaption>One tap per golfer to pick a side.</figcaption>
+        </figure>
+      </div>
+      <p>Your new tournament appears on everyone's dashboard, with its rounds listed on the card:</p>
+      <div class="shots">
+        <figure class="shot">
+          <img src="guide-assets/tournament-card.png" alt="Tournament card on dashboard" loading="lazy">
+          <figcaption>The tournament card: rounds, tee times, and <strong>+ Add Round</strong>.</figcaption>
+        </figure>
+      </div>
+
+      <h3 id="add-round">Add a round</h3>
+      <ol class="steps">
+        <li>On the tournament card, tap <b>+ Add Round</b>.</li>
+        <li>Pick the <b>date</b>, <b>course</b>, and <b>tees</b>, then tap
+          <b>Continue to Matches</b>. (You can also save the round bare and set up matches later.)</li>
+        <li>Build the day's <b>matches</b> — for Ryder Cup, each match is 2v2 with a player from
+          each team's roster. Stroke Play and Scramble use foursome <b>groups</b> instead.</li>
+        <li>Tap <b>Continue to Tee Times</b>, add your tee times, and slot each match into one.</li>
+        <li>Tap <b>Save Round</b>. Done — the round shows on the tournament card with its tee times.</li>
+      </ol>
+      <div class="shots">
+        <figure class="shot">
+          <img src="guide-assets/tournament-add-round.png" alt="Round information form" loading="lazy">
+          <figcaption>Date, course, tees.</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="guide-assets/tournament-matches.png" alt="Match setup 2v2" loading="lazy">
+          <figcaption>2v2 matches from the team rosters.</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="guide-assets/tournament-teetimes.png" alt="Tee times with matches assigned" loading="lazy">
+          <figcaption>Assign each match a tee time, then Save.</figcaption>
+        </figure>
+      </div>
+      <div class="tip"><strong>Locked rounds:</strong> once a round has scores, its setup locks to
+      protect the results — you'll see a <b>Locked</b> badge instead of an Edit button.</div>
     </section>
 
     <!-- ═══════════════════ SCORING ═══════════════════ -->
     <section class="guide-section" id="scoring">
       <h2>Entering Scores</h2>
       <p class="lead">One person per foursome (or everyone — it's up to you) enters gross strokes
-      hole by hole. Sandbagger applies handicaps and updates every leaderboard live.</p>
-      <p><em>Score entry, stroke dots, the Match / Round / Tournament tabs, and finalizing —
-      coming in this section.</em></p>
+      hole by hole. Sandbagger applies handicaps and updates every leaderboard live. Tournament
+      rounds have three tabs: <strong>My Match</strong>, <strong>Round</strong>, and
+      <strong>Tournament</strong>.</p>
+
+      <h3 id="my-match">My Match — enter your scores</h3>
+      <p>Open the round from the dashboard and you land on your own match's scorecard.
+      Enter each player's <strong>gross strokes</strong> from the dropdowns — that's the whole job.</p>
+      <ol class="steps">
+        <li><b>Dots</b> mark holes where a player gets handicap strokes (two dots = two strokes).</li>
+        <li>Cell colors flag the score vs. par: birdie-or-better (blue), par (gray), bogey+ (red).</li>
+        <li>The <b>left edge</b> tracks the match hole by hole — the color is the leading team,
+          the number is the margin.</li>
+        <li>Scores save instantly; everyone viewing the round sees them live.</li>
+      </ol>
+      <div class="shots">
+        <figure class="shot">
+          <img src="guide-assets/tournament-match-scoring.png" alt="Match scorecard with team colors and match status" loading="lazy">
+          <figcaption>Team-colored columns, stroke dots, and the match ticker on the left edge.</figcaption>
+        </figure>
+      </div>
+
+      <h3 id="round-tab">Round — today's action</h3>
+      <p>The Round tab shows every match in today's round with its live status, plus the round
+      leaderboards (gross and net) and any skins on the line. Tap a match to see its full scorecard.</p>
+      <div class="shots">
+        <figure class="shot">
+          <img src="guide-assets/tournament-round-tab.png" alt="Round tab with matches and leaderboard" loading="lazy">
+          <figcaption>Every match's live status + round leaderboards.</figcaption>
+        </figure>
+      </div>
+
+      <h3 id="tournament-tab">Tournament — the big picture</h3>
+      <p>The Tournament tab is the trip scoreboard: team points up top (Ryder Cup), every round's
+      matchups and tee times, and the tournament-long leaderboards.</p>
+      <div class="shots">
+        <figure class="shot">
+          <img src="guide-assets/tournament-standings-tab.png" alt="Tournament tab with team scoreboard" loading="lazy">
+          <figcaption>The scoreboard that settles the trip.</figcaption>
+        </figure>
+      </div>
+      <div class="tip green"><strong>Spotty signal?</strong> Keep scoring — scores you enter
+      offline are saved on your phone and sync automatically when you're back in coverage.</div>
     </section>
 
     <!-- ═══════════════════ HANDICAPS ═══════════════════ -->

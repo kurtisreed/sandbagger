@@ -235,7 +235,157 @@ const scenes = {
     await signInDemo();
     await shot('dashboard-active');
   },
+
+  /** Ryder Cup creation wizard: step 1, team setup, player assignment, card. */
+  async 't-wizard'() {
+    await signInDemo();
+    await page.click('#create-tournament-btn');
+    await visible('#nt-name');
+    await type('#nt-name', 'Ryder Cup Weekend');
+    await setDate('#nt-start-date', 0);
+    await setDate('#nt-end-date', 2);
+    const rcValue = await page.$eval('#nt-format', (sel) =>
+      [...sel.options].find((o) => /ryder/i.test(o.textContent))?.value
+    );
+    await page.select('#nt-format', rcValue);
+    await shot('tournament-step1');
+
+    await page.click('#nt-continue-btn');
+    await visible('#nt-team1-name');
+    await type('#nt-team1-name', 'USA');
+    await type('#nt-team2-name', 'Europe');
+    await shot('tournament-teams');
+
+    await page.click('#nt-step2-continue-btn');
+    await visible('.nt-assign-btn');
+    // Alternate golfers between the two teams
+    await page.evaluate(() => {
+      const ids = [...new Set([...document.querySelectorAll('.nt-assign-btn')]
+        .map((b) => b.dataset.golferId))];
+      ids.forEach((gid, i) => {
+        document.querySelector(`.nt-assign-btn[data-golfer-id="${gid}"][data-team="${(i % 2) + 1}"]`).click();
+      });
+    });
+    await sleep(300);
+    await shot('tournament-assign');
+
+    await page.click('#nt-step3-continue-btn');
+    await visible('#user-dashboard', 20000);
+    await sleep(900);
+    await scenes['tournament-card']();
+  },
+
+  /** The tournament card on the dashboard (scrolled into view). */
+  async 'tournament-card'() {
+    if (!(await page.$('#user-dashboard'))) await signInDemo();
+    if (await page.$eval('#user-dashboard', (el) => el.style.display === 'none')) await signInDemo();
+    await page.evaluate(() => {
+      const h4 = [...document.querySelectorAll('.tournament-card h4')]
+        .find((el) => /ryder cup/i.test(el.textContent));
+      if (h4) h4.closest('.tournament-card').scrollIntoView({ behavior: 'instant', block: 'start' });
+      window.scrollBy(0, -70);
+    });
+    await shot('tournament-card');
+  },
+
+  /** Add a round to the tournament: round info, matches, tee times. */
+  async 't-round'() {
+    await signInDemo();
+    await page.click('.add-round-btn');
+    await visible('#add-round-date');
+    await setDate('#add-round-date', 0);
+    await page.waitForFunction(
+      () => document.querySelectorAll('#add-round-course option[value]:not([value=""])').length > 0,
+      { timeout: 10000 }
+    );
+    const course = await page.$eval('#add-round-course', (sel) =>
+      [...sel.options].map((o) => o.value).find((v) => v)
+    );
+    await page.select('#add-round-course', course);
+    await page.waitForFunction(
+      () => document.querySelectorAll('#add-round-tees option[value]:not([value=""])').length > 0,
+      { timeout: 10000 }
+    );
+    const tees = await page.$eval('#add-round-tees', (sel) =>
+      [...sel.options].map((o) => o.value).filter((v) => v)
+    );
+    await page.select('#add-round-tees', tees[Math.min(2, tees.length - 1)]);
+    await shot('tournament-add-round');
+
+    await page.click('#add-round-form button[type="submit"]');
+    await visible('#add-match-btn');
+    await page.click('#add-match-btn');
+    await sleep(250);
+    await page.click('#add-match-btn');
+    await sleep(250);
+    // Fill both matches. Each select's options may be team-filtered (Ryder Cup),
+    // so pick the first not-yet-used golfer from that select's own options.
+    const used = new Set();
+    for (let m = 0; m < 2; m++) {
+      for (const [team, pos] of [[1, 1], [1, 2], [2, 1], [2, 2]]) {
+        const sel = `.match-player-select[data-match-index="${m}"][data-team="${team}"][data-position="${pos}"]`;
+        const val = await page.$eval(sel, (el, usedArr) => {
+          const taken = new Set(usedArr);
+          return [...el.options].map((o) => o.value).find((v) => v && !taken.has(v));
+        }, [...used]);
+        used.add(val);
+        await page.select(sel, val);
+        await sleep(80);
+      }
+    }
+    await shot('tournament-matches');
+
+    await page.click('#continue-to-tee-times-btn');
+    await visible('#add-tee-time-btn');
+    await sleep(300);
+    // First tee time exists by default: assign match 1; add a second for match 2
+    await page.click('.add-match-to-tee-btn[data-tee-index="0"]');
+    await sleep(200);
+    await page.select('.tee-time-match-select[data-tee-index="0"]', 'match-0');
+    await sleep(200);
+    await page.click('#add-tee-time-btn');
+    await sleep(300);
+    await page.click('.add-match-to-tee-btn[data-tee-index="1"]');
+    await sleep(200);
+    await page.select('.tee-time-match-select[data-tee-index="1"]', 'match-1');
+    await sleep(200);
+    await shot('tournament-teetimes');
+
+    await page.click('#save-all-btn');
+    await visible('#user-dashboard', 20000);
+  },
+
+  /** Score a tournament round: match scorecard + Round + Tournament tabs. */
+  async 't-scoring'() {
+    await signInDemo();
+    // Quick-round cards also render .tournament-round-btn — target the
+    // Ryder Cup (format 3) round specifically.
+    await page.click('.tournament-round-btn[data-format-id="3"]');
+    await visible('select[data-hole]', 20000);
+    await enterScores(9);
+    await shot('tournament-match-scoring');
+
+    await page.evaluate(() => document.querySelector('button[data-page="today"]').click());
+    await sleep(1200);
+    await shot('tournament-round-tab');
+
+    await page.evaluate(() => document.querySelector('button[data-page="tournament"]').click());
+    await sleep(1200);
+    await shot('tournament-standings-tab');
+  },
 };
+
+/** Set a date input to today + offsetDays (date inputs need value + events). */
+async function setDate(sel, offsetDays) {
+  await page.evaluate(({ sel, offsetDays }) => {
+    const d = new Date();
+    d.setDate(d.getDate() + offsetDays);
+    const el = document.querySelector(sel);
+    el.value = d.toISOString().slice(0, 10);
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  }, { sel, offsetDays });
+}
 
 // ── Quick-round helpers ─────────────────────────────────────────────────────
 

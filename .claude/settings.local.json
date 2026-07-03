@@ -100,7 +100,14 @@
       "Bash(node --check tools/capture-guide.js)",
       "Bash(node tools/capture-guide.js admin qr-bestball qr-rollingskins qr-wolf qr-rabbit dashboard-active)",
       "Bash(node tools/capture-guide.js qr-bestball qr-rollingskins qr-wolf qr-rabbit dashboard-active)",
-      "Bash(node tools/capture-guide.js admin)"
+      "Bash(node tools/capture-guide.js admin)",
+      "Bash(git pull *)",
+      "Bash(git stash *)",
+      "Bash(node tools/capture-guide.js t-wizard t-round t-scoring)",
+      "Bash(node tools/capture-guide.js t-round t-scoring)",
+      "Bash(node tools/capture-guide.js t-scoring)",
+      "Bash(awk '/^function loadTournamentRound/,/^}/' script.js)",
+      "Bash(node tools/capture-guide.js tournament-card)"
     ]
   }
 }
