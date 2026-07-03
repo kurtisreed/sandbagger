@@ -12238,6 +12238,19 @@ function loadHelpPage() {
   document.getElementById('help-page-container').style.display = 'block';
   const list = document.getElementById('help-topics-list');
   list.innerHTML = '';
+
+  // Full user guide lives on the website (not bundled in the native app),
+  // so always link to the production domain there; on the web use our origin.
+  const guideOrigin = API_BASE_URL || window.location.origin;
+  const guideLink = document.createElement('a');
+  guideLink.href = `${guideOrigin}/guide.html`;
+  guideLink.target = '_blank';
+  guideLink.rel = 'noopener';
+  guideLink.className = 'btn btn-primary';
+  guideLink.style.marginBottom = 'var(--space-4)';
+  guideLink.textContent = '📖 Open the Full User Guide';
+  list.appendChild(guideLink);
+
   (window.HELP_CATEGORIES || []).forEach(cat => {
     const header = document.createElement('h3');
     header.className = 'help-category-header';

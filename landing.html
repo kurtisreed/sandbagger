@@ -564,6 +564,18 @@
       color: rgba(255,255,255,0.3);
       font-weight: 600;
     }
+    .footer-links {
+      margin-top: 1rem;
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+    .footer-links a {
+      color: var(--gold);
+      text-decoration: none;
+      opacity: 0.85;
+    }
+    .footer-links a:hover { opacity: 1; text-decoration: underline; }
+    .footer-links .sep { color: rgba(255,255,255,0.25); margin: 0 0.5rem; }
 
     /* ── Scroll reveal ─────────────────────────────────────────────────────── */
     .reveal {
@@ -798,6 +810,11 @@
       <span class="footer-logo-text">Sandbagger</span>
     </div>
     <p class="footer-tagline">Golf trip scoring for groups who take the game seriously. (And those who definitely don't.)</p>
+    <p class="footer-links">
+      <a href="guide.html">📖 User Guide</a>
+      <span class="sep">·</span>
+      <a href="deleteaccount.html">Delete Account</a>
+    </p>
   </footer>
 
   <script>
