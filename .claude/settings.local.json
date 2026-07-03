@@ -107,7 +107,9 @@
       "Bash(node tools/capture-guide.js t-round t-scoring)",
       "Bash(node tools/capture-guide.js t-scoring)",
       "Bash(awk '/^function loadTournamentRound/,/^}/' script.js)",
-      "Bash(node tools/capture-guide.js tournament-card)"
+      "Bash(node tools/capture-guide.js tournament-card)",
+      "Bash(node tools/capture-guide.js account history)",
+      "Bash(OUT=/private/tmp/claude-501/-Applications-XAMPP-xamppfiles-htdocs-sandbagger/807e3ad7-6ce3-40c7-9f84-34a49b86ec3d/scratchpad node /private/tmp/claude-501/-Applications-XAMPP-xamppfiles-htdocs-sandbagger/807e3ad7-6ce3-40c7-9f84-34a49b86ec3d/scratchpad/guide-final.js)"
     ]
   }
 }

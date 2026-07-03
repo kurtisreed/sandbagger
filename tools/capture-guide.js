@@ -236,6 +236,34 @@ const scenes = {
     await shot('dashboard-active');
   },
 
+  /** My Account page: profile, groups, credentials. */
+  async account() {
+    await signInDemo();
+    await page.click('#hamburger-menu-btn');
+    await sleep(250);
+    await page.click('#menu-edit-user');
+    await page.waitForFunction(
+      () => (document.getElementById('profile-display-first-name')?.textContent || '').length > 0,
+      { timeout: 10000 }
+    );
+    await sleep(600);
+    await shot('account-page');
+  },
+
+  /** My History: past tournaments and quick rounds. */
+  async history() {
+    await signInDemo();
+    await page.click('#hamburger-menu-btn');
+    await sleep(250);
+    await page.click('#menu-my-history');
+    await page.waitForFunction(
+      () => document.querySelectorAll('#tournament-history-content > div').length > 0,
+      { timeout: 10000 }
+    );
+    await sleep(500);
+    await shot('history-page');
+  },
+
   /** Ryder Cup creation wizard: step 1, team setup, player assignment, card. */
   async 't-wizard'() {
     await signInDemo();

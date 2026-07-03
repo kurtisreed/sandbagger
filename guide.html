@@ -202,6 +202,9 @@
       color: var(--text-muted);
     }
     table.info-table td:first-child { font-weight: 800; color: var(--purple); white-space: nowrap; }
+    @media (max-width: 600px) {
+      table.info-table td:first-child { white-space: normal; width: 36%; }
+    }
 
     footer {
       text-align: center; color: var(--text-muted);
@@ -663,30 +666,85 @@
     <!-- ═══════════════════ HANDICAPS ═══════════════════ -->
     <section class="guide-section" id="handicaps">
       <h2>Handicaps Explained</h2>
-      <p class="lead">The 30-second version of how Sandbagger levels the playing field.</p>
+      <p class="lead">This is Sandbagger's whole reason for existing: different players, different
+      tees, different courses — one fair game. Here's the vocabulary in plain English.</p>
       <table class="info-table">
-        <tr><td>Handicap Index</td><td>Your portable skill number (e.g. 12.4) — set it in My Account.</td></tr>
-        <tr><td>Playing Handicap</td><td>Your index adjusted for the course's difficulty (slope) and the event's Handicap&nbsp;%.</td></tr>
-        <tr><td>Handicap %</td><td>How much of the handicap the event uses — 80% is a common trip setting.</td></tr>
-        <tr><td>Stroke dots</td><td>Dots on the scorecard mark holes where a player receives strokes.</td></tr>
+        <tr><td>Handicap Index</td><td>Your portable skill number (e.g. 12.4). Set it in
+          <a href="#account">My Account</a>, or the admin can set it for you. Update it as your
+          game changes.</td></tr>
+        <tr><td>Playing Handicap</td><td>What you actually get <em>today</em>: your index adjusted
+          for the tees you're playing (slope/rating) and the event's Handicap&nbsp;%. Shown next to
+          each name on the scorecard.</td></tr>
+        <tr><td>Handicap %</td><td>How much of the full handicap the event uses. 100% = full
+          strokes; 80% is a common trip setting that keeps things competitive without giving the
+          high-handicapper the keys.</td></tr>
+        <tr><td>Stroke Index (HI column)</td><td>The course's 1–18 difficulty ranking. Strokes are
+          given on the hardest holes first — a 5-handicap strokes on the 5 hardest holes.</td></tr>
+        <tr><td>Stroke dots</td><td>Dots in a scorecard cell mark holes where that player receives
+          strokes (two dots = two strokes). Net score = gross − dots.</td></tr>
+        <tr><td>Gross vs. Net</td><td>Gross is strokes taken; net is gross minus handicap strokes.
+          Leaderboards show both — bragging rights settled either way.</td></tr>
       </table>
-      <p><em>Fuller explanations, calculated vs. manual handicaps, and locking coming in this section.</em></p>
+
+      <h3>In head-to-head games</h3>
+      <p>In quick-round matches, handicaps play <strong>relative to the low man</strong> — the
+      lowest playing handicap in the game plays at 0 (scratch) and everyone else gets the
+      difference. That's why the best player in your foursome shows (0.0) on the card.</p>
+
+      <h3>Calculated vs. manual</h3>
+      <p>Quick rounds normally <strong>calculate</strong> playing handicaps from each player's
+      index. Prefer to set today's strokes by hand — grudge-match style? Choose
+      <strong>Manual Handicaps</strong> in the round setup and type them in.</p>
+
+      <h3>Locking handicaps for a tournament</h3>
+      <p>Indexes drift; tournaments shouldn't. On the tournament's <b>Edit</b> page, tap
+      <b>🔒 Lock Handicaps for Tournament</b> to freeze everyone's handicap for the event —
+      later index updates won't change the trip's math. Locked values that differ from a
+      player's current index are highlighted so the commissioner always knows.</p>
     </section>
 
     <!-- ═══════════════════ HISTORY ═══════════════════ -->
     <section class="guide-section" id="history">
       <h2>History</h2>
-      <p class="lead">Every finalized round and tournament is preserved — scorecards, results, and standings.</p>
-      <p><em>Round history and tournament history walkthrough coming in this section.</em></p>
+      <p class="lead">Every round and tournament is preserved — scorecards, results, and standings.</p>
+      <ol class="steps">
+        <li>Open <b>☰ → My History</b>.</li>
+        <li>You'll see every tournament and quick round you've played, newest first.</li>
+        <li>Tap any card to reopen it — finalized rounds open as read-only scorecards with the
+          final results; tournaments open to their standings.</li>
+      </ol>
+      <div class="shots">
+        <figure class="shot">
+          <img src="guide-assets/history-page.png" alt="Tournament history list" loading="lazy">
+          <figcaption>Your personal archive — every trip, every round.</figcaption>
+        </figure>
+      </div>
+      <div class="tip"><strong>Deleted your buddy?</strong> Removing a golfer from the group never
+      deletes the group's scoring history — past leaderboards stay intact.</div>
     </section>
 
     <!-- ═══════════════════ ACCOUNT ═══════════════════ -->
     <section class="guide-section" id="account">
       <h2>My Account</h2>
-      <p class="lead">Your profile, your handicap index, your groups, and your credentials.</p>
-      <p><em>Profile editing, joining/creating additional groups, password changes, and account
-      deletion coming in this section. To delete your account, see the short version at
-      <a href="deleteaccount.html">the account deletion page</a>.</em></p>
+      <p class="lead">Your profile, your handicap index, your groups, and your credentials —
+      all under <strong>☰ → My Account</strong>.</p>
+      <ol class="steps">
+        <li><b>Edit Profile</b> — update your name, email, or <b>Handicap Index</b>.</li>
+        <li><b>Change Password</b> — what it says on the tin.</li>
+        <li><b>My Groups</b> — every group you belong to. Join another with an invite code, or
+          create a brand-new group (you'll be its admin).</li>
+        <li>In more than one group? Tap the <b>group name in the top bar</b> to switch between
+          them any time.</li>
+        <li><b>Delete Account</b> — permanently removes your login and personal info immediately.
+          Scores you recorded stay in your groups' shared history, unlinked from you. Details at
+          <a href="deleteaccount.html">the account deletion page</a>.</li>
+      </ol>
+      <div class="shots">
+        <figure class="shot">
+          <img src="guide-assets/account-page.png" alt="My Account page with profile and groups" loading="lazy">
+          <figcaption>Profile, groups, and credentials in one place.</figcaption>
+        </figure>
+      </div>
     </section>
 
   </main>
