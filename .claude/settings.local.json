@@ -109,7 +109,17 @@
       "Bash(awk '/^function loadTournamentRound/,/^}/' script.js)",
       "Bash(node tools/capture-guide.js tournament-card)",
       "Bash(node tools/capture-guide.js account history)",
-      "Bash(OUT=/private/tmp/claude-501/-Applications-XAMPP-xamppfiles-htdocs-sandbagger/807e3ad7-6ce3-40c7-9f84-34a49b86ec3d/scratchpad node /private/tmp/claude-501/-Applications-XAMPP-xamppfiles-htdocs-sandbagger/807e3ad7-6ce3-40c7-9f84-34a49b86ec3d/scratchpad/guide-final.js)"
+      "Bash(OUT=/private/tmp/claude-501/-Applications-XAMPP-xamppfiles-htdocs-sandbagger/807e3ad7-6ce3-40c7-9f84-34a49b86ec3d/scratchpad node /private/tmp/claude-501/-Applications-XAMPP-xamppfiles-htdocs-sandbagger/807e3ad7-6ce3-40c7-9f84-34a49b86ec3d/scratchpad/guide-final.js)",
+      "Bash(python3 -c 'import json; d=json.load\\(open\\('\\\\''/private/tmp/claude-501/-Applications-XAMPP-xamppfiles-htdocs-sandbagger/807e3ad7-6ce3-40c7-9f84-34a49b86ec3d/scratchpad/ghin-login-resp.json'\\\\''\\)\\); g=d['\\\\''golfer_user'\\\\'']['\\\\''golfers'\\\\''][0]; print\\(json.dumps\\({k:g.get\\(k\\) for k in \\('\\\\''ghin_number'\\\\'','\\\\''player_name'\\\\'','\\\\''club_name'\\\\'','\\\\''handicap_index'\\\\'','\\\\''hi_value'\\\\'','\\\\''hi_display'\\\\'','\\\\''low_hi'\\\\'','\\\\''rev_date'\\\\'','\\\\''status'\\\\''\\)}, indent=1\\)\\); open\\('\\\\''/private/tmp/claude-501/-Applications-XAMPP-xamppfiles-htdocs-sandbagger/807e3ad7-6ce3-40c7-9f84-34a49b86ec3d/scratchpad/ghin-token.txt'\\\\'','\\\\''w'\\\\''\\).write\\(d['\\\\''golfer_user'\\\\'']['\\\\''golfer_user_token'\\\\'']\\)')",
+      "Bash(python3)",
+      "Bash(curl -s -o /private/tmp/claude-501/-Applications-XAMPP-xamppfiles-htdocs-sandbagger/807e3ad7-6ce3-40c7-9f84-34a49b86ec3d/scratchpad/ghin-search-resp.json -w 'HTTP %{http_code}\\\\n' 'https://api2.ghin.com/api/v1/golfers/search.json?golfer_id=10566202&page=1&per_page=5' -H 'Authorization: Bearer __CMDSUB_OUTPUT__' -H 'User-Agent: Mozilla/5.0 \\(iPhone; CPU iPhone OS 17_0 like Mac OS X\\)')",
+      "Bash(/Applications/XAMPP/xamppfiles/bin/php -l api/ghin_helpers.php)",
+      "Bash(/Applications/XAMPP/xamppfiles/bin/php -l api/config.php)",
+      "Bash(/Applications/XAMPP/xamppfiles/bin/php _ghin_test.php)",
+      "Bash(/Applications/XAMPP/xamppfiles/bin/php -l api/ghin_lookup.php)",
+      "Bash(/Applications/XAMPP/xamppfiles/bin/php -l api/ghin_sync.php)",
+      "Bash(curl -s -b /private/tmp/claude-501/-Applications-XAMPP-xamppfiles-htdocs-sandbagger/807e3ad7-6ce3-40c7-9f84-34a49b86ec3d/scratchpad/cookies.txt -X PUT http://localhost:8080/api/golfers.php?golfer_id=66 -H 'Content-Type: application/json' -d '{\"first_name\":\"Michael\",\"last_name\":\"Reynolds\",\"handicap\":13.7,\"ghin_number\":\"10566202\"}')",
+      "Bash(curl -s -b /private/tmp/claude-501/-Applications-XAMPP-xamppfiles-htdocs-sandbagger/807e3ad7-6ce3-40c7-9f84-34a49b86ec3d/scratchpad/cookies.txt -X PUT http://localhost:8080/api/golfers.php?golfer_id=66 -H 'Content-Type: application/json' -d '{\"first_name\":\"Michael\",\"last_name\":\"Reynolds\",\"handicap\":12.0,\"ghin_number\":\"10566202\"}')"
     ]
   }
 }

@@ -16,7 +16,8 @@ switch ($method) {
     if ($id) {
       // Fetch one golfer (scoped to org)
       $stmt = $conn->prepare("
-        SELECT golfer_id, first_name, last_name, handicap, user_id
+        SELECT golfer_id, first_name, last_name, handicap, user_id,
+               ghin_number, handicap_source, handicap_updated_at
           FROM golfers
          WHERE golfer_id = ?
            AND org_id = ?
@@ -29,6 +30,7 @@ switch ($method) {
       // Fetch all golfers for this org, with email from linked user account
       $stmt = $conn->prepare("
         SELECT g.golfer_id, g.first_name, g.last_name, g.handicap, g.user_id,
+               g.ghin_number, g.handicap_source, g.handicap_updated_at,
                u.email
           FROM golfers g
           LEFT JOIN users u ON u.user_id = g.user_id
@@ -49,29 +51,38 @@ switch ($method) {
     $firstName = trim($data['first_name'] ?? '');
     $lastName  = trim($data['last_name']  ?? '');
     $handicap  = (float)($data['handicap'] ?? 0);
+    $ghin      = preg_replace('/\D/', '', $data['ghin_number'] ?? '');
+    $ghin      = $ghin === '' ? null : $ghin;
     $stmt = $conn->prepare("
-      INSERT INTO golfers (first_name, last_name, handicap, org_id)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO golfers (first_name, last_name, handicap, ghin_number, org_id)
+      VALUES (?, ?, ?, ?, ?)
     ");
-    $stmt->bind_param('ssdi', $firstName, $lastName, $handicap, $currentOrgId);
+    $stmt->bind_param('ssdsi', $firstName, $lastName, $handicap, $ghin, $currentOrgId);
     $stmt->execute();
     echo json_encode(['inserted_id' => $stmt->insert_id]);
     break;
 
   case 'PUT':
     requireAdmin();
-    // Update an existing golfer (must belong to this org)
+    // Update an existing golfer (must belong to this org).
+    // Marking the handicap "manual" (and stamping it) only when the value
+    // actually changes preserves the "synced from GHIN" badge on name-only edits.
     $data      = json_decode(file_get_contents('php://input'), true);
     $firstName = trim($data['first_name'] ?? '');
     $lastName  = trim($data['last_name']  ?? '');
     $handicap  = (float)($data['handicap'] ?? 0);
+    $ghin      = preg_replace('/\D/', '', $data['ghin_number'] ?? '');
+    $ghin      = $ghin === '' ? null : $ghin;
     $stmt = $conn->prepare("
       UPDATE golfers
-         SET first_name = ?, last_name = ?, handicap = ?
+         SET first_name = ?, last_name = ?, ghin_number = ?,
+             handicap_source     = CASE WHEN handicap <> ? THEN 'manual' ELSE handicap_source END,
+             handicap_updated_at = CASE WHEN handicap <> ? THEN NOW()    ELSE handicap_updated_at END,
+             handicap = ?
        WHERE golfer_id = ?
          AND org_id = ?
     ");
-    $stmt->bind_param('ssdii', $firstName, $lastName, $handicap, $id, $currentOrgId);
+    $stmt->bind_param('sssdddii', $firstName, $lastName, $ghin, $handicap, $handicap, $handicap, $id, $currentOrgId);
     $stmt->execute();
     echo json_encode(['affected_rows' => $stmt->affected_rows]);
     break;

@@ -11863,11 +11863,108 @@ function loadEditGolfersPage() {
   // Reset add-golfer form
   document.getElementById('add-golfer-form').style.display = 'none';
   document.getElementById('add-golfer-btn').style.display = 'block';
-  ['new-golfer-first', 'new-golfer-last', 'new-golfer-hcp'].forEach(id => {
+  ['new-golfer-first', 'new-golfer-last', 'new-golfer-hcp', 'new-golfer-ghin'].forEach(id => {
     document.getElementById(id).value = '';
   });
 
+  refreshGhinUiVisibility();
   refreshGolferList();
+}
+
+// GHIN sync is enabled per-group on the server. Ask the server whether this
+// group has it, then show/hide all GHIN controls accordingly. The endpoints
+// enforce the same gate, so this is purely cosmetic.
+let ghinEnabled = false;
+function refreshGhinUiVisibility() {
+  fetch(`${API_BASE_URL}/api/ghin_status.php`, { credentials: 'include' })
+    .then(r => r.json())
+    .then(data => {
+      ghinEnabled = !!data.enabled;
+      document.querySelectorAll('.ghin-only').forEach(el => {
+        el.style.display = ghinEnabled ? '' : 'none';
+      });
+      const syncBtn = document.getElementById('ghin-sync-all-btn');
+      if (syncBtn) syncBtn.style.display = ghinEnabled ? 'block' : 'none';
+      if (!ghinEnabled) {
+        const res = document.getElementById('ghin-sync-results');
+        if (res) res.style.display = 'none';
+      }
+    })
+    .catch(() => { ghinEnabled = false; });
+}
+
+// "2026-07-06 13:25:41" or "2026-06-21" → "Jul 6"
+// Parse the Y/M/D parts directly so a date-only string isn't shifted a day by
+// being read as UTC midnight in a negative-offset timezone.
+function formatGhinDate(s) {
+  if (!s) return '';
+  const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return '';
+  const d = new Date(+m[1], +m[2] - 1, +m[3]);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+// Render the results of a "Sync all from GHIN" run into the given box.
+function renderGhinSyncResults(data, box) {
+  const rows = (data.results || []).map(r => {
+    if (r.status === 'updated') {
+      return `<div style="padding:0.2rem 0;">✅ <b>${r.name}</b>: ${r.old ?? '—'} → <b>${r.new}</b></div>`;
+    }
+    if (r.status === 'unchanged') {
+      return `<div style="padding:0.2rem 0; color:#555;">➖ <b>${r.name}</b>: ${r.new} (no change)</div>`;
+    }
+    if (r.status === 'no_index') {
+      return `<div style="padding:0.2rem 0; color:#a07000;">⚠️ <b>${r.name}</b>: no established index on GHIN — left unchanged</div>`;
+    }
+    return `<div style="padding:0.2rem 0; color:#a07000;">⚠️ <b>${r.name}</b>: GHIN ${r.ghin || ''} not found — left unchanged</div>`;
+  }).join('');
+  const changed = (data.results || []).filter(r => r.status === 'updated').length;
+  box.innerHTML =
+    `<div style="font-weight:800; margin-bottom:0.3rem;">Updated ${changed} handicap${changed === 1 ? '' : 's'}</div>` +
+    (rows || '<div style="color:#888;">No golfers have a GHIN number yet.</div>');
+}
+
+// Wire the Verify button in the edit-golfer modal for a given golfer object.
+function wireGhinVerify(g) {
+  const oldBtn = document.getElementById('egm-ghin-verify-btn');
+  if (!oldBtn) return;
+  const btn = oldBtn.cloneNode(true);
+  oldBtn.parentNode.replaceChild(btn, oldBtn);
+  const resultEl = document.getElementById('egm-ghin-result');
+
+  const show = (msg, ok) => {
+    resultEl.style.display = 'block';
+    resultEl.style.background = ok ? '#e8f5e9' : '#fdecea';
+    resultEl.style.color      = ok ? '#1b5e20' : '#b71c1c';
+    resultEl.innerHTML = msg;
+  };
+
+  btn.addEventListener('click', () => {
+    const ghin = document.getElementById('egm-ghin').value.replace(/\D/g, '');
+    if (!ghin) { show('Enter a GHIN number first.', false); return; }
+    btn.disabled = true; btn.textContent = '…';
+    fetch(`${API_BASE_URL}/api/ghin_lookup.php?ghin_number=${ghin}`, { credentials: 'include' })
+      .then(r => r.json().then(d => ({ ok: r.ok, d })))
+      .then(({ ok, d }) => {
+        btn.disabled = false; btn.textContent = 'Verify';
+        if (!ok || !d.golfer) { show(d.error || 'No GHIN record found.', false); return; }
+        const gl = d.golfer;
+        if (gl.handicap_index == null) {
+          show(`Found <b>${gl.name}</b> (${gl.club || 'no club'}) — no established Handicap Index.`, false);
+          return;
+        }
+        show(
+          `✓ <b>${gl.name}</b> — ${gl.club || ''}<br>Index <b>${gl.handicap_index}</b> (as of ${formatGhinDate(gl.rev_date)}) ` +
+          `<button type="button" id="egm-ghin-apply" style="margin-left:0.3rem; font-size:0.78rem; font-weight:700; color:#4F2185; background:none; border:none; cursor:pointer; text-decoration:underline;">Use this</button>`,
+          true
+        );
+        const applyBtn = document.getElementById('egm-ghin-apply');
+        if (applyBtn) applyBtn.addEventListener('click', () => {
+          document.getElementById('egm-hcp').value = gl.handicap_index;
+        });
+      })
+      .catch(() => { btn.disabled = false; btn.textContent = 'Verify'; show('Lookup failed. Try again.', false); });
+  });
 }
 
 function refreshGolferList() {
@@ -11903,11 +12000,14 @@ function renderGolferCard(g, list) {
     const emailLine = g.email
       ? `<div style="font-size:0.82rem; color:#888; margin-top:0.2rem;">${g.email}</div>`
       : `<div style="margin-top:0.25rem;"><span style="font-size:0.72rem; font-weight:700; color:#a07000; background:#fff8e1; border:1px solid #ffe082; border-radius:4px; padding:0.1rem 0.45rem; letter-spacing:0.03em;">PENDING</span></div>`;
+    const ghinBadge = (g.handicap_source === 'ghin')
+      ? `<span style="font-size:0.68rem; font-weight:700; color:#005f94; background:#e3f2fd; border:1px solid #90caf9; border-radius:4px; padding:0.05rem 0.4rem; margin-left:0.4rem; letter-spacing:0.03em; white-space:nowrap;">GHIN${g.handicap_updated_at ? ' · ' + formatGhinDate(g.handicap_updated_at) : ''}</span>`
+      : '';
     card.innerHTML = `
       <div style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem;">
         <div style="min-width:0;">
           <div style="font-weight:700; font-size:1rem; color:#1a1c23; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${g.first_name} ${g.last_name}</div>
-          <div style="font-size:0.82rem; color:#4F2185; font-weight:600; margin-top:0.1rem;"><span class="help-term" data-help="handicap-index">Handicap</span>: ${g.handicap}</div>
+          <div style="font-size:0.82rem; color:#4F2185; font-weight:600; margin-top:0.1rem;"><span class="help-term" data-help="handicap-index">Handicap</span>: ${g.handicap}${ghinBadge}</div>
           ${emailLine}
         </div>
         <div style="display:flex; gap:0.4rem; flex-shrink:0; align-items:center;">
@@ -11938,6 +12038,19 @@ function renderGolferCard(g, list) {
     saveBtn.disabled    = false;
     saveBtn.textContent = 'Save Changes';
 
+    // GHIN fields (only meaningful when the feature is enabled for this group)
+    const ghinInput  = document.getElementById('egm-ghin');
+    const ghinResult = document.getElementById('egm-ghin-result');
+    const srcLine    = document.getElementById('egm-hcp-source');
+    if (ghinInput)  ghinInput.value = g.ghin_number || '';
+    if (ghinResult) { ghinResult.style.display = 'none'; ghinResult.textContent = ''; }
+    if (srcLine) {
+      srcLine.textContent = (g.handicap_source === 'ghin' && g.handicap_updated_at)
+        ? `Synced from GHIN on ${formatGhinDate(g.handicap_updated_at)}`
+        : '';
+    }
+    if (ghinEnabled) wireGhinVerify(g);
+
     // Show reset section only if golfer has an account
     resetSection.style.display = g.user_id ? 'block' : 'none';
     resetBtn.disabled    = false;
@@ -11958,17 +12071,22 @@ function renderGolferCard(g, list) {
         statusEl.style.display = 'block';
         return;
       }
+      const ghinVal = ghinEnabled ? (document.getElementById('egm-ghin').value.replace(/\D/g, '')) : (g.ghin_number || '');
+      const hcpChanged = !(g.handicap != null && Math.abs(parseFloat(g.handicap) - hcp) < 0.05);
       newSaveBtn.disabled    = true;
       newSaveBtn.textContent = 'Saving…';
       fetch(`${API_BASE_URL}/api/golfers.php?golfer_id=${g.golfer_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ first_name: first, last_name: last, handicap: hcp }),
+        body: JSON.stringify({ first_name: first, last_name: last, handicap: hcp, ghin_number: ghinVal }),
         credentials: 'include'
       })
         .then(r => r.json())
         .then(() => {
           g.first_name = first; g.last_name = last; g.handicap = hcp;
+          g.ghin_number = ghinVal;
+          // Editing the handicap by hand marks it manual (mirrors the server).
+          if (hcpChanged) { g.handicap_source = 'manual'; g.handicap_updated_at = null; }
           modal.style.display = 'none';
           showView();
           document.getElementById('edit-golfers-status').textContent = `✓ ${first} ${last} updated.`;
@@ -12094,6 +12212,38 @@ document.addEventListener('DOMContentLoaded', () => {
   const cancelNewBtn = document.getElementById('cancel-new-golfer-btn');
   const saveNewBtn  = document.getElementById('save-new-golfer-btn');
 
+  // GHIN: sync every golfer that has a GHIN number
+  const ghinSyncBtn = document.getElementById('ghin-sync-all-btn');
+  if (ghinSyncBtn) ghinSyncBtn.addEventListener('click', () => {
+    const box = document.getElementById('ghin-sync-results');
+    ghinSyncBtn.disabled = true;
+    ghinSyncBtn.textContent = 'Syncing…';
+    box.style.display = 'block';
+    box.innerHTML = '<span style="color:#888;">Contacting GHIN…</span>';
+    fetch(`${API_BASE_URL}/api/ghin_sync.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ all: true }),
+      credentials: 'include'
+    })
+      .then(r => r.json().then(d => ({ ok: r.ok, d })))
+      .then(({ ok, d }) => {
+        ghinSyncBtn.disabled = false;
+        ghinSyncBtn.textContent = '⟳ Sync Handicaps from GHIN';
+        if (!ok || !d.results) {
+          box.innerHTML = `<span style="color:#b71c1c;">${(d && d.error) || 'Sync failed.'}</span>`;
+          return;
+        }
+        renderGhinSyncResults(d, box);
+        refreshGolferList(); // reflect new handicaps + GHIN badges
+      })
+      .catch(() => {
+        ghinSyncBtn.disabled = false;
+        ghinSyncBtn.textContent = '⟳ Sync Handicaps from GHIN';
+        box.innerHTML = '<span style="color:#b71c1c;">Connection error. Try again.</span>';
+      });
+  });
+
   if (addBtn) addBtn.addEventListener('click', () => {
     addForm.style.display = 'block';
     addBtn.style.display = 'none';
@@ -12103,7 +12253,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (cancelNewBtn) cancelNewBtn.addEventListener('click', () => {
     addForm.style.display = 'none';
     addBtn.style.display = 'block';
-    ['new-golfer-first', 'new-golfer-last', 'new-golfer-hcp'].forEach(id => {
+    ['new-golfer-first', 'new-golfer-last', 'new-golfer-hcp', 'new-golfer-ghin'].forEach(id => {
       document.getElementById(id).value = '';
     });
   });
@@ -12112,6 +12262,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const first = document.getElementById('new-golfer-first').value.trim();
     const last  = document.getElementById('new-golfer-last').value.trim();
     const hcp   = parseFloat(document.getElementById('new-golfer-hcp').value) || 0;
+    const ghin  = ghinEnabled ? document.getElementById('new-golfer-ghin').value.replace(/\D/g, '') : '';
     const status = document.getElementById('edit-golfers-status');
 
     if (!first || !last) {
@@ -12126,7 +12277,7 @@ document.addEventListener('DOMContentLoaded', () => {
     fetch(`${API_BASE_URL}/api/golfers.php`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ first_name: first, last_name: last, handicap: hcp }),
+      body: JSON.stringify({ first_name: first, last_name: last, handicap: hcp, ghin_number: ghin }),
       credentials: 'include'
     })
       .then(r => r.json())
@@ -12135,7 +12286,7 @@ document.addEventListener('DOMContentLoaded', () => {
         saveNewBtn.textContent = 'Save';
         if (data.inserted_id) {
           // Add card to top of list
-          const newGolfer = { golfer_id: data.inserted_id, first_name: first, last_name: last, handicap: hcp };
+          const newGolfer = { golfer_id: data.inserted_id, first_name: first, last_name: last, handicap: hcp, ghin_number: ghin, handicap_source: 'manual' };
           const list = document.getElementById('edit-golfers-list');
           renderGolferCard(newGolfer, list); // appends, then we move it
           list.prepend(list.lastChild);
