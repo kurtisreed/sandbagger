@@ -4612,8 +4612,11 @@ function loadTodaysMatch() {
         table.appendChild(totalsRow);
 
 
-      // ✅ Append table to DOM
-      container.appendChild(table);
+      // Wrap in a scroll container so the golfer-name header stays sticky
+      const tableWrapper = document.createElement("div");
+      tableWrapper.className = "skins-table-wrapper";
+      tableWrapper.appendChild(table);
+      container.appendChild(tableWrapper);
 
       let finalizeButton = document.getElementById("finalize-results-btn");
       if (!finalizeButton) {
@@ -8269,8 +8272,12 @@ function loadMatchScorecard(match_id, container_id = "today-summary") {
         table.appendChild(teamTotalRow);
       }
 
-      container.appendChild(table);
-    
+      // Wrap in a scroll container so the golfer-name header stays sticky
+      const tableWrapper = document.createElement("div");
+      tableWrapper.className = "skins-table-wrapper";
+      tableWrapper.appendChild(table);
+      container.appendChild(tableWrapper);
+
       // Fetch scores
       fetch(`${API_BASE_URL}/api/get_scores.php?match_id=${match_id}`, { credentials: 'include' })
         .then(res => res.json())
