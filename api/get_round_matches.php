@@ -29,6 +29,7 @@ SELECT
   g.first_name,
   g.last_name,
   t.name AS team_name,
+  t.color_hex AS team_color,
   mg.player_order
 FROM matches m
 JOIN match_golfers mg ON m.match_id = mg.match_id

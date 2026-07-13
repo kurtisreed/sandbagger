@@ -6131,26 +6131,32 @@ function loadTodaySummary() {
         const div = document.createElement("div");
         div.className = "match-summary";
 
-        // Dynamically filter golfers by team names
-        const primaryTeamGolfers = match.golfers.filter(g => g.team_name === primaryTeamName);
-        const secondaryTeamGolfers = match.golfers.filter(g => g.team_name === secondaryTeamName);
+        // Derive the two teams from THIS match's own data (name + color) so the
+        // badge/header colors never depend on volatile global team-orientation
+        // state left behind by other views.
+        const teamsInMatch = [];
+        match.golfers.forEach(g => {
+          if (g.team_name && !teamsInMatch.some(t => t.name === g.team_name)) {
+            teamsInMatch.push({ name: g.team_name, color: g.team_color || '#888888' });
+          }
+        });
+        const teamA = teamsInMatch[0] || { name: '', color: '#888888' };
+        const teamB = teamsInMatch[1] || { name: '', color: '#888888' };
+        const aGolfers = match.golfers.filter(g => g.team_name === teamA.name);
+        const bGolfers = match.golfers.filter(g => g.team_name === teamB.name);
 
-        const primaryTeamNames = primaryTeamGolfers.map(g => g.first_name).join(" & ");
-        const secondaryTeamNames = secondaryTeamGolfers.map(g => g.first_name).join(" & ");
-
-        // Header with names
+        // Header with names, colored from each team's own color
         const header = `
           <div class="teams-row">
-            <div class="team-box primary-team">${primaryTeamNames}</div>
+            <div class="team-box" style="background-color:${teamA.color}; color:${pickContrastColorFromHex(teamA.color)};">${aGolfers.map(g => g.first_name).join(" & ")}</div>
             <div class="vs">vs</div>
-            <div class="team-box secondary-team">${secondaryTeamNames}</div>
+            <div class="team-box" style="background-color:${teamB.color}; color:${pickContrastColorFromHex(teamB.color)};">${bGolfers.map(g => g.first_name).join(" & ")}</div>
           </div>`;
 
-        // Get status
-
-        const status = calculateMatchStatus(primaryTeamGolfers, secondaryTeamGolfers, match.scores);
-        const statusClass = getMatchStatusClass(status);
-        const statusDisplay = `<div class="${statusClass}"><span class="help-term" data-help="match-status">${status}</span></div>`;
+        // Status + the leading team's actual color (black when tied / no scores)
+        const st = computeTeamMatchStatus(teamA, teamB, aGolfers, bGolfers, match.scores);
+        const badgeBg   = st.leadColor || '#1a1c23';
+        const statusDisplay = `<div class="match-status" style="background-color:${badgeBg}; color:${pickContrastColorFromHex(badgeBg)}; padding:var(--space-1) var(--space-3);"><span class="help-term" data-help="match-status">${st.text}</span></div>`;
         div.innerHTML = header + statusDisplay;
 
         // Add click event to load match scorecard
@@ -6997,93 +7003,60 @@ function calculateGuysTripMatchStatus(partnership1Golfers, partnership2Golfers, 
 }
 
 
-//used to show status of matches in today tab
-function calculateMatchStatus(primaryTeamGolfers, secondaryTeamGolfers, scores) {
+// Match-play status for the Round tab. Fully self-contained: takes the two
+// teams (each {name, color}) and their golfers from the match's own data, and
+// returns { text, leadColor } where leadColor is the leading team's actual
+// colour (null when tied / no scores → caller shows black). No global team
+// state is consulted, so the badge colour can't be corrupted by other views.
+// differential > 0 means teamA is up.
+function computeTeamMatchStatus(teamA, teamB, aGolfers, bGolfers, scores) {
+  const allGolfers = aGolfers.concat(bGolfers);
+  if (allGolfers.length === 0) return { text: 'No scores yet', leadColor: null };
 
-
-  const allGolfers = primaryTeamGolfers.concat(secondaryTeamGolfers);
-
-
-
-
-  strokeMaps = {}; // golfer_id -> [0,1,...]
-
-  // Build stroke maps using match-adjusted handicaps (lowest = 0)
-  const matchPlayingHcps = allGolfers.map(g => calculatePlayingHandicap(g.handicap));
-  const matchMinHcp = Math.min(...matchPlayingHcps);
-  allGolfers.forEach((golfer, i) => {
-    strokeMaps[golfer.golfer_id] = buildStrokeMapForGolfer(matchPlayingHcps[i] - matchMinHcp, holeInfo);
+  // Stroke maps using match-adjusted handicaps (lowest in the match = 0)
+  const localStrokeMaps = {};
+  const matchHcps = allGolfers.map(g => calculatePlayingHandicap(g.handicap));
+  const minHcp = Math.min(...matchHcps);
+  allGolfers.forEach((g, i) => {
+    localStrokeMaps[g.golfer_id] = buildStrokeMapForGolfer(matchHcps[i] - minHcp, holeInfo);
   });
 
-
-
-
-  const scoresByHole = {}; // hole_number: { primaryTeamName: [net], secondaryTeamName: [net] }
-
-  // Organize scores by hole and team
+  const byHole = {}; // hole → { a:[net], b:[net] }
   scores.forEach(s => {
-    const holeNum = parseInt(s.hole_number);
-    const golfer = allGolfers.find(g => g.golfer_id == s.golfer_id);
-    if (!golfer || !strokeMaps[golfer.golfer_id]) {
-      return;
-    }
-
-    const strokesReceived = strokeMaps[golfer.golfer_id][holeNum] || 0;
-    const netScore = parseInt(s.strokes) - strokesReceived;
-
-    if (!scoresByHole[holeNum]) {
-      scoresByHole[holeNum] = { [primaryTeamName]: [], [secondaryTeamName]: [] };
-    }
-
-    if (!scoresByHole[holeNum][golfer.team_name]) {
-      scoresByHole[holeNum][golfer.team_name] = [];
-    }
-
-    scoresByHole[holeNum][golfer.team_name].push(netScore);
+    const hole = parseInt(s.hole_number);
+    const g = allGolfers.find(x => x.golfer_id == s.golfer_id);
+    if (!g || !localStrokeMaps[g.golfer_id]) return;
+    const net = parseInt(s.strokes) - (localStrokeMaps[g.golfer_id][hole] || 0);
+    if (!byHole[hole]) byHole[hole] = { a: [], b: [] };
+    if (g.team_name === teamA.name) byHole[hole].a.push(net);
+    else if (g.team_name === teamB.name) byHole[hole].b.push(net);
   });
-
 
   let differential = 0;
   let holesPlayed = 0;
-
-  // Calculate the differential for each hole
   for (let i = 1; i <= 18; i++) {
-    const hole = scoresByHole[i];
-    if (!hole || hole[primaryTeamName].length === 0 || hole[secondaryTeamName].length === 0) continue;
-
-    const primaryBest = Math.min(...hole[primaryTeamName]);
-    const secondaryBest = Math.min(...hole[secondaryTeamName]);
-
-    if (!isFinite(primaryBest) || !isFinite(secondaryBest)) continue;
-
+    const h = byHole[i];
+    if (!h || h.a.length === 0 || h.b.length === 0) continue;
+    const aBest = Math.min(...h.a);
+    const bBest = Math.min(...h.b);
+    if (!isFinite(aBest) || !isFinite(bBest)) continue;
     holesPlayed++;
+    if (aBest < bBest) differential++;
+    else if (bBest < aBest) differential--;
 
-    if (primaryBest < secondaryBest) differential++;
-    else if (secondaryBest < primaryBest) differential--;
-
-    // Check if match is already decided after each hole
     const holesRemaining = 18 - holesPlayed;
     if (Math.abs(differential) > holesRemaining) {
-      const margin = Math.abs(differential);
-      const closedOut = holesRemaining;
-      const winner = differential > 0 ? primaryTeamName : secondaryTeamName;
-      return `Team ${winner} wins ${margin}&${closedOut}`;
+      const winner = differential > 0 ? teamA : teamB;
+      return { text: `Team ${winner.name} wins ${Math.abs(differential)}&${holesRemaining}`, leadColor: winner.color };
     }
   }
 
-  if (holesPlayed === 0) return "No scores yet";
-
-  // If we get here, no team has won yet
+  if (holesPlayed === 0) return { text: 'No scores yet', leadColor: null };
   if (differential === 0) {
-    if (holesPlayed === 18) {
-      return "Match Halved";
-    } else {
-      return `Tied – Thru ${holesPlayed}`;
-    }
+    return { text: holesPlayed === 18 ? 'Match Halved' : `Tied – Thru ${holesPlayed}`, leadColor: null };
   }
-
-  if (differential > 0) return `Team ${primaryTeamName} up ${differential} – Thru ${holesPlayed}`;
-  return `Team ${secondaryTeamName} up ${Math.abs(differential)} – Thru ${holesPlayed}`;
+  const leader = differential > 0 ? teamA : teamB;
+  return { text: `Team ${leader.name} up ${Math.abs(differential)} – Thru ${holesPlayed}`, leadColor: leader.color };
 }
 
 
