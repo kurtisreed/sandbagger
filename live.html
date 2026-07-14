@@ -26,6 +26,20 @@
       color: var(--ink);
       min-height: 100vh;
     }
+    /* Decorative banner pinned to the bottom of the viewport; content scrolls over it. */
+    body::after {
+      content: '';
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      height: 44.7vw; /* matches lowerbanner.png aspect (2390x1069) at full width */
+      max-height: 30vh;
+      background: url('images/lowerbanner.png') no-repeat bottom center;
+      background-size: 100% auto;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .site-header { position: relative; z-index: 2; }
+    main { position: relative; z-index: 1; }
     .site-header {
       background: var(--purple);
       color: #fff;
@@ -57,7 +71,7 @@
       white-space: nowrap;
     }
 
-    main { max-width: 640px; margin: 0 auto; padding: 1rem; }
+    main { max-width: 640px; margin: 0 auto; padding: 1rem; padding-bottom: calc(min(44.7vw, 30vh) + 1rem); }
 
     .card {
       background: #fff;
@@ -239,7 +253,7 @@
     }
     .corner-dot.second-dot { right: 10px; }
 
-    footer { text-align: center; color: var(--muted); font-size: 0.75rem; padding: 1.5rem 0 2rem; }
+    footer { position: relative; z-index: 1; text-align: center; color: var(--muted); font-size: 0.75rem; padding: 1.5rem 0 2rem; }
     footer a { color: var(--purple); }
   </style>
 </head>
