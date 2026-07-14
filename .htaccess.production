@@ -28,6 +28,14 @@
 	RewriteRule .* - [L]
 </IfModule>
 # END Newfold Skip 404 Handling for Static Files
+
+# Pretty URL for the public live spectator page (must run before the
+# WordPress catch-all below, which would otherwise swallow /live)
+<IfModule mod_rewrite.c>
+	RewriteEngine On
+	RewriteRule ^live/?$ /live.html [L]
+</IfModule>
+
 # BEGIN WordPress
 # The directives (lines) between "BEGIN WordPress" and "END WordPress" are
 # dynamically generated, and should only be modified via WordPress filters.

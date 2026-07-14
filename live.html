@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>Live Scoring — Sandbagger</title>
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --purple: #4F2185;
+      --gold: #FFC62F;
+      --ink: #1f2430;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --bg: #f4f4f6;
+      --card-radius: 14px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+    .site-header {
+      background: var(--purple);
+      color: #fff;
+      padding: 0.9rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .site-header .brand {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.6rem;
+      letter-spacing: 1px;
+      line-height: 1;
+    }
+    .site-header .live-dot {
+      display: inline-block;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: #ef4444;
+      margin-right: 6px;
+      animation: pulse 1.6s infinite;
+      vertical-align: 1px;
+    }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+    .site-header .tag {
+      font-size: 0.8rem;
+      opacity: 0.85;
+      margin-left: auto;
+      white-space: nowrap;
+    }
+
+    main { max-width: 640px; margin: 0 auto; padding: 1rem; }
+
+    .card {
+      background: #fff;
+      border-radius: var(--card-radius);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    h2.section-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.35rem;
+      letter-spacing: 0.5px;
+      color: var(--purple);
+      margin-bottom: 0.6rem;
+    }
+
+    /* ── Code entry ─────────────────────────────── */
+    #code-entry { text-align: center; padding-top: 2rem; }
+    #code-entry h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.2rem;
+      color: var(--purple);
+      margin-bottom: 0.25rem;
+    }
+    #code-entry p.sub { color: var(--muted); margin-bottom: 1.25rem; }
+    #code-input {
+      font-family: 'Nunito', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 800;
+      letter-spacing: 0.5em;
+      text-transform: uppercase;
+      text-align: center;
+      width: 100%;
+      max-width: 320px;
+      padding: 0.6rem 0.5rem 0.6rem 1rem;
+      border: 2px solid var(--line);
+      border-radius: 10px;
+      outline: none;
+    }
+    #code-input:focus { border-color: var(--purple); }
+    #watch-btn {
+      display: block;
+      margin: 1rem auto 0;
+      background: var(--purple);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      padding: 0.75rem 2.5rem;
+      cursor: pointer;
+    }
+    #watch-btn:disabled { opacity: 0.6; cursor: wait; }
+    #code-error { color: #dc2626; margin-top: 0.75rem; min-height: 1.2em; font-weight: 600; }
+
+    /* ── Live view header ───────────────────────── */
+    .tournament-head { text-align: center; margin-bottom: 1rem; }
+    .tournament-head h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.9rem;
+      color: var(--purple);
+      line-height: 1.1;
+    }
+    .tournament-head .dates { color: var(--muted); font-size: 0.9rem; }
+    .refresh-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      margin-top: 0.4rem;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    #refresh-btn {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 8px;
+      padding: 0.2rem 0.7rem;
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.82rem;
+      cursor: pointer;
+      color: var(--ink);
+    }
+    #reconnecting { color: #d97706; font-weight: 700; display: none; }
+
+    /* ── Team banner ────────────────────────────── */
+    .team-banner { display: flex; border-radius: var(--card-radius); overflow: hidden; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .team-banner .team {
+      flex: 1;
+      padding: 0.9rem 0.5rem 1rem;
+      text-align: center;
+      color: #fff;
+    }
+    .team-banner .team .tname {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.3rem;
+      letter-spacing: 1px;
+    }
+    .team-banner .team .tpoints { font-size: 2.1rem; font-weight: 800; line-height: 1.1; }
+    .team-banner .team .tplayers { font-size: 0.75rem; opacity: 0.9; margin-top: 0.3rem; }
+
+    /* ── Matches ────────────────────────────────── */
+    .round-block { margin-bottom: 0.75rem; }
+    .round-block h3 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      text-align: center;
+      margin: 0.5rem 0 0.4rem;
+    }
+    .round-block .course-line { text-align: center; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.5rem; }
+    .tee-time-label { font-size: 0.8rem; font-weight: 700; color: var(--muted); margin: 0.5rem 0 0.25rem; }
+    .match-row {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0.6rem 0.7rem;
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+    }
+    .match-row .pairing { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; font-size: 0.9rem; font-weight: 700; }
+    .match-row .side { flex: 1; }
+    .match-row .side.right { text-align: right; }
+    .match-row .vs { color: var(--muted); font-size: 0.75rem; font-weight: 600; }
+    .status-chip {
+      display: inline-block;
+      margin-top: 0.45rem;
+      padding: 0.18rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: #fff;
+      background: #111;
+    }
+    .status-chip.none { background: #9ca3af; }
+
+    /* ── Leaderboards ───────────────────────────── */
+    table.lb { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    table.lb th {
+      text-align: left;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      padding: 0.3rem 0.4rem;
+      border-bottom: 2px solid var(--line);
+    }
+    table.lb td { padding: 0.42rem 0.4rem; border-bottom: 1px solid var(--line); }
+    table.lb tr:last-child td { border-bottom: none; }
+    .team-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+    td.num, th.num { text-align: right; }
+
+    /* ── Scorecard view ─────────────────────────── */
+    #scorecard-view .back-btn {
+      background: none;
+      border: none;
+      color: var(--purple);
+      font-family: 'Nunito', sans-serif;
+      font-weight: 800;
+      font-size: 0.95rem;
+      cursor: pointer;
+      padding: 0.25rem 0;
+      margin-bottom: 0.5rem;
+    }
+    .sc-wrap { overflow-x: auto; }
+    table.sc { border-collapse: collapse; font-size: 0.85rem; width: 100%; min-width: 320px; }
+    table.sc th, table.sc td { border: 1px solid var(--line); text-align: center; padding: 0.3rem 0.35rem; }
+    table.sc thead th { position: sticky; top: 0; color: #fff; z-index: 2; }
+    table.sc th.hole-col { background: #f3f4f6; color: var(--ink); font-weight: 800; }
+    table.sc td.cell { position: relative; font-weight: 700; }
+    table.sc tr.tot td { font-weight: 800; background: #f9fafb; }
+    .corner-dot {
+      position: absolute; top: 2px; right: 2px;
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #111;
+    }
+    .corner-dot.second-dot { right: 10px; }
+
+    footer { text-align: center; color: var(--muted); font-size: 0.75rem; padding: 1.5rem 0 2rem; }
+    footer a { color: var(--purple); }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <span class="brand">Sandbagger</span>
+    <span class="tag"><span class="live-dot"></span>Live Scoring</span>
+  </header>
+
+  <main>
+    <!-- Code entry -->
+    <section id="code-entry">
+      <h1>Follow Along Live</h1>
+      <p class="sub">Enter the code your group shared with you.</p>
+      <input id="code-input" maxlength="6" autocomplete="off" autocapitalize="characters"
+             spellcheck="false" inputmode="text" placeholder="ABC123">
+      <button id="watch-btn">Watch</button>
+      <p id="code-error"></p>
+    </section>
+
+    <!-- Live tournament view -->
+    <section id="live-view" style="display:none">
+      <div class="tournament-head">
+        <h1 id="t-name"></h1>
+        <div class="dates" id="t-dates"></div>
+        <div class="refresh-row">
+          <span id="updated-ago">Updated just now</span>
+          <button id="refresh-btn">Refresh</button>
+          <span id="reconnecting">Reconnecting…</span>
+        </div>
+      </div>
+      <div id="live-body"></div>
+    </section>
+
+    <!-- Match scorecard drill-down -->
+    <section id="scorecard-view" style="display:none">
+      <button class="back-btn" id="sc-back">&larr; Back to results</button>
+      <div id="scorecard-body"></div>
+    </section>
+  </main>
+
+  <footer>
+    Powered by <a href="https://sandbaggerscoring.com">Sandbagger</a>
+  </footer>
+
+  <script src="live.js"></script>
+</body>
+</html>

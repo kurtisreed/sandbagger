@@ -2,6 +2,8 @@
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteRule ^$ landing.html [L]
+  # Pretty URL for the public live spectator page
+  RewriteRule ^live/?$ /live.html [L]
 </IfModule>
 
 # BEGIN Newfold Headers

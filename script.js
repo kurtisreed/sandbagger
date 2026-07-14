@@ -9292,6 +9292,23 @@ async function showEditTournamentForm(tournament) {
     </div>
     ${teamsHtml}
     ${rosterHtml}
+    ${isQuickRound ? '' : `
+    <div class="card" id="live-share-card">
+      <h3 class="edit-card-title">Live Sharing</h3>
+      <label style="display:flex; align-items:center; justify-content:space-between; gap:var(--space-3); cursor:pointer; margin:0;">
+        <span style="font-size:var(--font-size-sm); color:var(--color-text-secondary);">Let friends &amp; family follow along live — no account needed.</span>
+        <input type="checkbox" id="live-share-toggle" style="width:1.25rem; height:1.25rem; cursor:pointer; flex-shrink:0; accent-color:var(--color-action-primary);">
+      </label>
+      <div id="live-share-details" style="display:none; margin-top:var(--space-3);">
+        <input type="text" id="live-share-url" class="form-input" readonly style="width:100%; font-size:var(--font-size-sm); margin-bottom:var(--space-2);">
+        <div style="display:flex; align-items:center; gap:var(--space-2);">
+          <span style="flex:1; font-size:var(--font-size-sm);">Code: <strong id="live-share-code" style="letter-spacing:0.15em;"></strong></span>
+          <button type="button" id="live-share-copy-btn" class="btn btn-ghost" style="width:auto; margin:0; padding:var(--space-2) var(--space-3); white-space:nowrap;">Copy Link</button>
+          <button type="button" id="live-share-regen-btn" class="btn btn-ghost" style="width:auto; margin:0; padding:var(--space-2) var(--space-3); white-space:nowrap;">Regenerate</button>
+        </div>
+      </div>
+      <div id="live-share-status" style="margin-top:var(--space-2); font-size:var(--font-size-sm); text-align:center;"></div>
+    </div>`}
     <button id="save-edit-tournament-btn" class="btn btn-primary">Save Changes</button>
     ${isQuickRound ? '' : `<button id="lock-handicaps-btn" class="btn btn-ghost">🔒 Lock Handicaps for Tournament</button>`}
     <div id="edit-tournament-status" style="margin-top:var(--space-3); font-size:var(--font-size-sm); text-align:center;"></div>
@@ -9341,6 +9358,93 @@ async function showEditTournamentForm(tournament) {
 
   document.getElementById('delete-tournament-btn').addEventListener('click', () => {
     showDeleteTournamentModal(tournament.tournament_id, tournament.tournament_name);
+  });
+
+  if (!isQuickRound) wireLiveShareCard(tournament.tournament_id);
+}
+
+// "Live Sharing" card on the Edit Tournament page: toggle a public spectator
+// code for this tournament (served by api/live_share.php, viewed at live.html).
+function wireLiveShareCard(tournamentId) {
+  const toggle   = document.getElementById('live-share-toggle');
+  const details  = document.getElementById('live-share-details');
+  const urlInput = document.getElementById('live-share-url');
+  const codeEl   = document.getElementById('live-share-code');
+  const statusEl = document.getElementById('live-share-status');
+  if (!toggle) return;
+
+  const applyState = (state) => {
+    toggle.checked = state.enabled;
+    details.style.display = state.enabled ? 'block' : 'none';
+    if (state.enabled) {
+      urlInput.value = state.url || '';
+      codeEl.textContent = state.code || '';
+    }
+  };
+
+  const setStatus = (msg, isError = false) => {
+    statusEl.textContent = msg;
+    statusEl.style.color = isError ? 'var(--color-danger, #dc3545)' : 'var(--color-text-secondary)';
+    if (msg && !isError) setTimeout(() => { if (statusEl.textContent === msg) statusEl.textContent = ''; }, 3000);
+  };
+
+  const post = async (action) => {
+    const res = await fetch(`${API_BASE_URL}/api/live_share.php`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tournament_id: tournamentId, action }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Request failed');
+    return data;
+  };
+
+  // Hydrate current state
+  fetch(`${API_BASE_URL}/api/live_share.php?tournament_id=${tournamentId}`, { credentials: 'include' })
+    .then(r => r.json())
+    .then(state => { if (!state.error) applyState(state); })
+    .catch(() => {});
+
+  toggle.addEventListener('change', async () => {
+    const enabling = toggle.checked;
+    toggle.disabled = true;
+    try {
+      applyState(await post(enabling ? 'enable' : 'disable'));
+      setStatus(enabling ? 'Live sharing is on — send the link!' : 'Live sharing turned off.');
+    } catch (err) {
+      toggle.checked = !enabling;
+      setStatus(err.message, true);
+    }
+    toggle.disabled = false;
+  });
+
+  document.getElementById('live-share-copy-btn').addEventListener('click', function() {
+    const link = urlInput.value;
+    if (!link) return;
+    const done = () => {
+      this.textContent = 'Copied!';
+      setTimeout(() => { this.textContent = 'Copy Link'; }, 2000);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(link).then(done).catch(() => {
+        urlInput.select(); document.execCommand('copy'); done();
+      });
+    } else {
+      urlInput.select(); document.execCommand('copy'); done();
+    }
+  });
+
+  document.getElementById('live-share-regen-btn').addEventListener('click', async function() {
+    if (!confirm('Generate a new code? The old link will stop working.')) return;
+    this.disabled = true;
+    try {
+      applyState(await post('regenerate'));
+      setStatus('New code generated — the old link no longer works.');
+    } catch (err) {
+      setStatus(err.message, true);
+    }
+    this.disabled = false;
   });
 }
 
