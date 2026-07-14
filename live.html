@@ -34,7 +34,10 @@
       height: 44.7vw; /* matches lowerbanner.png aspect (2390x1069) at full width */
       max-height: 30vh;
       background: url('images/lowerbanner.png') no-repeat bottom center;
-      background-size: 100% auto;
+      /* contain shows the whole image (no top crop) when the height cap kicks
+         in on wide/desktop viewports; on phones the container already matches
+         the image aspect ratio, so it still fills full width. */
+      background-size: contain;
       z-index: 0;
       pointer-events: none;
     }
