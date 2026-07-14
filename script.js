@@ -7516,23 +7516,35 @@ function renderRoundsAndMatchups(parentContainer, rounds) {
           // Group matches by tee time (if multiple teeTimes have the same time)
           // If your data already groups matches under teeTime, you can use this directly:
           teeTime.matches.forEach((match, idx) => {
-            const team1Golfers = match.golfers.filter(g => g.team_name === primaryTeamName);
-            const team2Golfers = match.golfers.filter(g => g.team_name === secondaryTeamName);
+            // Derive the two teams from the match's own golfer data (ordered by
+            // team name from the API) so rendering never depends on the mutable
+            // primary/secondary team globals, which other views reorient.
+            const teamOrder = [];
+            match.golfers.forEach(g => {
+              if (!teamOrder.some(t => t.name === g.team_name)) {
+                teamOrder.push({ name: g.team_name, color: g.team_color, id: g.team_id });
+              }
+            });
+            const team1 = teamOrder[0] || {};
+            const team2 = teamOrder[1] || {};
 
-            const team1Color = team1Golfers[0]?.team_color || primaryTeamColor || "#eee";
-            const team2Color = team2Golfers[0]?.team_color || secondaryTeamColor || "#eee";
+            const team1Golfers = match.golfers.filter(g => g.team_name === team1.name);
+            const team2Golfers = match.golfers.filter(g => g.team_name === team2.name);
+
+            const team1Color = team1.color || "#eee";
+            const team2Color = team2.color || "#eee";
             const team1TextColor = pickContrastColorFromHex(team1Color);
             const team2TextColor = pickContrastColorFromHex(team2Color);
 
             const team1Names = team1Golfers.map(g => g.name).join(' & ');
             const team2Names = team2Golfers.map(g => g.name).join(' & ');
 
-            // --- NEW: Calculate match result cell ---
+            // --- Calculate match result cell ---
             let resultCell = `<td></td>`; // default blank
 
             if (Array.isArray(match.results) && match.results.length === 2) {
-              const t1 = match.results.find(r => r.team_id == primaryTeamId);
-              const t2 = match.results.find(r => r.team_id == secondaryTeamId);
+              const t1 = match.results.find(r => r.team_id == team1.id);
+              const t2 = match.results.find(r => r.team_id == team2.id);
 
               if (t1 && t2) {
                 if (t1.points === 1 && t2.points === 0) {

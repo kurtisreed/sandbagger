@@ -75,6 +75,7 @@ foreach ($rounds as &$round) {
                     g.first_name AS name,
                     t.color_hex AS team_color,
                     t.name AS team_name,
+                    tg.team_id,
                     mg.player_order
                 FROM match_golfers mg
                 JOIN golfers g ON mg.golfer_id = g.golfer_id
@@ -92,6 +93,7 @@ foreach ($rounds as &$round) {
                     'name' => $row2['name'],
                     'team_color' => $row2['team_color'],
                     'team_name' => $row2['team_name'],
+                    'team_id' => $row2['team_id'] !== null ? (int)$row2['team_id'] : null,
                     'player_order' => $row2['player_order']
                 ];
             }

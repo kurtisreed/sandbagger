@@ -123,7 +123,21 @@
       "Bash(/Applications/XAMPP/xamppfiles/bin/php -l api/get_round_matches.php)",
       "Bash(/Applications/XAMPP/xamppfiles/bin/mysql.server start *)",
       "Bash(sudo /Applications/XAMPP/xamppfiles/bin/mysql.server start)",
-      "Bash(awk '/function loadTodaysMatch/,/^}/' script.js)"
+      "Bash(awk '/function loadTodaysMatch/,/^}/' script.js)",
+      "Bash(curl -s -c /tmp/sb_cookies.txt -X POST http://localhost/sandbagger/api/login.php -H 'Content-Type: application/json' -d '{\"email\":\"reed.kurtis@gmail.com\",\"password\":\"newtest1234\"}')",
+      "Bash(curl -s -b /tmp/sb_cookies.txt \"http://localhost/sandbagger/api/get_tournament_rounds.php?tournament_id=1\")",
+      "Bash(python3 -c ' *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost/sandbagger/index.html)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost/sandbagger/api/login.php)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} \" http://localhost/)",
+      "Bash(curl -s -c /tmp/sb_cookies.txt -X POST http://localhost/api/login.php -H 'Content-Type: application/json' -d '{\"email\":\"reed.kurtis@gmail.com\",\"password\":\"newtest1234\"}')",
+      "Bash(curl -s -b /tmp/sb_cookies.txt \"http://localhost/api/get_tournament_rounds.php?tournament_id=1\")",
+      "Bash(curl -s -c /tmp/sb_cookies.txt -X POST http://localhost/api/login.php -H 'Content-Type: application/json' -d '{\"email\":\"demo@sandbaggerscoring.com\",\"password\":\"demo12345\"}')",
+      "Bash(curl -s -b /tmp/sb_cookies.txt \"http://localhost/api/get_tournament_rounds.php?tournament_id=65\")",
+      "Bash(node /private/tmp/claude-501/-Applications-XAMPP-xamppfiles-htdocs-sandbagger/807e3ad7-6ce3-40c7-9f84-34a49b86ec3d/scratchpad/verify_matchup_colors.js)",
+      "Bash(NODE_PATH=./node_modules node /private/tmp/claude-501/-Applications-XAMPP-xamppfiles-htdocs-sandbagger/807e3ad7-6ce3-40c7-9f84-34a49b86ec3d/scratchpad/verify_matchup_colors.js)",
+      "Bash(python3 -)",
+      "Bash(NODE_PATH=/Applications/XAMPP/xamppfiles/htdocs/sandbagger/node_modules node verify_matchup_colors.js)"
     ]
   }
 }
