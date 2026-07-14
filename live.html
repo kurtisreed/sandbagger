@@ -253,7 +253,9 @@
     }
     .corner-dot.second-dot { right: 10px; }
 
-    footer { position: relative; z-index: 1; text-align: center; color: var(--muted); font-size: 0.75rem; padding: 1.5rem 0 2rem; }
+    footer { position: relative; z-index: 1; text-align: center; font-size: 0.75rem; padding: 1.5rem 0 2rem; }
+    footer .pill { display: inline-block; background: rgba(255,255,255,0.85); color: var(--muted); padding: 0.35rem 0.85rem; border-radius: 999px; box-shadow: 0 1px 4px rgba(0,0,0,0.12); }
+    footer .pill a { color: var(--purple); }
     footer a { color: var(--purple); }
   </style>
 </head>
@@ -296,7 +298,7 @@
   </main>
 
   <footer>
-    Powered by <a href="https://sandbaggerscoring.com">Sandbagger</a>
+    <span class="pill">Powered by <a href="https://sandbaggerscoring.com">Sandbagger</a></span>
   </footer>
 
   <script src="live.js"></script>
