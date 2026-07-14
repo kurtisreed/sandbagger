@@ -157,7 +157,9 @@
       "Bash(curl -s http://localhost/live)",
       "Bash(NODE_PATH=/Applications/XAMPP/xamppfiles/htdocs/sandbagger/node_modules node verify_live_e2e.js)",
       "Bash(NODE_PATH=/Applications/XAMPP/xamppfiles/htdocs/sandbagger/node_modules node -e ' *)",
-      "Bash(/Applications/XAMPP/xamppfiles/bin/mysql -u root sandbagger -e \" *)"
+      "Bash(/Applications/XAMPP/xamppfiles/bin/mysql -u root sandbagger -e \" *)",
+      "Bash(curl -s \"http://localhost/live.js?x=$\\(date +%s\\)\")",
+      "Bash(curl -s \"http://localhost/live.html?x=1\")"
     ]
   }
 }

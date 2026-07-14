@@ -425,7 +425,12 @@
         const s = scoreLookup[`${g.golfer_id}-${h.hole_number}`];
         if (s !== undefined) totals[g.golfer_id] = (totals[g.golfer_id] || 0) + s;
         const dots = dotHtml(strokeMaps[g.golfer_id][h.hole_number] || 0);
-        html += `<td class="cell">${s !== undefined ? s : ''}${dots}</td>`;
+        let cls = 'cell';
+        if (s !== undefined) {
+          if (s < h.par) cls += ' under-par';
+          else if (s > h.par) cls += ' over-par';
+        }
+        html += `<td class="${cls}">${s !== undefined ? s : ''}${dots}</td>`;
       });
       html += '</tr>';
     });
