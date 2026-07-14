@@ -409,7 +409,15 @@
       scoreLookup[`${s.golfer_id}-${s.hole_number}`] = s.strokes;
     });
 
-    let html = `<div class="card"><h2 class="section-title">${esc(round.round_name)}</h2><div class="sc-wrap"><table class="sc"><thead><tr><th class="hole-col">Hole</th><th class="hole-col">Par</th>`;
+    // Running best-ball match-play margin per hole (team matches only), same
+    // as the leftmost column on the app's scorecard.
+    const teams = matchTeams(match);
+    const showMatch = teams.length === 2;
+    const matchByHole = computeMatchColumn(match, round, holes, strokeMaps, teams, showMatch);
+
+    let html = `<div class="card"><h2 class="section-title">${esc(round.round_name)}</h2><div class="sc-wrap"><table class="sc"><thead><tr>`;
+    if (showMatch) html += `<th class="match-col">Match</th>`;
+    html += `<th class="hole-col">Hole</th><th class="hole-col">Par</th>`;
     match.golfers.forEach(g => {
       const bg = g.team_color || '#4F2185';
       html += `<th style="background:${esc(bg)};color:${pickContrastColor(bg)}">${esc(g.first_name)}</th>`;
@@ -420,7 +428,14 @@
     let parTotal = 0;
     holes.forEach(h => {
       parTotal += h.par;
-      html += `<tr><td><strong>${h.hole_number}</strong></td><td>${h.par}</td>`;
+      html += '<tr>';
+      if (showMatch) {
+        const m = matchByHole[h.hole_number];
+        html += m
+          ? `<td class="match-cell" style="background:${esc(m.color)};color:${m.textColor}">${m.mag}</td>`
+          : `<td class="match-cell"></td>`;
+      }
+      html += `<td><strong>${h.hole_number}</strong></td><td>${h.par}</td>`;
       match.golfers.forEach(g => {
         const s = scoreLookup[`${g.golfer_id}-${h.hole_number}`];
         if (s !== undefined) totals[g.golfer_id] = (totals[g.golfer_id] || 0) + s;
@@ -435,7 +450,7 @@
       html += '</tr>';
     });
 
-    html += `<tr class="tot"><td>Tot</td><td>${parTotal}</td>`;
+    html += `<tr class="tot">${showMatch ? '<td></td>' : ''}<td>Tot</td><td>${parTotal}</td>`;
     match.golfers.forEach(g => {
       html += `<td>${totals[g.golfer_id] ?? ''}</td>`;
     });
@@ -443,6 +458,41 @@
 
     body.innerHTML = html;
     showSection('scorecard-view');
+  }
+
+  // Per-hole running match-play margin, mirroring the app's read-only
+  // best-ball status column: net best ball per team, running differential,
+  // magnitude shown and colored by the leading team (black when tied).
+  function computeMatchColumn(match, round, holes, strokeMaps, teams, showMatch) {
+    const result = {};
+    if (!showMatch) return result;
+    const [teamA, teamB] = teams;
+
+    const byHole = {};
+    match.hole_scores.forEach(s => {
+      const g = match.golfers.find(x => x.golfer_id == s.golfer_id);
+      if (!g) return;
+      const net = s.strokes - (strokeMaps[g.golfer_id][s.hole_number] || 0);
+      if (!byHole[s.hole_number]) byHole[s.hole_number] = { a: [], b: [] };
+      if (g.team_name === teamA.name) byHole[s.hole_number].a.push(net);
+      else if (g.team_name === teamB.name) byHole[s.hole_number].b.push(net);
+    });
+
+    let diff = 0;
+    holes.forEach(h => {
+      const hh = byHole[h.hole_number];
+      if (!hh || !hh.a.length || !hh.b.length) return;
+      const aBest = Math.min(...hh.a);
+      const bBest = Math.min(...hh.b);
+      if (aBest < bBest) diff++;
+      else if (bBest < aBest) diff--;
+      let color, textColor;
+      if (diff === 0) { color = '#000'; textColor = '#fff'; }
+      else if (diff > 0) { color = teamA.color; textColor = pickContrastColor(teamA.color); }
+      else { color = teamB.color; textColor = pickContrastColor(teamB.color); }
+      result[h.hole_number] = { mag: Math.abs(diff), color, textColor };
+    });
+    return result;
   }
 
   function dotHtml(strokes) {

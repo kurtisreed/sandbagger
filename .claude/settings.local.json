@@ -159,7 +159,8 @@
       "Bash(NODE_PATH=/Applications/XAMPP/xamppfiles/htdocs/sandbagger/node_modules node -e ' *)",
       "Bash(/Applications/XAMPP/xamppfiles/bin/mysql -u root sandbagger -e \" *)",
       "Bash(curl -s \"http://localhost/live.js?x=$\\(date +%s\\)\")",
-      "Bash(curl -s \"http://localhost/live.html?x=1\")"
+      "Bash(curl -s \"http://localhost/live.html?x=1\")",
+      "Bash(awk 'NR>=8180 && NR<=8235 && \\(/th>/ || /header/ || /Match/\\)' /Applications/XAMPP/xamppfiles/htdocs/sandbagger/script.js)"
     ]
   }
 }
