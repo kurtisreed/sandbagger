@@ -137,7 +137,12 @@
       "Bash(node /private/tmp/claude-501/-Applications-XAMPP-xamppfiles-htdocs-sandbagger/807e3ad7-6ce3-40c7-9f84-34a49b86ec3d/scratchpad/verify_matchup_colors.js)",
       "Bash(NODE_PATH=./node_modules node /private/tmp/claude-501/-Applications-XAMPP-xamppfiles-htdocs-sandbagger/807e3ad7-6ce3-40c7-9f84-34a49b86ec3d/scratchpad/verify_matchup_colors.js)",
       "Bash(python3 -)",
-      "Bash(NODE_PATH=/Applications/XAMPP/xamppfiles/htdocs/sandbagger/node_modules node verify_matchup_colors.js)"
+      "Bash(NODE_PATH=/Applications/XAMPP/xamppfiles/htdocs/sandbagger/node_modules node verify_matchup_colors.js)",
+      "Bash(awk 'NR>=3300 && /^\\(function|async function\\)/ {print NR\": \"$0}' /Applications/XAMPP/xamppfiles/htdocs/sandbagger/script.js)",
+      "Bash(awk -F: '{n=$1; name=$2} n<3841{f1=name} n<4129{f2=name} n<4361{f3=name} n<6132{f4=name} n<8137{f5=name} n<10508{f6=name} n<10584{f7=name} END{print \"3841:\"f1\"\\\\n4129:\"f2\"\\\\n4361:\"f3\"\\\\n6132:\"f4\"\\\\n8137:\"f5\"\\\\n10508:\"f6\"\\\\n10584:\"f7}')",
+      "Bash(awk 'NR>=8000 && NR<=8700 && /primaryTeam|secondaryTeam|assignCSSColors/ {print NR\": \"$0}' /Applications/XAMPP/xamppfiles/htdocs/sandbagger/script.js)",
+      "Bash(node --check /Applications/XAMPP/xamppfiles/htdocs/sandbagger/script.js)",
+      "Bash(NODE_PATH=/Applications/XAMPP/xamppfiles/htdocs/sandbagger/node_modules node verify_header_color.js)"
     ]
   }
 }

@@ -6129,7 +6129,13 @@ function loadTodaySummary() {
       }
 
       container.innerHTML = "<h3>Matches (click match to see scorecard)</h3>";
-      assignCSSColors(primaryTeamColor, secondaryTeamColor);
+      // Repaint from sessionStorage (set at round entry, never reoriented by
+      // other views) so a previously viewed scorecard can't flip the
+      // header/tab colors away from the user's own team.
+      assignCSSColors(
+        sessionStorage.getItem('primary_team_color') || primaryTeamColor,
+        sessionStorage.getItem('secondary_team_color') || secondaryTeamColor
+      );
       matches.forEach(match => {
         const div = document.createElement("div");
         div.className = "match-summary";
@@ -8160,6 +8166,15 @@ function loadMatchScorecard(match_id, container_id = "today-summary") {
             }
           });
           const uniqueTeams = Array.from(teamMap.entries()).map(([name, color]) => ({ name, color }));
+
+          // Keep the user's own team as primary (the round bar / tabs are
+          // painted from these globals elsewhere). sessionStorage holds the
+          // orientation set at round entry and is never reoriented by views.
+          const userTeamName = sessionStorage.getItem('primary_team_name');
+          const userTeamIdx = uniqueTeams.findIndex(t => t.name === userTeamName);
+          if (userTeamIdx > 0) {
+            uniqueTeams.unshift(uniqueTeams.splice(userTeamIdx, 1)[0]);
+          }
 
           if (uniqueTeams.length >= 1) {
             primaryTeamName = uniqueTeams[0].name;
