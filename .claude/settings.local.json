@@ -161,7 +161,16 @@
       "Bash(curl -s \"http://localhost/live.js?x=$\\(date +%s\\)\")",
       "Bash(curl -s \"http://localhost/live.html?x=1\")",
       "Bash(awk 'NR>=8180 && NR<=8235 && \\(/th>/ || /header/ || /Match/\\)' /Applications/XAMPP/xamppfiles/htdocs/sandbagger/script.js)",
-      "Bash(sips -g pixelWidth -g pixelHeight images/lowerbanner.png)"
+      "Bash(sips -g pixelWidth -g pixelHeight images/lowerbanner.png)",
+      "Bash(/Applications/XAMPP/xamppfiles/bin/php -l api/admin_set_role.php)",
+      "Bash(curl -s -b /tmp/sb_admin.txt -X POST http://localhost/api/admin_set_role.php -H 'Content-Type: application/json' -d '{\"user_id\":15,\"role\":\"admin\"}')",
+      "Bash(curl -s -b /tmp/sb_admin.txt -X POST http://localhost/api/admin_set_role.php -H 'Content-Type: application/json' -d '{\"user_id\":15,\"role\":\"scorer\"}')",
+      "Bash(curl -s -b /tmp/sb_admin.txt -X POST http://localhost/api/admin_set_role.php -H 'Content-Type: application/json' -d '{\"user_id\":12,\"role\":\"scorer\"}')",
+      "Bash(curl -s -b /tmp/sb_admin.txt -X POST http://localhost/api/admin_set_role.php -d '{\"user_id\":15,\"role\":\"admin\"}' -H 'Content-Type: application/json')",
+      "Bash(curl -s -X POST http://localhost/api/admin_set_role.php -H 'Content-Type: application/json' -d '{\"user_id\":15,\"role\":\"admin\"}')",
+      "Bash(curl -s -b /tmp/sb_admin.txt -X POST http://localhost/api/admin_set_role.php -H 'Content-Type: application/json' -d '{\"user_id\":15,\"role\":\"viewer\"}')",
+      "Bash(awk 'NR>=11455 && NR<=11475' script.js)",
+      "Bash(grep -c '\\\\${memberRows}' script.js)"
     ]
   }
 }

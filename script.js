@@ -11587,6 +11587,13 @@ async function showEditGroupPage() {
         </div>
       </div>
     </div>
+
+    <!-- Members card -->
+    <div style="background:#fff; border:1px solid #e0e0e0; border-radius:12px; padding:1.25rem; margin-bottom:1rem; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+      <h3 style="margin:0 0 0.75rem; font-size:1.1rem; color:#1a1a1a;">Members</h3>
+      <p style="margin:0 0 0.75rem; font-size:0.9rem; color:#666;">Tap a member to edit their info, reset their password, or make them an administrator.</p>
+      ${memberRows || '<p style="font-size:0.9rem; color:#888;">No members yet.</p>'}
+    </div>
   `;
 
   // Load invite link
@@ -11854,6 +11861,21 @@ function showMemberDetailPage(member) {
       <button id="member-save-btn" style="width:100%; padding:0.65rem; background:#4F2185; color:white; border:none; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">Save Changes</button>
     </div>
 
+    <!-- Role card -->
+    ${currentUser && currentUser.email && member.email === currentUser.email ? '' : `
+    <div style="background:#fff; border:1px solid #e0e0e0; border-radius:12px; padding:1.25rem; margin-bottom:1rem; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+      <h3 style="margin:0 0 0.5rem; font-size:1.1rem; color:#1a1a1a;">Role</h3>
+      <p style="margin:0 0 1rem; font-size:0.9rem; color:#666;">
+        This member is ${member.role === 'admin'
+          ? 'an <strong>administrator</strong> — they can manage the group, members, and tournaments.'
+          : 'a <strong>scorer</strong> — they can enter scores but not manage the group.'}
+      </p>
+      <p id="member-role-status" style="display:none; font-size:0.875rem; text-align:center; margin:0 0 0.75rem;"></p>
+      <button id="member-role-btn" style="width:100%; padding:0.65rem; background:${member.role === 'admin' ? '#fff' : '#4F2185'}; color:${member.role === 'admin' ? '#4F2185' : '#fff'}; border:${member.role === 'admin' ? '1px solid #4F2185' : 'none'}; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">
+        ${member.role === 'admin' ? 'Remove Administrator' : 'Make Administrator'}
+      </button>
+    </div>`}
+
     <!-- Password reset card -->
     <div style="background:#fff; border:1px solid #e0e0e0; border-radius:12px; padding:1.25rem; margin-bottom:1rem; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
       <h3 style="margin:0 0 0.5rem; font-size:1.1rem; color:#1a1a1a;">Reset Password <button type="button" class="help-icon" data-help="password-reset-link" aria-label="About reset links">?</button></h3>
@@ -11912,6 +11934,48 @@ function showMemberDetailPage(member) {
     btn.disabled    = false;
     btn.textContent = 'Save Changes';
   });
+
+  // Promote / demote administrator
+  const roleBtn = document.getElementById('member-role-btn');
+  if (roleBtn) {
+    roleBtn.addEventListener('click', async () => {
+      const makingAdmin = member.role !== 'admin';
+      const verb = makingAdmin ? 'make this member an administrator' : 'remove this member as administrator';
+      if (!confirm(`Are you sure you want to ${verb}?`)) return;
+
+      const statusEl = document.getElementById('member-role-status');
+      const newRole  = makingAdmin ? 'admin' : 'scorer';
+      statusEl.style.display = 'none';
+      roleBtn.disabled = true;
+      roleBtn.textContent = 'Saving…';
+      try {
+        const res  = await fetch(`${API_BASE_URL}/api/admin_set_role.php`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: member.user_id, role: newRole }),
+          credentials: 'include',
+        });
+        const data = await res.json();
+        if (data.success) {
+          member.role = data.role;
+          // Re-render the page so the card reflects the new role
+          showMemberDetailPage(member);
+        } else {
+          statusEl.textContent   = data.error || 'Could not update role.';
+          statusEl.style.color   = '#c00';
+          statusEl.style.display = 'block';
+          roleBtn.disabled = false;
+          roleBtn.textContent = makingAdmin ? 'Make Administrator' : 'Remove Administrator';
+        }
+      } catch {
+        statusEl.textContent   = 'Connection error. Please try again.';
+        statusEl.style.color   = '#c00';
+        statusEl.style.display = 'block';
+        roleBtn.disabled = false;
+        roleBtn.textContent = makingAdmin ? 'Make Administrator' : 'Remove Administrator';
+      }
+    });
+  }
 
   // Generate reset link
   document.getElementById('member-reset-btn').addEventListener('click', async () => {
