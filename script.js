@@ -7238,13 +7238,13 @@ function renderScoreboard(parentContainer, scoreboard) {
         return;
     }
     
-    // Find the two teams from the scoreboard data
-    let teamA = scoreboard.find(t => t.team_name === primaryTeamName);
-    let teamB = scoreboard.find(t => t.team_name === secondaryTeamName);
-
-    // Fallback: if not found, just use the first two teams
-    if (!teamA) teamA = scoreboard[0];
-    if (!teamB) teamB = scoreboard[1];
+    // Order the two teams alphabetically by team name so the scoreboard sides
+    // are consistent for everyone (and match the Matchups & Tee Times tables),
+    // rather than depending on the viewer's own team.
+    const orderedTeams = [...scoreboard].sort((a, b) =>
+      (a.team_name || '').localeCompare(b.team_name || ''));
+    const teamA = orderedTeams[0];
+    const teamB = orderedTeams[1];
 
     // Update team A
     const teamADiv = totalScore.querySelector("#teamA"); // <-- FIXED
