@@ -1018,13 +1018,21 @@ main {
 .matchup-table td:nth-child(1) { width: 14%; }
 
 .matchup-table th:nth-child(2),
-.matchup-table td:nth-child(2) { width: 39%; }
+.matchup-table td:nth-child(2) { width: 37%; }
 
 .matchup-table th:nth-child(3),
-.matchup-table td:nth-child(3) { width: 39%; }
+.matchup-table td:nth-child(3) { width: 37%; }
 
 .matchup-table th:nth-child(4),
-.matchup-table td:nth-child(4) { width: 8%; }
+.matchup-table td:nth-child(4) { width: 12%; }
+
+/* Never truncate the result cell (e.g. "½") — always show it in full */
+.matchup-table td.matchup-result {
+  overflow: visible;
+  text-overflow: clip;
+  padding-left: 2px;
+  padding-right: 2px;
+}
 
 /* ── Handicap Explanation ─────────────────────────────────────────────────── */
 .handicap-explanation {

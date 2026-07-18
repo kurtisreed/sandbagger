@@ -7546,7 +7546,7 @@ function renderRoundsAndMatchups(parentContainer, rounds) {
             const team2Names = team2Golfers.map(g => g.name).join(' & ');
 
             // --- Calculate match result cell ---
-            let resultCell = `<td></td>`; // default blank
+            let resultCell = `<td class="matchup-result"></td>`; // default blank
 
             if (Array.isArray(match.results) && match.results.length === 2) {
               const t1 = match.results.find(r => r.team_id == team1.id);
@@ -7554,11 +7554,11 @@ function renderRoundsAndMatchups(parentContainer, rounds) {
 
               if (t1 && t2) {
                 if (t1.points === 1 && t2.points === 0) {
-                  resultCell = `<td style="background:${team1Color};color:${team1TextColor};text-align:center;">1</td>`;
+                  resultCell = `<td class="matchup-result" style="background:${team1Color};color:${team1TextColor};text-align:center;">1</td>`;
                 } else if (t2.points === 1 && t1.points === 0) {
-                  resultCell = `<td style="background:${team2Color};color:${team2TextColor};text-align:center;">1</td>`;
+                  resultCell = `<td class="matchup-result" style="background:${team2Color};color:${team2TextColor};text-align:center;">1</td>`;
                 } else if (t1.points === 0.5 && t2.points === 0.5) {
-                  resultCell = `<td style="background:#000;color:#fff;text-align:center;">1/2</td>`;
+                  resultCell = `<td class="matchup-result" style="background:#000;color:#fff;text-align:center;">½</td>`;
                 }
               }
             }
