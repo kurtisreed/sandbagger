@@ -9047,7 +9047,6 @@ function loadUserTournaments(golferId) {
               ` : ''}
             </div>
             ${!isMember ? `<p class="tournament-not-enrolled-badge">👀 Admin view — not enrolled</p>` : ''}
-            ${currentUser && currentUser.org_name ? `<p class="tournament-card-meta">${currentUser.org_name}</p>` : ''}
             ${teamSubtitle}
             <p class="tournament-card-dates">${tournament.start_date} — ${tournament.end_date}</p>
             ${tournament.live_share_enabled && tournament.live_share_code ? `
