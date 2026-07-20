@@ -170,7 +170,22 @@
       "Bash(curl -s -X POST http://localhost/api/admin_set_role.php -H 'Content-Type: application/json' -d '{\"user_id\":15,\"role\":\"admin\"}')",
       "Bash(curl -s -b /tmp/sb_admin.txt -X POST http://localhost/api/admin_set_role.php -H 'Content-Type: application/json' -d '{\"user_id\":15,\"role\":\"viewer\"}')",
       "Bash(awk 'NR>=11455 && NR<=11475' script.js)",
-      "Bash(grep -c '\\\\${memberRows}' script.js)"
+      "Bash(grep -c '\\\\${memberRows}' script.js)",
+      "Bash(curl -sS -I --max-time 15 https://sandbaggerscoring.com/)",
+      "Bash(curl -sS -i --max-time 15 https://sandbaggerscoring.com/api/check_session.php)",
+      "Bash(nslookup sandbaggerscoring.com)",
+      "Bash(nc -vz -G 8 sandbaggerscoring.com 443)",
+      "Bash(curl -sS -I --max-time 12 http://sandbaggerscoring.com/)",
+      "Bash(curl -sS -v --max-time 12 https://sandbaggerscoring.com/)",
+      "WebFetch(domain:sandbaggerscoring.com)",
+      "Bash(timeout 12 openssl s_client -connect 50.6.2.227:443 -servername sandbaggerscoring.com)",
+      "Bash(timeout 12 openssl s_client -connect 50.6.2.227:443 -servername google.com)",
+      "Bash(timeout 12 openssl s_client -connect 50.6.2.227:443)",
+      "Bash(timeout 12 openssl s_client -connect 50.6.2.227:443 -servername example.com)",
+      "Bash(/Applications/XAMPP/xamppfiles/bin/php -l api/get_user_tournaments.php)",
+      "Bash(curl -s -c /tmp/c.txt -X POST http://localhost/api/login.php -H 'Content-Type: application/json' -d '{\"email\":\"demo@sandbaggerscoring.com\",\"password\":\"demo12345\"}')",
+      "Bash(curl -s -b /tmp/c.txt \"http://localhost/api/get_user_tournaments.php?golfer_id=65\")",
+      "Bash(python3 -c \"import json,sys; t=[x for x in json.load\\(sys.stdin\\)['tournaments'] if x['tournament_id']==65][0]; print\\('enabled:', t['live_share_enabled'], '| code:', t['live_share_code']\\)\")"
     ]
   }
 }

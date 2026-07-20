@@ -38,6 +38,8 @@ if ($isAdmin) {
     t.end_date,
     t.format_id,
     t.handicap_pct,
+    t.live_share_code,
+    t.live_share_enabled,
     r.round_id,
     r.round_name,
     r.round_date,
@@ -67,6 +69,8 @@ if ($isAdmin) {
     t.end_date,
     t.format_id,
     t.handicap_pct,
+    t.live_share_code,
+    t.live_share_enabled,
     r.round_id,
     r.round_name,
     r.round_date,
@@ -104,6 +108,8 @@ while ($row = $result->fetch_assoc()) {
       'end_date' => $row['end_date'],
       'format_id' => $row['format_id'],
       'handicap_pct' => $row['handicap_pct'],
+      'live_share_code' => $row['live_share_code'],
+      'live_share_enabled' => (bool) $row['live_share_enabled'],
       'is_member' => (bool) $row['is_member'],
       'rounds' => []
     ];

@@ -8963,6 +8963,49 @@ function loadActiveQuickRounds() {
     });
 }
 
+// Share a tournament's public live-scoring link. Uses the native share sheet
+// on mobile/the installed app, and falls back to copying the link elsewhere.
+async function shareLiveLink(tournamentName, code, btnEl) {
+  const url = `https://sandbaggerscoring.com/live.html?code=${code}`;
+  const title = tournamentName ? `${tournamentName} — Live Scores` : 'Live Scores';
+  const text = tournamentName
+    ? `Follow ${tournamentName} live on Sandbagger:`
+    : 'Follow along live on Sandbagger:';
+
+  if (navigator.share) {
+    try {
+      await navigator.share({ title, text, url });
+      return;
+    } catch (err) {
+      // AbortError = user dismissed the share sheet; do nothing further
+      if (err && err.name === 'AbortError') return;
+      // Otherwise fall through to clipboard copy
+    }
+  }
+
+  // Fallback: copy the link and flash confirmation on the button
+  const flash = (msg) => {
+    if (!btnEl) return;
+    const original = btnEl.innerHTML;
+    btnEl.innerHTML = msg;
+    btnEl.disabled = true;
+    setTimeout(() => { btnEl.innerHTML = original; btnEl.disabled = false; }, 2000);
+  };
+  try {
+    await navigator.clipboard.writeText(url);
+    flash('✓ Link copied!');
+  } catch {
+    // Last-resort fallback for older browsers
+    const tmp = document.createElement('input');
+    tmp.value = url;
+    document.body.appendChild(tmp);
+    tmp.select();
+    document.execCommand('copy');
+    document.body.removeChild(tmp);
+    flash('✓ Link copied!');
+  }
+}
+
 function loadUserTournaments(golferId) {
   const tournamentsList = document.getElementById('tournaments-list');
   tournamentsList.innerHTML = '<p>Loading...</p>';
@@ -9007,6 +9050,11 @@ function loadUserTournaments(golferId) {
             ${currentUser && currentUser.org_name ? `<p class="tournament-card-meta">${currentUser.org_name}</p>` : ''}
             ${teamSubtitle}
             <p class="tournament-card-dates">${tournament.start_date} — ${tournament.end_date}</p>
+            ${tournament.live_share_enabled && tournament.live_share_code ? `
+              <button class="tournament-share-btn" data-share-code="${tournament.live_share_code}" data-share-name="${String(tournament.tournament_name).replace(/"/g, '&quot;')}">
+                <span aria-hidden="true">🔗</span> Share Live Scores
+              </button>
+            ` : ''}
         `;
 
         html += '<div class="tournament-card-rounds">';
@@ -9099,6 +9147,14 @@ function loadUserTournaments(golferId) {
             // Load regular tournament round
             loadTournamentRound(roundId, tournamentId, roundName);
           }
+        });
+      });
+
+      // Add click handlers for "Share Live Scores" buttons
+      document.querySelectorAll('.tournament-share-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          shareLiveLink(this.dataset.shareName, this.dataset.shareCode, this);
         });
       });
 

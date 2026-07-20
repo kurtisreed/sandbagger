@@ -1156,6 +1156,25 @@ h3 {
   margin: var(--space-2) 0 var(--space-3);
 }
 
+.tournament-share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0 0 var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-brand-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.tournament-share-btn:hover { opacity: 0.9; }
+.tournament-share-btn:disabled { opacity: 1; cursor: default; }
+
 .tournament-card-rounds {
   display: flex;
   flex-direction: column;
