@@ -1162,8 +1162,8 @@ h3 {
   gap: var(--space-1);
   margin: 0 0 var(--space-3);
   padding: var(--space-2) var(--space-3);
-  background: var(--color-brand-primary);
-  color: #fff;
+  background: #FFC62F;
+  color: #1a1a1a;
   border: none;
   border-radius: var(--radius-md);
   font-size: var(--font-size-sm);
