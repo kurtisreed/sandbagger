@@ -4004,14 +4004,9 @@ function loadBestBallScoring() {
             selectEl.value = score.strokes;
             const cell = selectEl.closest('td');
             if (cell) {
-              cell.classList.remove("score-birdie", "score-bogey", "score-par");
               const par = holeInfo.find(h => h.hole_number == score.hole_number)?.par;
               const strokes = parseInt(score.strokes);
-              if (!isNaN(par) && !isNaN(strokes)) {
-                if (strokes < par) cell.classList.add("score-birdie");
-                else if (strokes > par) cell.classList.add("score-bogey");
-                else cell.classList.add("score-par");
-              }
+              applyScoreClass(cell, strokes, par);
             }
           }
         });
@@ -4244,15 +4239,9 @@ function loadBestBallScorecardReadOnly() {
           scores.forEach(score => {
             const cell = document.querySelector(`td.readonly-score-cell[data-hole="${score.hole_number}"][data-golfer="${score.golfer_id}"]`);
             if (cell) {
-              // Remove previous classes
-              cell.classList.remove("score-birdie", "score-bogey", "score-par");
               const par = holeInfo.find(h => h.hole_number == score.hole_number)?.par;
               const strokes = parseInt(score.strokes);
-              if (!isNaN(par) && !isNaN(strokes)) {
-                if (strokes < par) cell.classList.add("score-birdie");
-                else if (strokes > par) cell.classList.add("score-bogey");
-                else cell.classList.add("score-par");
-              }
+              applyScoreClass(cell, strokes, par);
               // Set the cell content (with or without the dot)
               const stroke = strokeMaps[score.golfer_id]?.[score.hole_number] || 0;
                             const dots = strokeDots(stroke);
@@ -4669,14 +4658,9 @@ function loadTodaysMatch() {
               // Remove previous classes from the parent cell
               const cell = selectEl.closest('td');
               if (cell) {
-                cell.classList.remove("score-birdie", "score-bogey", "score-par");
                 const par = holeInfo.find(h => h.hole_number == score.hole_number)?.par;
                 const strokes = parseInt(score.strokes);
-                if (!isNaN(par) && !isNaN(strokes)) {
-                  if (strokes < par) cell.classList.add("score-birdie");
-                  else if (strokes > par) cell.classList.add("score-bogey");
-                  else cell.classList.add("score-par");
-                }
+                applyScoreClass(cell, strokes, par);
               }
             }
           });
@@ -4883,13 +4867,7 @@ function loadSkinsMatch() {
               if (cell) {
                 const par = holeInfo.find(h => h.hole_number == score.hole_number)?.par;
                 const strokes = parseInt(score.strokes);
-                cell.classList.remove('score-birdie', 'score-bogey', 'score-par', 'score-eagle');
-                if (!isNaN(par) && !isNaN(strokes)) {
-                  if (strokes <= par - 2) cell.classList.add('score-eagle');
-                  else if (strokes === par - 1) cell.classList.add('score-birdie');
-                  else if (strokes === par) cell.classList.add('score-par');
-                  else cell.classList.add('score-bogey');
-                }
+                applyScoreClass(cell, strokes, par);
               }
             }
           });
@@ -5012,14 +4990,7 @@ function loadScrambleMatch() {
       container.appendChild(tableWrapper);
 
       function colorCell(cell, strokes, par) {
-        cell.classList.remove('score-birdie', 'score-bogey', 'score-par', 'score-eagle');
-        const s = parseInt(strokes), p = parseInt(par);
-        if (!isNaN(p) && !isNaN(s)) {
-          if (s <= p - 2) cell.classList.add('score-eagle');
-          else if (s === p - 1) cell.classList.add('score-birdie');
-          else if (s === p) cell.classList.add('score-par');
-          else cell.classList.add('score-bogey');
-        }
+        applyScoreClass(cell, strokes, par);
       }
 
       function recomputeTotals() {
@@ -5393,14 +5364,9 @@ function loadGuysTripMatch() {
             selectEl.value = score.strokes;
             const cell = selectEl.closest('td');
             if (cell) {
-              cell.classList.remove("score-birdie", "score-bogey", "score-par");
               const par = holeInfo.find(h => h.hole_number == score.hole_number)?.par;
               const strokes = parseInt(score.strokes);
-              if (!isNaN(par) && !isNaN(strokes)) {
-                if (strokes < par) cell.classList.add("score-birdie");
-                else if (strokes > par) cell.classList.add("score-bogey");
-                else cell.classList.add("score-par");
-              }
+              applyScoreClass(cell, strokes, par);
             }
           }
         });
@@ -5738,15 +5704,10 @@ function updateScoreCellClasses() {
   document.querySelectorAll('select[data-hole][data-golfer]').forEach(selectEl => {
     const cell = selectEl.closest('td');
     if (!cell) return;
-    cell.classList.remove("score-birdie", "score-bogey", "score-par");
     const hole = parseInt(selectEl.dataset.hole);
     const strokes = parseInt(selectEl.value);
     const par = holeInfo.find(h => h.hole_number == hole)?.par;
-    if (!isNaN(par) && !isNaN(strokes)) {
-      if (strokes < par) cell.classList.add("score-birdie");
-      else if (strokes > par) cell.classList.add("score-bogey");
-      else cell.classList.add("score-par");
-    }
+    applyScoreClass(cell, strokes, par);
   });
 }
 
@@ -6455,13 +6416,7 @@ function loadSkinsGroupScorecard(matchId) {
             if (cell) {
               const par     = holeInfo.find(h => h.hole_number == score.hole_number)?.par;
               const strokes = parseInt(score.strokes);
-              cell.classList.remove('score-birdie', 'score-bogey', 'score-par', 'score-eagle');
-              if (!isNaN(par) && !isNaN(strokes)) {
-                if (strokes <= par - 2)      cell.classList.add('score-eagle');
-                else if (strokes === par - 1) cell.classList.add('score-birdie');
-                else if (strokes === par)     cell.classList.add('score-par');
-                else                          cell.classList.add('score-bogey');
-              }
+              applyScoreClass(cell, strokes, par);
               const dots = strokeDots(localStrokeMaps[score.golfer_id]?.[score.hole_number] || 0);
               cell.innerHTML = `${dots}${strokes}`;
             }
@@ -7148,6 +7103,22 @@ function strokeDots(stroke) {
   if (stroke === 2) return '<span class="corner-dot"></span><span class="corner-dot second-dot"></span>';
   if (stroke === -1) return '<span class="corner-dot penalty-dot"></span>';
   return '';
+}
+
+// Color a scorecard cell by score-to-par, with two shades on each side:
+// eagle-or-better (darker blue), birdie (blue), par (neutral),
+// bogey (red), double-bogey-or-worse (darker red). Used by every scorecard
+// so the coloring is identical everywhere.
+function applyScoreClass(cell, strokes, par) {
+  cell.classList.remove('score-eagle', 'score-birdie', 'score-par', 'score-bogey', 'score-double');
+  const s = parseInt(strokes), p = parseInt(par);
+  if (isNaN(s) || isNaN(p)) return;
+  const diff = s - p;
+  if (diff <= -2) cell.classList.add('score-eagle');
+  else if (diff === -1) cell.classList.add('score-birdie');
+  else if (diff === 0) cell.classList.add('score-par');
+  else if (diff === 1) cell.classList.add('score-bogey');
+  else cell.classList.add('score-double');
 }
 
 // Adjust handicaps within a match so the lowest handicap player becomes 0
@@ -8312,15 +8283,9 @@ function loadMatchScorecard(match_id, container_id = "today-summary") {
           scores.forEach(score => {
             const cell = document.querySelector(`td[data-hole="${score.hole_number}"][data-golfer="${score.golfer_id}"]`);
             if (cell) {
-              // Remove previous classes
-              cell.classList.remove("score-birdie", "score-bogey", "score-par");
               const par = holeInfo.find(h => h.hole_number == score.hole_number)?.par;
               const strokes = parseInt(score.strokes);
-              if (!isNaN(par) && !isNaN(strokes)) {
-                if (strokes < par) cell.classList.add("score-birdie");
-                else if (strokes > par) cell.classList.add("score-bogey");
-                else cell.classList.add("score-par");
-              }
+              applyScoreClass(cell, strokes, par);
               // Set the cell content (with or without the dot)
                 const stroke = strokeMaps[score.golfer_id]?.[score.hole_number] || 0;
                                 const dots = strokeDots(stroke);

@@ -443,8 +443,11 @@
         const dots = dotHtml(strokeMaps[g.golfer_id][h.hole_number] || 0);
         let cls = 'cell';
         if (s !== undefined) {
-          if (s < h.par) cls += ' under-par';
-          else if (s > h.par) cls += ' over-par';
+          const diff = s - h.par;
+          if (diff <= -2) cls += ' eagle-better';
+          else if (diff === -1) cls += ' under-par';
+          else if (diff === 1) cls += ' over-par';
+          else if (diff >= 2) cls += ' double-worse';
         }
         html += `<td class="${cls}">${s !== undefined ? s : ''}${dots}</td>`;
       });

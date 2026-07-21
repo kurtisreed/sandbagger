@@ -30,11 +30,12 @@
   --color-action-info:    #0077b6;
   --color-action-neutral: #6b7280;
 
-  /* Score colors */
-  --color-score-birdie: #bfdbfe;  /* clear blue — under par */
-  --color-score-bogey:  #fecaca;  /* clear red — over par */
-  --color-score-eagle:  #86efac;  /* bright green — eagle/better */
+  /* Score colors — two shades on each side of par */
+  --color-score-eagle:  #60a5fa;  /* darker blue — eagle or better */
+  --color-score-birdie: #bfdbfe;  /* clear blue — 1 under par */
   --color-score-par:    #f3f4f6;  /* neutral grey — par */
+  --color-score-bogey:  #fecaca;  /* clear red — 1 over par */
+  --color-score-double: #f87171;  /* darker red — double bogey or worse */
 
   /* Typography */
   --font-family:    'Nunito', system-ui, -apple-system, sans-serif;
@@ -476,14 +477,20 @@ main {
 }
 
 /* ── Score Colors ─────────────────────────────────────────────────────────── */
+.score-eagle {
+  background-color: var(--color-score-eagle) !important;
+}
 .score-birdie {
   background-color: var(--color-score-birdie) !important;
+}
+.score-par {
+  background-color: var(--color-score-par) !important;
 }
 .score-bogey {
   background-color: var(--color-score-bogey) !important;
 }
-.score-par {
-  background-color: var(--color-score-par) !important;
+.score-double {
+  background-color: var(--color-score-double) !important;
 }
 
 .best-ball-cell {
