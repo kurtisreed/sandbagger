@@ -264,7 +264,8 @@
   function renderMatchups(d, hasTeams) {
     const card = document.createElement('div');
     card.className = 'card';
-    card.innerHTML = `<h2 class="section-title">${hasTeams ? 'Matches' : 'Groups'}</h2>`;
+    card.innerHTML = `<h2 class="section-title">${hasTeams ? 'Matches' : 'Groups'}</h2>
+      <p class="section-hint">Tap a ${hasTeams ? 'match' : 'group'} to see the full scorecard.</p>`;
 
     d.rounds.forEach(round => {
       const block = document.createElement('div');
