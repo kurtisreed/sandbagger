@@ -5983,10 +5983,11 @@ function showMatchResultsModal(matchType, onDone) {
     ${birdieHtml}
   `;
 
-  // Build a plain-text recap for sharing (texts, email, group chat)
+  // Build a plain-text recap (used as the share caption + as a fallback)
   const shareText = buildMatchShareText(matchType, withScores, allBirdies);
 
-  // Wire Share button — native share sheet on mobile, clipboard elsewhere
+  // Wire Share button — shares a PNG image of the summary; native share sheet
+  // on mobile/the app, download elsewhere.
   const shareBtn = document.getElementById('match-results-share-btn');
   shareBtn.onclick = function() { shareMatchSummary(shareText, shareBtn); };
 
@@ -6036,24 +6037,77 @@ function buildMatchShareText(matchType, withScores, allBirdies) {
   return lines.join('\n');
 }
 
-// Share a text recap: native share sheet on mobile / the app, clipboard fallback.
+// Share a PNG image of the summary: native share sheet on mobile / the app,
+// download elsewhere. Falls back to sharing/copying text if image capture fails.
 async function shareMatchSummary(text, btnEl) {
-  if (navigator.share) {
+  const setBtn = (html, disabled) => {
+    if (!btnEl) return;
+    btnEl.innerHTML = html;
+    btnEl.disabled = !!disabled;
+  };
+  const flash = (msg) => {
+    const original = '<span aria-hidden="true">📤</span> Share!';
+    setBtn(msg, true);
+    setTimeout(() => setBtn(original, false), 2000);
+  };
+
+  const blob = await renderMatchSummaryImage(btnEl);
+  if (!blob) { await shareMatchText(text, flash); return; }
+
+  const file = new File([blob], 'match-results.png', { type: 'image/png' });
+
+  // Native share with the image file (mobile / installed app)
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
     try {
-      await navigator.share({ title: 'Match Results', text });
+      await navigator.share({ files: [file], title: 'Match Results', text });
+      setBtn('<span aria-hidden="true">📤</span> Share!', false);
       return;
     } catch (err) {
-      if (err && err.name === 'AbortError') return; // user dismissed
-      // otherwise fall through to clipboard
+      if (err && err.name === 'AbortError') { setBtn('<span aria-hidden="true">📤</span> Share!', false); return; }
+      // otherwise fall through to download
     }
   }
-  const flash = (msg) => {
-    if (!btnEl) return;
-    const original = btnEl.innerHTML;
-    btnEl.innerHTML = msg;
-    btnEl.disabled = true;
-    setTimeout(() => { btnEl.innerHTML = original; btnEl.disabled = false; }, 2000);
-  };
+
+  // Fallback: download the PNG
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'match-results.png';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  flash('✓ Image saved!');
+}
+
+// Render the summary card (#match-results-body) to a PNG blob via html2canvas.
+async function renderMatchSummaryImage(btnEl) {
+  const el = document.getElementById('match-results-body');
+  if (!el || typeof html2canvas !== 'function') return null;
+  const original = btnEl ? btnEl.innerHTML : '';
+  if (btnEl) { btnEl.innerHTML = 'Creating image…'; btnEl.disabled = true; }
+  try {
+    if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (e) {} }
+    const canvas = await html2canvas(el, {
+      backgroundColor: '#ffffff',
+      scale: Math.min(2, window.devicePixelRatio || 2),
+      useCORS: true,
+      logging: false,
+    });
+    return await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+  } catch (e) {
+    return null;
+  } finally {
+    if (btnEl) { btnEl.innerHTML = original; btnEl.disabled = false; }
+  }
+}
+
+// Text-only share/copy fallback (used only if image capture is unavailable).
+async function shareMatchText(text, flash) {
+  if (navigator.share) {
+    try { await navigator.share({ title: 'Match Results', text }); return; }
+    catch (err) { if (err && err.name === 'AbortError') return; }
+  }
   try {
     await navigator.clipboard.writeText(text);
     flash('✓ Copied!');

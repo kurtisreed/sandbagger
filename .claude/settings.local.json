@@ -192,7 +192,9 @@
       "Bash(/Applications/XAMPP/xamppfiles/bin/php -l api/name_match.php)",
       "Bash(/Applications/XAMPP/xamppfiles/bin/php -l api/join.php)",
       "Bash(/Applications/XAMPP/xamppfiles/bin/php -l api/join_existing.php)",
-      "Bash(/Applications/XAMPP/xamppfiles/bin/php -r ' *)"
+      "Bash(/Applications/XAMPP/xamppfiles/bin/php -r ' *)",
+      "Bash(curl -sSL \"https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js\" -o html2canvas.min.js)",
+      "Bash(echo \"exit: $?\")"
     ]
   }
 }
