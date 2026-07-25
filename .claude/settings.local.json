@@ -195,7 +195,13 @@
       "Bash(/Applications/XAMPP/xamppfiles/bin/php -r ' *)",
       "Bash(curl -sSL \"https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js\" -o html2canvas.min.js)",
       "Bash(echo \"exit: $?\")",
-      "Bash(/Applications/XAMPP/xamppfiles/bin/php -l api/get_match_by_id.php)"
+      "Bash(/Applications/XAMPP/xamppfiles/bin/php -l api/get_match_by_id.php)",
+      "Bash(awk -F: '$1>3762 && $1<4050')",
+      "Bash(awk 'NR>=4055 && NR<=4245 && \\(/appendChild\\\\\\(table\\\\\\)|skins-table-wrapper|tableWrapper/\\)' script.js)",
+      "Bash(awk -F: '$1>4055 && $1<4245')",
+      "Bash(awk 'NR>=3762 && NR<=3980 && /qr-scoreboard|classList/' script.js)",
+      "Bash(curl -s -b /tmp/c.txt \"http://localhost/api/get_best_ball_match.php?match_id=239\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('error' if 'error' in d else \\('golfers: '+str\\(len\\(d.get\\('match',[]\\)\\)\\)+' holes: '+str\\(len\\(d.get\\('holes',[]\\)\\)\\)\\)\\)\")"
     ]
   }
 }

@@ -3949,7 +3949,12 @@ function loadBestBallScoring() {
       }).join("");
       table.appendChild(totalsRow);
 
-      container.appendChild(table);
+      // Wrap in a bounded-height scroll container so the golfer-name header
+      // stays sticky while scrolling through the holes.
+      const tableWrapper = document.createElement("div");
+      tableWrapper.className = "skins-table-wrapper";
+      tableWrapper.appendChild(table);
+      container.appendChild(tableWrapper);
 
       // Add finalize button
       let finalizeButton = document.getElementById("finalize-results-btn");
@@ -4222,7 +4227,12 @@ function loadBestBallScorecardReadOnly() {
       }).join("");
       table.appendChild(totalsRow);
 
-      container.appendChild(table);
+      // Wrap in a bounded-height scroll container so the golfer-name header
+      // stays sticky while scrolling through the holes.
+      const tableWrapper = document.createElement("div");
+      tableWrapper.className = "skins-table-wrapper";
+      tableWrapper.appendChild(table);
+      container.appendChild(tableWrapper);
 
       // Add handicap calculation explanation
       const handicapExplanation = document.createElement("div");
