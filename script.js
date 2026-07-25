@@ -13018,16 +13018,7 @@ function initJoinGroupForm() {
         claimDiv.innerHTML = `
           <p style="margin:0 0 0.6rem; font-size:0.9rem; font-weight:600; color:#333;">Are you one of these golfers?</p>
           <p style="margin:0 0 0.75rem; font-size:0.82rem; color:#666;">Your name wasn't found in the roster. Select your profile or create a new one.</p>
-          ${data.candidates.map(g => {
-            const hcp = parseFloat(g.handicap) % 1 === 0 ? parseInt(g.handicap) : parseFloat(g.handicap).toFixed(1);
-            return `<button class="inline-claim-btn" data-golfer-id="${g.golfer_id}"
-              style="display:flex; align-items:center; justify-content:space-between; width:100%;
-                     padding:0.65rem 0.9rem; margin-bottom:0.4rem; background:#f4f0fa;
-                     border:1px solid #c5a8f0; border-radius:8px; cursor:pointer; font-size:0.92rem;">
-              <span style="font-weight:600; color:#1a1a1a;">${g.first_name} ${g.last_name}</span>
-              <span style="font-size:0.8rem; color:#888;">HCP ${hcp}</span>
-            </button>`;
-          }).join('')}
+          <div id="inline-claim-list"></div>
           <button id="inline-claim-none"
             style="width:100%; margin-top:0.25rem; padding:0.55rem; background:transparent;
                    border:1px solid #ccc; border-radius:8px; font-size:0.85rem; color:#666; cursor:pointer;">
@@ -13037,11 +13028,17 @@ function initJoinGroupForm() {
         const joinFormEl = document.getElementById('join-group-form');
         joinFormEl.appendChild(claimDiv);
 
-        claimDiv.querySelectorAll('.inline-claim-btn').forEach(btn => {
-          btn.addEventListener('click', async () => {
+        renderRankedClaimCandidates(document.getElementById('inline-claim-list'), data.candidates, {
+          btnClass: 'inline-claim-btn',
+          btnStyle: 'display:flex; align-items:center; justify-content:space-between; width:100%;' +
+                    'padding:0.65rem 0.9rem; margin-bottom:0.4rem; background:#f4f0fa;' +
+                    'border:1px solid #c5a8f0; border-radius:8px; cursor:pointer; font-size:0.92rem; color:#1a1a1a;',
+          toggleStyle: 'width:100%; margin:0.1rem 0 0.5rem; padding:0.5rem; background:transparent;' +
+                       'border:1px dashed #c5a8f0; border-radius:8px; font-size:0.82rem; color:#7a52b3; cursor:pointer;',
+          onPick: async (golferId) => {
             claimDiv.remove();
-            await doJoinExisting(code, parseInt(btn.dataset.golferId));
-          });
+            await doJoinExisting(code, golferId);
+          }
         });
 
         document.getElementById('inline-claim-none').addEventListener('click', async () => {
@@ -13554,34 +13551,63 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Render claim candidates grouped by likelihood: likely matches (flagged by
+  // the server's fuzzy ranking) show first; the rest tuck behind a "Show all"
+  // toggle. If nothing is flagged likely, everyone is shown. opts: { btnClass,
+  // btnStyle, toggleStyle, onPick }.
+  function renderRankedClaimCandidates(listEl, candidates, opts) {
+    const fmtHcp = h => (parseFloat(h) % 1 === 0 ? parseInt(h) : parseFloat(h).toFixed(1));
+    const btn = g => `
+      <button class="${opts.btnClass}" data-golfer-id="${g.golfer_id}" style="${opts.btnStyle}">
+        <span style="font-weight:600;">${g.first_name} ${g.last_name}</span>
+        <span style="font-size:0.82rem; opacity:0.75;">HCP ${fmtHcp(g.handicap)}</span>
+      </button>`;
+    const likely    = candidates.filter(c => c.likely);
+    const primary   = likely.length ? likely : candidates;
+    const secondary = likely.length ? candidates.filter(c => !c.likely) : [];
+
+    let html = primary.map(btn).join('');
+    if (secondary.length) {
+      html += `
+        <button type="button" class="claim-show-all-btn" style="${opts.toggleStyle}">Show all ${candidates.length} golfers ▾</button>
+        <div class="claim-others" style="display:none;">${secondary.map(btn).join('')}</div>`;
+    }
+    listEl.innerHTML = html;
+
+    listEl.querySelectorAll('.' + opts.btnClass).forEach(b => {
+      b.addEventListener('click', () => opts.onPick(parseInt(b.dataset.golferId), b));
+    });
+    const showAll = listEl.querySelector('.claim-show-all-btn');
+    if (showAll) {
+      showAll.addEventListener('click', () => {
+        listEl.querySelector('.claim-others').style.display = '';
+        showAll.style.display = 'none';
+      });
+    }
+  }
+
   function showClaimStep(candidates, code) {
     document.getElementById('join-form').style.display = 'none';
     const claimForm  = document.getElementById('claim-profile-form');
     const listEl     = document.getElementById('claim-candidates-list');
     claimForm.style.display = '';
 
-    listEl.innerHTML = candidates.map(g => {
-      const hcp = parseFloat(g.handicap) % 1 === 0 ? parseInt(g.handicap) : parseFloat(g.handicap).toFixed(1);
-      return `
-        <button class="claim-candidate-btn" data-golfer-id="${g.golfer_id}"
-          style="display:flex; align-items:center; justify-content:space-between; width:100%;
-                 padding:0.75rem 1rem; margin-bottom:0.5rem; background:rgba(255,255,255,0.12);
-                 border:1px solid rgba(255,255,255,0.3); border-radius:8px; cursor:pointer;
-                 color:white; font-size:0.95rem; text-align:left;">
-          <span style="font-weight:600;">${g.first_name} ${g.last_name}</span>
-          <span style="font-size:0.82rem; opacity:0.75;">HCP ${hcp}</span>
-        </button>`;
-    }).join('');
-
-    listEl.querySelectorAll('.claim-candidate-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const golferId = parseInt(btn.dataset.golferId);
+    renderRankedClaimCandidates(listEl, candidates, {
+      btnClass: 'claim-candidate-btn',
+      btnStyle: 'display:flex; align-items:center; justify-content:space-between; width:100%;' +
+                'padding:0.75rem 1rem; margin-bottom:0.5rem; background:rgba(255,255,255,0.12);' +
+                'border:1px solid rgba(255,255,255,0.3); border-radius:8px; cursor:pointer;' +
+                'color:white; font-size:0.95rem; text-align:left;',
+      toggleStyle: 'width:100%; margin:0.1rem 0 0.6rem; padding:0.55rem; background:transparent;' +
+                   'border:1px dashed rgba(255,255,255,0.4); border-radius:8px; color:#e6dcf5;' +
+                   'font-size:0.85rem; cursor:pointer;',
+      onPick: async (golferId, btnEl) => {
         document.getElementById('claim-error').style.display = 'none';
         listEl.querySelectorAll('.claim-candidate-btn').forEach(b => b.disabled = true);
         document.getElementById('claim-none-btn').disabled = true;
-        btn.textContent = 'Joining…';
+        btnEl.textContent = 'Joining…';
         await submitJoin({ ..._pendingJoin, claim_golfer_id: golferId });
-      });
+      }
     });
 
     document.getElementById('claim-none-btn').onclick = async () => {

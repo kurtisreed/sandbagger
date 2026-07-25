@@ -5,6 +5,7 @@ require_once '../cors_headers.php';
 header('Content-Type: application/json');
 
 require_once __DIR__ . '/session_setup.php';
+require_once __DIR__ . '/name_match.php';
 
 if (empty($_SESSION['user_id'])) {
     http_response_code(401);
@@ -183,7 +184,9 @@ try {
             $stmt->close();
 
             if (!empty($candidates)) {
-                // Org joined successfully, but ask user to claim a profile
+                // Org joined successfully, but ask user to claim a profile.
+                // Rank by name similarity so the likely match is surfaced first.
+                $candidates = nm_rank_candidates($candidates, $firstName, $lastName);
                 $conn->commit();
                 echo json_encode([
                     'success'     => true,

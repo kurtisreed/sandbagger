@@ -5,6 +5,7 @@ require_once '../cors_headers.php';
 header('Content-Type: application/json');
 
 require_once __DIR__ . '/session_setup.php'; // db_connect included by session_setup
+require_once __DIR__ . '/name_match.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     // Validate code and return org name so the join form can show it
@@ -188,7 +189,9 @@ try {
             $stmt->close();
 
             if (!empty($candidates)) {
-                // Roll back — don't create the account yet, ask the user to claim a profile
+                // Roll back — don't create the account yet, ask the user to claim a profile.
+                // Rank by name similarity so the likely match is surfaced first.
+                $candidates = nm_rank_candidates($candidates, $firstName, $lastName);
                 $conn->rollback();
                 echo json_encode([
                     'needs_claim' => true,
