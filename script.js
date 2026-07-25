@@ -5983,6 +5983,13 @@ function showMatchResultsModal(matchType, onDone) {
     ${birdieHtml}
   `;
 
+  // Build a plain-text recap for sharing (texts, email, group chat)
+  const shareText = buildMatchShareText(matchType, withScores, allBirdies);
+
+  // Wire Share button — native share sheet on mobile, clipboard elsewhere
+  const shareBtn = document.getElementById('match-results-share-btn');
+  shareBtn.onclick = function() { shareMatchSummary(shareText, shareBtn); };
+
   // Wire Done button
   const doneBtn = document.getElementById('match-results-done-btn');
   doneBtn.onclick = function() {
@@ -5991,6 +5998,74 @@ function showMatchResultsModal(matchType, onDone) {
   };
 
   document.getElementById('match-results-modal').style.display = 'flex';
+}
+
+// Compose the shareable text recap of a finished match.
+function buildMatchShareText(matchType, withScores, allBirdies) {
+  const lines = [];
+  const course = (courses && courses.course_name) ? ` — ${courses.course_name}` : '';
+  lines.push(`⛳ Match Complete${course}`);
+
+  try {
+    const { winnerNames, resultString } = calculateMatchPlayResult(matchType);
+    if (winnerNames === null) {
+      lines.push('🤝 All Square');
+    } else {
+      const verb = matchType === 'tournament' ? 'wins' : 'win';
+      lines.push(`🏆 ${winnerNames} ${verb} ${resultString}!`);
+    }
+  } catch (e) { /* no result line if data unavailable */ }
+
+  if (withScores.length) {
+    const medals = ['🥇', '🥈', '🥉'];
+    lines.push('', 'Scores (gross / net):');
+    withScores.forEach((r, i) => {
+      const name = `${r.golfer.name} ${r.golfer.lastName || ''}`.trim();
+      lines.push(`${medals[i] || '•'} ${name} — ${r.gross} / ${r.net}`);
+    });
+  }
+
+  if (allBirdies.length) {
+    lines.push('', 'Birdies & Better:');
+    allBirdies.forEach(b => {
+      lines.push(`${b.icon} ${b.golferName.trim()} — ${b.label} on Hole ${b.hole}`);
+    });
+  }
+
+  lines.push('', 'Scored with Sandbagger — sandbaggerscoring.com');
+  return lines.join('\n');
+}
+
+// Share a text recap: native share sheet on mobile / the app, clipboard fallback.
+async function shareMatchSummary(text, btnEl) {
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: 'Match Results', text });
+      return;
+    } catch (err) {
+      if (err && err.name === 'AbortError') return; // user dismissed
+      // otherwise fall through to clipboard
+    }
+  }
+  const flash = (msg) => {
+    if (!btnEl) return;
+    const original = btnEl.innerHTML;
+    btnEl.innerHTML = msg;
+    btnEl.disabled = true;
+    setTimeout(() => { btnEl.innerHTML = original; btnEl.disabled = false; }, 2000);
+  };
+  try {
+    await navigator.clipboard.writeText(text);
+    flash('✓ Copied!');
+  } catch {
+    const tmp = document.createElement('textarea');
+    tmp.value = text;
+    document.body.appendChild(tmp);
+    tmp.select();
+    document.execCommand('copy');
+    document.body.removeChild(tmp);
+    flash('✓ Copied!');
+  }
 }
 
 //calculate golfer total scores
