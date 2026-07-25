@@ -5926,14 +5926,14 @@ function addViewSummaryButton(container, matchType) {
   if (existing) existing.remove();
   const wrap = document.createElement('div');
   wrap.className = 'view-summary-wrap';
-  wrap.style.cssText = 'text-align:center; margin:1.25rem 0 0.5rem;';
+  wrap.style.cssText = 'text-align:center; margin:0 0 1rem;';
   const btn = document.createElement('button');
   btn.className = 'btn btn-auto';
   btn.style.cssText = 'background:#FFC62F; color:#1a1a1a; min-width:220px; font-weight:700;';
   btn.innerHTML = '🏆 View Match Summary';
   btn.onclick = () => showMatchResultsModal(matchType);
   wrap.appendChild(btn);
-  container.appendChild(wrap);
+  container.prepend(wrap); // top of the page
 }
 
 function showMatchResultsModal(matchType, onDone) {
