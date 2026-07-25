@@ -30,6 +30,7 @@ SELECT
   r.round_name,
   r.round_date,
   c.course_name,
+  m.finalized,
   g.golfer_id,
   g.first_name,
   t.name AS team_name,

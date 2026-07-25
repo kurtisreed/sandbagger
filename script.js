@@ -4252,6 +4252,7 @@ function loadBestBallScorecardReadOnly() {
           applyPendingScores(matchId);
           updateTotalScoresReadOnly(golfers, holeInfo);
           calculateBestBallStatusReadOnly(golfers, strokeMaps);
+          addViewSummaryButton(container, 'bestball');
         });
     })
     .catch(err => {
@@ -5788,18 +5789,27 @@ function calculateMatchPoints() {
 
 // ── Match Results Modal ────────────────────────────────────────────────────
 
-function buildMatchResultsData() {
-  // Snapshot scores from the DOM before the page reloads
-  const rawScores = {};
-  document.querySelectorAll('select[data-hole][data-golfer]').forEach(sel => {
-    const hole = parseInt(sel.dataset.hole);
-    const gid  = parseInt(sel.dataset.golfer);
-    const strokes = parseInt(sel.value);
+// Collect entered scores from the current match view as {golferId: {hole: strokes}}.
+// Works on both the live scoring view (<select>) and the finalized read-only
+// view (<td> cells), so the summary can be shown after a round is finalized too.
+function collectMatchScores() {
+  const scores = {};
+  document.querySelectorAll('[data-hole][data-golfer]').forEach(el => {
+    const hole = parseInt(el.dataset.hole);
+    const gid  = parseInt(el.dataset.golfer);
+    if (isNaN(hole) || isNaN(gid)) return;
+    const strokes = el.tagName === 'SELECT'
+      ? parseInt(el.value)
+      : parseInt((el.textContent || '').replace(/[^\d]/g, ''));
     if (!isNaN(strokes) && strokes > 0) {
-      if (!rawScores[gid]) rawScores[gid] = {};
-      rawScores[gid][hole] = strokes;
+      (scores[gid] = scores[gid] || {})[hole] = strokes;
     }
   });
+  return scores;
+}
+
+function buildMatchResultsData() {
+  const rawScores = collectMatchScores();
 
   return golfers.map(g => {
     let gross = 0;
@@ -5848,23 +5858,24 @@ function calculateMatchPlayResult(matchType) {
   });
 
   const byHole = {};
-  document.querySelectorAll('select[data-hole][data-golfer]').forEach(sel => {
-    const strokes = parseInt(sel.value);
-    const h  = parseInt(sel.dataset.hole);
-    const gid = parseInt(sel.dataset.golfer);
-    const g  = golfers.find(x => x.id == gid);
-    if (!g || isNaN(strokes) || strokes <= 0) return;
-    const net = strokes - (localMaps[g.id]?.[h] || 0);
-    if (!byHole[h]) byHole[h] = { g1: [], g2: [] };
+  const rawScores = collectMatchScores();
+  Object.keys(rawScores).forEach(gid => {
+    const g = golfers.find(x => x.id == gid);
+    if (!g) return;
+    Object.keys(rawScores[gid]).forEach(hStr => {
+      const h = parseInt(hStr);
+      const net = rawScores[gid][h] - (localMaps[g.id]?.[h] || 0);
+      if (!byHole[h]) byHole[h] = { g1: [], g2: [] };
 
-    if (matchType === 'guystrip') {
-      const side = g.player_order <= 2 ? 'g1' : 'g2';
-      byHole[h][side].push(net);
-    } else {
-      // bestball & tournament: use golfer.team string
-      if (g.team === primaryTeamName)   byHole[h].g1.push(net);
-      else if (g.team === secondaryTeamName) byHole[h].g2.push(net);
-    }
+      if (matchType === 'guystrip') {
+        const side = g.player_order <= 2 ? 'g1' : 'g2';
+        byHole[h][side].push(net);
+      } else {
+        // bestball & tournament: use golfer.team string
+        if (g.team === primaryTeamName)   byHole[h].g1.push(net);
+        else if (g.team === secondaryTeamName) byHole[h].g2.push(net);
+      }
+    });
   });
 
   let diff = 0; // positive = side 1 leads, negative = side 2 leads
@@ -5904,6 +5915,25 @@ function calculateMatchPlayResult(matchType) {
   }
 
   return { winnerNames, resultString };
+}
+
+// Add a gold "View Match Summary" button to a finalized read-only scorecard,
+// so anyone can reopen the results modal later. `matchType` is one of
+// 'bestball' | 'tournament' | 'guystrip'.
+function addViewSummaryButton(container, matchType) {
+  if (!container) return;
+  const existing = container.querySelector('.view-summary-wrap');
+  if (existing) existing.remove();
+  const wrap = document.createElement('div');
+  wrap.className = 'view-summary-wrap';
+  wrap.style.cssText = 'text-align:center; margin:1.25rem 0 0.5rem;';
+  const btn = document.createElement('button');
+  btn.className = 'btn btn-auto';
+  btn.style.cssText = 'background:#FFC62F; color:#1a1a1a; min-width:220px; font-weight:700;';
+  btn.innerHTML = '🏆 View Match Summary';
+  btn.onclick = () => showMatchResultsModal(matchType);
+  wrap.appendChild(btn);
+  container.appendChild(wrap);
 }
 
 function showMatchResultsModal(matchType, onDone) {
@@ -8244,7 +8274,9 @@ function loadMatchScorecard(match_id, container_id = "today-summary") {
 
 
 
-        const golfers = Array.from(golferMap.values());
+        // Assign to the global `golfers` (not a local) so the match summary
+        // modal — which reads the global — reflects this match when reopened.
+        golfers = Array.from(golferMap.values());
 
         // For Guys Trip, sort by player_order to group partnerships
         // For other formats, the database query already sorted by team name
@@ -8428,6 +8460,12 @@ function loadMatchScorecard(match_id, container_id = "today-summary") {
           // Update team scores for Guys Trip
           if (isGuysTripFormat) {
             updateGuysTripTeamScoresReadOnly(golfers, strokeMaps, holeInfo);
+          }
+
+          // Finalized matches get a button to reopen the results summary anytime
+          const isFinalized = matchGolfers[0] && parseInt(matchGolfers[0].finalized) === 1;
+          if (isFinalized) {
+            addViewSummaryButton(container, isGuysTripFormat ? 'guystrip' : 'tournament');
           }
         });
     });
