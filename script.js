@@ -3842,8 +3842,11 @@ function loadBestBallScoring() {
       secondaryTeamName = 'Team 2';
       primaryTeamColor = '#4F2185'; // Purple
       secondaryTeamColor = '#FFC62F'; // Gold
-      primaryTeamId = 1;
-      secondaryTeamId = 2;
+
+      // Determine unique team IDs present in this match
+      const uniqueTeamIds = [...new Set(matchGolfers.map(r => r.team_id).filter(id => id !== null && id !== undefined))];
+      if (uniqueTeamIds.length >= 1) primaryTeamId = parseInt(uniqueTeamIds[0]);
+      if (uniqueTeamIds.length >= 2) secondaryTeamId = parseInt(uniqueTeamIds[1]);
 
       // Set up course data for handicap calculations
       courses = {
@@ -3862,19 +3865,26 @@ function loadBestBallScoring() {
       // Find the lowest playing handicap (for adjusted handicap calculation)
       const lowestHandicap = Math.min(...playingHandicaps.map(ph => ph.playingHandicap));
 
-      // Build golfer list with adjusted handicaps (lowest player = 0, others adjusted down)
+      // Build golfer list with normalized team_id (1 for Team 1, 2 for Team 2)
       const golferMap = new Map();
-      matchGolfers.forEach(row => {
+      matchGolfers.forEach((row, idx) => {
         if (!golferMap.has(row.golfer_id)) {
           const playingHandicap = playingHandicaps.find(ph => ph.golfer_id === row.golfer_id)?.playingHandicap || 0;
           const adjustedHandicap = playingHandicap - lowestHandicap;
-          const tId = parseInt(row.team_id);
+
+          let isPrimary = false;
+          if (uniqueTeamIds.length >= 2) {
+            isPrimary = (parseInt(row.team_id) === primaryTeamId);
+          } else {
+            isPrimary = (idx < Math.ceil(matchGolfers.length / 2));
+          }
+
           golferMap.set(row.golfer_id, {
             id: row.golfer_id,
             name: row.first_name,
             lastName: row.last_name,
-            team_id: tId,
-            team: tId === 1 ? 'Team 1' : 'Team 2',
+            team_id: isPrimary ? 1 : 2,
+            team: isPrimary ? 'Team 1' : 'Team 2',
             handicap: adjustedHandicap,
           });
         }
@@ -3894,8 +3904,8 @@ function loadBestBallScoring() {
       // Build header row
       const header = document.createElement("tr");
       header.innerHTML = `<th></th><th>#</th><th>P</th><th><span class="help-term" data-help="stroke-index">HI</span></th>` + golfers.map(golfer => {
-        const bg = parseInt(golfer.team_id) === 1 ? '#4F2185' : '#FFC62F';
-        const textColor = parseInt(golfer.team_id) === 1 ? '#fff' : '#000';
+        const bg = golfer.team_id === 1 ? primaryTeamColor : secondaryTeamColor;
+        const textColor = golfer.team_id === 1 ? '#fff' : '#000';
         return `<th style="background-color: ${bg}; color: ${textColor};">${golfer.name} (${parseFloat(golfer.handicap).toFixed(1)})</th>`;
       }).join("");
       table.appendChild(header);
@@ -3906,7 +3916,7 @@ function loadBestBallScoring() {
         const par = holeInfo.find(h => h.hole_number === i)?.par || "-";
         const index = holeInfo.find(h => h.hole_number === i)?.handicap_index || "-";
 
-        row.innerHTML = `<td></td><td>${i}</td><td>${par}</td><td>${index}</td>` + golfers.map(golfer => {
+        row.innerHTML = `<td class="match-result-cell" data-hole="${i}"></td><td>${i}</td><td>${par}</td><td>${index}</td>` + golfers.map(golfer => {
           const strokeCount = strokeMaps[golfer.id]?.[i] || 0;
           const select = `
             <select data-hole="${i}" data-golfer="${golfer.id}">
@@ -4134,8 +4144,11 @@ function loadBestBallScorecardReadOnly() {
       secondaryTeamName = 'Team 2';
       primaryTeamColor = '#4F2185'; // Purple
       secondaryTeamColor = '#FFC62F'; // Gold
-      primaryTeamId = 1;
-      secondaryTeamId = 2;
+
+      // Determine unique team IDs present in this match
+      const uniqueTeamIds = [...new Set(matchGolfers.map(r => r.team_id).filter(id => id !== null && id !== undefined))];
+      if (uniqueTeamIds.length >= 1) primaryTeamId = parseInt(uniqueTeamIds[0]);
+      if (uniqueTeamIds.length >= 2) secondaryTeamId = parseInt(uniqueTeamIds[1]);
 
       courses = {
         course_name: match.course_name,
@@ -4153,19 +4166,26 @@ function loadBestBallScorecardReadOnly() {
       // Find the lowest playing handicap (for adjusted handicap calculation)
       const lowestHandicap = Math.min(...playingHandicaps.map(ph => ph.playingHandicap));
 
-      // Build golfer list with adjusted handicaps (lowest player = 0, others adjusted down)
+      // Build golfer list with normalized team_id (1 for Team 1, 2 for Team 2)
       const golferMap = new Map();
-      matchGolfers.forEach(row => {
+      matchGolfers.forEach((row, idx) => {
         if (!golferMap.has(row.golfer_id)) {
           const playingHandicap = playingHandicaps.find(ph => ph.golfer_id === row.golfer_id)?.playingHandicap || 0;
           const adjustedHandicap = playingHandicap - lowestHandicap;
-          const tId = parseInt(row.team_id);
+
+          let isPrimary = false;
+          if (uniqueTeamIds.length >= 2) {
+            isPrimary = (parseInt(row.team_id) === primaryTeamId);
+          } else {
+            isPrimary = (idx < Math.ceil(matchGolfers.length / 2));
+          }
+
           golferMap.set(row.golfer_id, {
             id: row.golfer_id,
             name: row.first_name,
             lastName: row.last_name,
-            team_id: tId,
-            team: tId === 1 ? 'Team 1' : 'Team 2',
+            team_id: isPrimary ? 1 : 2,
+            team: isPrimary ? 'Team 1' : 'Team 2',
             handicap: adjustedHandicap,
           });
         }
@@ -4185,8 +4205,8 @@ function loadBestBallScorecardReadOnly() {
       // Header
       const header = document.createElement("tr");
       header.innerHTML = `<th></th><th>#</th><th>P</th><th><span class="help-term" data-help="stroke-index">HI</span></th>` + golfers.map(golfer => {
-        let bgColor = parseInt(golfer.team_id) === 1 ? primaryTeamColor : secondaryTeamColor;
-        let txtColor = parseInt(golfer.team_id) === 1 ? '#fff' : '#000';
+        let bgColor = golfer.team_id === 1 ? primaryTeamColor : secondaryTeamColor;
+        let txtColor = golfer.team_id === 1 ? '#fff' : '#000';
         return `<th style="background-color: ${bgColor}; color: ${txtColor};">${golfer.name} (${parseFloat(golfer.handicap).toFixed(1)})</th>`;
       }).join("");
       table.appendChild(header);
