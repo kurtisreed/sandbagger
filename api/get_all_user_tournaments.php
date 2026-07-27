@@ -36,7 +36,14 @@ SELECT DISTINCT
   r.round_id,
   r.round_name,
   r.round_date,
-  c.course_name
+  c.course_name,
+  (
+    SELECT GROUP_CONCAT(DISTINCT g2.first_name ORDER BY g2.first_name SEPARATOR ', ')
+    FROM match_golfers mg2
+    JOIN matches m2 ON mg2.match_id = m2.match_id
+    JOIN golfers g2 ON mg2.golfer_id = g2.golfer_id
+    WHERE m2.round_id = r.round_id
+  ) AS participants
 FROM tournament_golfers tg
 JOIN tournaments t ON tg.tournament_id = t.tournament_id AND t.org_id = ?
 LEFT JOIN rounds r ON t.tournament_id = r.tournament_id
@@ -71,7 +78,8 @@ while ($row = $result->fetch_assoc()) {
       'round_id' => $row['round_id'],
       'round_name' => $row['round_name'],
       'round_date' => $row['round_date'],
-      'course_name' => $row['course_name']
+      'course_name' => $row['course_name'],
+      'participants' => $row['participants']
     ];
   }
 }
