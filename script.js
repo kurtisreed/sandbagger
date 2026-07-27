@@ -5972,7 +5972,14 @@ function addViewSummaryButton(container, matchType) {
   btn.innerHTML = '🏆 View Match Summary';
   btn.onclick = () => showMatchResultsModal(matchType);
   wrap.appendChild(btn);
-  container.prepend(wrap); // top of the page
+
+  // Place button after the header/title banner if present, otherwise at top of container
+  const header = container.querySelector('div[style*="background"], .match-header, h2, h3') || container.firstElementChild;
+  if (header && header.parentElement === container) {
+    header.after(wrap);
+  } else {
+    container.prepend(wrap);
+  }
 }
 
 function showMatchResultsModal(matchType, onDone) {
