@@ -3863,18 +3863,23 @@ function loadBestBallScoring() {
       const lowestHandicap = Math.min(...playingHandicaps.map(ph => ph.playingHandicap));
 
       // Build golfer list with adjusted handicaps (lowest player = 0, others adjusted down)
-      golfers = [...new Set(matchGolfers.map(row => {
-        const playingHandicap = playingHandicaps.find(ph => ph.golfer_id === row.golfer_id).playingHandicap;
-        const adjustedHandicap = playingHandicap - lowestHandicap;
-        return {
-          id: row.golfer_id,
-          name: row.first_name,
-          lastName: row.last_name,
-          team_id: row.team_id,
-          team: row.team_id === 1 ? 'Team 1' : 'Team 2', // Add team name for calculateBestBallStatus
-          handicap: adjustedHandicap,
-        };
-      }))];
+      const golferMap = new Map();
+      matchGolfers.forEach(row => {
+        if (!golferMap.has(row.golfer_id)) {
+          const playingHandicap = playingHandicaps.find(ph => ph.golfer_id === row.golfer_id)?.playingHandicap || 0;
+          const adjustedHandicap = playingHandicap - lowestHandicap;
+          const tId = parseInt(row.team_id);
+          golferMap.set(row.golfer_id, {
+            id: row.golfer_id,
+            name: row.first_name,
+            lastName: row.last_name,
+            team_id: tId,
+            team: tId === 1 ? 'Team 1' : 'Team 2',
+            handicap: adjustedHandicap,
+          });
+        }
+      });
+      golfers = Array.from(golferMap.values());
 
       // Build stroke maps using adjusted handicaps
       strokeMaps = {};
@@ -3889,9 +3894,8 @@ function loadBestBallScoring() {
       // Build header row
       const header = document.createElement("tr");
       header.innerHTML = `<th></th><th>#</th><th>P</th><th><span class="help-term" data-help="stroke-index">HI</span></th>` + golfers.map(golfer => {
-        const bg = golfer.team_id === 1 ? '#4F2185' : '#FFC62F';
-        const textColor = golfer.team_id === 1 ? '#fff' : '#000';
-        const teamLabel = golfer.team_id === 1 ? 'Team 1' : 'Team 2';
+        const bg = parseInt(golfer.team_id) === 1 ? '#4F2185' : '#FFC62F';
+        const textColor = parseInt(golfer.team_id) === 1 ? '#fff' : '#000';
         return `<th style="background-color: ${bg}; color: ${textColor};">${golfer.name} (${parseFloat(golfer.handicap).toFixed(1)})</th>`;
       }).join("");
       table.appendChild(header);
@@ -4150,18 +4154,23 @@ function loadBestBallScorecardReadOnly() {
       const lowestHandicap = Math.min(...playingHandicaps.map(ph => ph.playingHandicap));
 
       // Build golfer list with adjusted handicaps (lowest player = 0, others adjusted down)
-      golfers = [...new Set(matchGolfers.map(row => {
-        const playingHandicap = playingHandicaps.find(ph => ph.golfer_id === row.golfer_id).playingHandicap;
-        const adjustedHandicap = playingHandicap - lowestHandicap;
-        return {
-          id: row.golfer_id,
-          name: row.first_name,
-          lastName: row.last_name,
-          team_id: row.team_id,
-          team: row.team_id === 1 ? 'Team 1' : 'Team 2',
-          handicap: adjustedHandicap,
-        };
-      }))];
+      const golferMap = new Map();
+      matchGolfers.forEach(row => {
+        if (!golferMap.has(row.golfer_id)) {
+          const playingHandicap = playingHandicaps.find(ph => ph.golfer_id === row.golfer_id)?.playingHandicap || 0;
+          const adjustedHandicap = playingHandicap - lowestHandicap;
+          const tId = parseInt(row.team_id);
+          golferMap.set(row.golfer_id, {
+            id: row.golfer_id,
+            name: row.first_name,
+            lastName: row.last_name,
+            team_id: tId,
+            team: tId === 1 ? 'Team 1' : 'Team 2',
+            handicap: adjustedHandicap,
+          });
+        }
+      });
+      golfers = Array.from(golferMap.values());
 
       // Build stroke maps using adjusted handicaps
       strokeMaps = {};
@@ -4176,8 +4185,8 @@ function loadBestBallScorecardReadOnly() {
       // Header
       const header = document.createElement("tr");
       header.innerHTML = `<th></th><th>#</th><th>P</th><th><span class="help-term" data-help="stroke-index">HI</span></th>` + golfers.map(golfer => {
-        let bgColor = golfer.team_id === 1 ? primaryTeamColor : secondaryTeamColor;
-        let txtColor = golfer.team_id === 1 ? '#fff' : '#000';
+        let bgColor = parseInt(golfer.team_id) === 1 ? primaryTeamColor : secondaryTeamColor;
+        let txtColor = parseInt(golfer.team_id) === 1 ? '#fff' : '#000';
         return `<th style="background-color: ${bgColor}; color: ${txtColor};">${golfer.name} (${parseFloat(golfer.handicap).toFixed(1)})</th>`;
       }).join("");
       table.appendChild(header);
