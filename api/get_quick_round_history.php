@@ -25,14 +25,16 @@ SELECT
   m.round_id,
   m.finalized,
   r.round_name,
+  c.course_name,
   GROUP_CONCAT(CONCAT(g.first_name, ' ', g.last_name) ORDER BY g.first_name SEPARATOR ', ') AS participants
 FROM matches m
 JOIN rounds r ON m.round_id = r.round_id
+LEFT JOIN courses c ON r.course_id = c.course_id
 JOIN tournaments t ON t.tournament_id = r.tournament_id AND t.org_id = ?
 JOIN match_golfers mg ON m.match_id = mg.match_id
 JOIN golfers g ON mg.golfer_id = g.golfer_id
 WHERE r.round_name IN ('Best Ball', 'Rabbit', 'Wolf', 'Rolling Skins')
-GROUP BY m.match_id, m.match_name, m.match_code, m.round_id, m.finalized, r.round_name
+GROUP BY m.match_id, m.match_name, m.match_code, m.round_id, m.finalized, r.round_name, c.course_name
 ORDER BY m.match_id DESC
 LIMIT 50
 ");

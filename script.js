@@ -8830,6 +8830,7 @@ function loadQuickRoundHistory() {
               <span style="background: ${roundTypeColor}; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.85rem;">${match.round_name}</span>
               <span style="background: #666; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.85rem; font-family: monospace;">Code: ${match.match_code}</span>
             </div>
+            ${match.course_name ? `<p style="margin: 0 0 0.25rem 0; font-size: 0.85rem; color: #4F2185; font-weight: 600;">⛳ ${match.course_name}</p>` : ''}
             <p style="margin: 0.5rem 0; color: #666; font-size: 0.9rem;">${match.participants}</p>
           </div>
         `;
@@ -10574,6 +10575,8 @@ function loadTournamentHistory(golferId) {
 
         if (isQuickRound) {
           // Quick Round - single clickable card
+          const courseName = (tournament.rounds && tournament.rounds[0] && tournament.rounds[0].course_name) ? tournament.rounds[0].course_name : '';
+
           html += `
             <div class="${cardClass}"
                  data-tournament-id="${tournament.tournament_id}"
@@ -10586,7 +10589,7 @@ function loadTournamentHistory(golferId) {
                 <h4 style="margin: 0 0 0.25rem 0;">${tournament.tournament_name}</h4>
                 <span style="background: #FFC62F; color: black; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.85rem;">Quick Round</span>
               </div>
-              ${currentUser && currentUser.org_name ? `<p style="margin: 0 0 0.25rem 0; font-size: 0.8rem; color: #999; font-weight: 500; text-transform: uppercase; letter-spacing: 0.03em;">${currentUser.org_name}</p>` : ''}
+              ${courseName ? `<p style="margin: 0 0 0.25rem 0; font-size: 0.85rem; color: #4F2185; font-weight: 600;">⛳ ${courseName}</p>` : ''}
               <p style="margin: 0; font-size: 0.9rem; color: #666;">${tournament.start_date} to ${tournament.end_date}</p>
             </div>
           `;
@@ -10595,7 +10598,6 @@ function loadTournamentHistory(golferId) {
           html += `
             <div style="border: 1px solid #ddd; padding: 1rem; border-radius: 8px; background: white;">
               <h4 style="margin: 0 0 0.25rem 0;">${tournament.tournament_name}</h4>
-              ${currentUser && currentUser.org_name ? `<p style="margin: 0 0 0.25rem 0; font-size: 0.8rem; color: #999; font-weight: 500; text-transform: uppercase; letter-spacing: 0.03em;">${currentUser.org_name}</p>` : ''}
               <p style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: #666;">${tournament.start_date} to ${tournament.end_date}</p>
           `;
 
