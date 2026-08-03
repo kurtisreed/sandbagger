@@ -255,6 +255,16 @@ function mp_compute(array $ctx) {
         }
         return null;
     };
+    // Ryder Cup sides are teams ("Team Tiger wins"); Guys Trip sides are two
+    // named golfers ("Jordan & Shane win"), which takes no "Team" and a plural
+    // verb.
+    $isTeam = function ($side) use ($golfers, $sides) {
+        foreach ($sides[$side] as $id) {
+            if (!empty($golfers[$id]['team_name'])) return true;
+        }
+        return false;
+    };
+    $name = fn($side) => ($isTeam($side) ? 'Team ' : '') . $label($side);
 
     $differential = 0;
     $holesPlayed  = 0;
@@ -307,14 +317,14 @@ function mp_compute(array $ctx) {
         $winner    = $differential > 0 ? $sideA : $sideB;
         $remaining = 18 - $endedAt;
         $margin_text = $remaining > 0 ? "{$margin}&{$remaining}" : "{$margin} up";
-        $status = 'Team ' . $label($winner) . ' wins ' . $margin_text;
+        $status = $name($winner) . ' ' . ($isTeam($winner) ? 'wins' : 'win') . ' ' . $margin_text;
         $leadColour = $colour($winner);
     } elseif ($differential === 0) {
         $status = $holesPlayed === 18 ? 'Match Halved' : "Tied – Thru {$holesPlayed}";
         $leadColour = null;
     } else {
         $leader = $differential > 0 ? $sideA : $sideB;
-        $status = 'Team ' . $label($leader) . " up {$margin} – Thru {$holesPlayed}";
+        $status = $name($leader) . " up {$margin} – Thru {$holesPlayed}";
         $leadColour = $colour($leader);
     }
 
@@ -348,6 +358,53 @@ function computeMatchPlay(mysqli $conn, $matchId, $orgId = null) {
         return ['valid' => false, 'reason' => 'incomplete course or field'];
     }
     return mp_compute($ctx);
+}
+
+/**
+ * Score a match for DISPLAY, applying the contract that keeps every screen
+ * agreeing with every other:
+ *
+ *   finalized   the stored result is authoritative and is never recomputed.
+ *               A finished match is a matter of record, not of arithmetic.
+ *   in progress computed live under the tournament's current rule.
+ *
+ * This is the whole fix for the three-way disagreement. Previously the
+ * Tournament tab read stored points, while the Round tab and the scorecard each
+ * recomputed - so any change to the scoring code made finished matches
+ * disagree with their own recorded result. Now only one of those is ever the
+ * source, decided by whether the match is closed.
+ *
+ * status_text is still computed for finalized matches, because only points are
+ * stored and the margin ("2&1") is not. That is safe: the rule is frozen, so it
+ * reproduces the stored points - the audit checks exactly this. If a hole score
+ * is edited after finalization the two can part company, so 'drift' reports it
+ * rather than letting the screens quietly diverge again.
+ */
+function mp_match_status(mysqli $conn, $matchId, $orgId = null) {
+    $r = computeMatchPlay($conn, $matchId, $orgId);
+    if (!$r || empty($r['valid'])) return null;
+
+    $points = $r['points'];
+    $drift  = false;
+
+    if ($r['finalized'] && count($r['stored_points']) === 2) {
+        $points = $r['stored_points'];
+        $drift  = !mp_points_match($r['points'], $r['stored_points']);
+    }
+
+    return [
+        'match_id'        => $r['match_id'],
+        'finalized'       => $r['finalized'],
+        'handicap_mode'   => $r['handicap_mode'],
+        'status_text'     => $r['status_text'],
+        'lead_color'      => $r['lead_color'],
+        'points'          => $points,          // authoritative
+        'computed_points' => $r['computed_points'] ?? $r['points'],
+        'drift'           => $drift,
+        'differential'    => $r['differential'],
+        'holes_played'    => $r['holes_played'],
+        'stroke_maps'     => $r['stroke_maps'],
+    ];
 }
 
 /** True when two points arrays agree, within rounding tolerance. */

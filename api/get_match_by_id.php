@@ -7,6 +7,7 @@ header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Access-Control-Allow-Credentials: true");
 
 require_once 'auth_middleware.php';
+require_once __DIR__ . '/match_play.php';
 
 $match_id = $_GET['match_id'] ?? null;
 // Accept GET parameter with fallback to session
@@ -77,8 +78,26 @@ if ($course_id) {
   }
 }
 
+// Authoritative status, plus the stroke allocation the server actually used.
+//
+// The scorecard used to derive strokes itself, min-adjusting handicaps under
+// whatever rule was current. That re-scored finished matches: Big Cedar match
+// 185 rendered as a Tiger win here while the Tournament tab showed Payne. It
+// now draws the strokes the server computed under the rule frozen on the match,
+// so the dots on screen always reconcile with the result above them.
+$status = mp_match_status($conn, $match_id, $currentOrgId);
+
 echo json_encode([
   'match' => $matchData,
-  'holes' => $holes
+  'holes' => $holes,
+  'handicap_mode' => $status ? $status['handicap_mode'] : null,
+  'stroke_maps'   => $status ? $status['stroke_maps']   : null,
+  'status' => $status ? [
+    'text'       => $status['status_text'],
+    'lead_color' => $status['lead_color'],
+    'points'     => $status['points'],
+    'finalized'  => $status['finalized'],
+    'drift'      => $status['drift'],
+  ] : null
 ]);
 ?>

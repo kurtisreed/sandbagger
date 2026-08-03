@@ -7,6 +7,7 @@ header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Access-Control-Allow-Credentials: true");
 
 require_once 'auth_middleware.php';
+require_once __DIR__ . '/match_play.php';
 
 // Accept GET parameters with fallback to session
 $round_id = $_GET['round_id'] ?? $_SESSION['round_id'] ?? null;
@@ -25,7 +26,11 @@ $sql = "
 SELECT
   m.match_id,
   g.golfer_id,
-  g.handicap,
+  -- The handicap snapshotted when this golfer was assigned to the tournament,
+  -- NOT g.handicap. Using the live value replayed finished matches with
+  -- today's indexes: Big Cedar match 185 read \"Match Halved\" on this screen
+  -- because two golfers' handicaps had moved since August 2025.
+  COALESCE(tg.handicap_at_assignment, g.handicap) AS handicap,
   g.first_name,
   g.last_name,
   t.name AS team_name,
@@ -76,6 +81,23 @@ if (count($matchIds) > 0) {
   while ($row = $scoreResult->fetch_assoc()) {
     $matches[$row['match_id']]['scores'][] = $row;
   }
+}
+
+// Step 3: Authoritative status for each match.
+//
+// The client used to compute this itself, from mutable globals holding
+// whichever course, slope and handicap percentage the last screen happened to
+// leave behind - and from live handicaps. It now renders what the server says,
+// so this screen cannot disagree with the scorecard or the Tournament tab.
+foreach ($matches as $mid => $_) {
+  $status = mp_match_status($conn, $mid, $currentOrgId);
+  $matches[$mid]['status'] = $status ? [
+    'text'       => $status['status_text'],
+    'lead_color' => $status['lead_color'],
+    'points'     => $status['points'],
+    'finalized'  => $status['finalized'],
+    'drift'      => $status['drift'],
+  ] : null;
 }
 
 echo json_encode(array_values($matches));

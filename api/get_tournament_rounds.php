@@ -7,6 +7,7 @@ header("Access-Control-Allow-Credentials: true");
 
 require_once 'db_connect.php';
 require_once 'auth_middleware.php';
+require_once __DIR__ . '/match_play.php';
 
 $tournament_id = isset($_GET['tournament_id']) ? intval($_GET['tournament_id']) : 0;
 if (!$tournament_id) {
@@ -113,6 +114,19 @@ foreach ($rounds as &$round) {
             }
             $stmt3->close();
             $match['results'] = $results;
+
+            // Live status for matches still in progress. This screen only ever
+            // showed stored points, so an unfinished match rendered as a blank
+            // result rather than "2 up thru 14". Finalized matches keep coming
+            // from $results above - a finished match is a matter of record.
+            $status = mp_match_status($conn, $match['match_id'], $currentOrgId);
+            $match['status'] = $status ? [
+                'text'       => $status['status_text'],
+                'lead_color' => $status['lead_color'],
+                'points'     => $status['points'],
+                'finalized'  => $status['finalized'],
+                'drift'      => $status['drift'],
+            ] : null;
         }
         $tee_time['matches'] = $matches;
     }
