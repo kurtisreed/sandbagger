@@ -50,17 +50,31 @@ if ($computed && !empty($computed['computed_points'])) {
     $points = $computed['computed_points'];
 }
 
-// Formats with no two-sided result (Wolf, Rabbit, Rolling Skins, individual
-// Skins) legitimately post an empty set - there are no team points to record.
-foreach ($points as $team_id => $pts) {
-    $team_id = intval($team_id);
-    if ($team_id <= 0) continue;   // guard against 'A'/'B' partnership keys
-    $sql = "INSERT INTO match_results (match_id, team_id, points)
-            VALUES (?, ?, ?)
-            ON DUPLICATE KEY UPDATE points = VALUES(points)";
-    $stmt2 = $conn->prepare($sql);
-    $stmt2->bind_param("iid", $match_id, $team_id, $pts);
+// Freeze the result. Team matches key on team_id; partnership formats (Guys
+// Trip) have no teams and key on side instead, so those results stop being
+// re-derived from raw scores on every page load. Formats with no two-sided
+// result at all (Wolf, Rabbit, Rolling Skins, individual Skins) post an empty
+// set and write nothing.
+foreach ($points as $key => $pts) {
+    $isTeam = is_numeric($key) && (int) $key > 0;
+
+    if ($isTeam) {
+        $team_id = (int) $key;
+        $stmt2 = $conn->prepare(
+            "INSERT INTO match_results (match_id, team_id, points)
+             VALUES (?, ?, ?)
+             ON DUPLICATE KEY UPDATE points = VALUES(points)");
+        $stmt2->bind_param("iid", $match_id, $team_id, $pts);
+    } else {
+        $side = (string) $key;
+        $stmt2 = $conn->prepare(
+            "INSERT INTO match_results (match_id, team_id, side, points)
+             VALUES (?, NULL, ?, ?)
+             ON DUPLICATE KEY UPDATE points = VALUES(points)");
+        $stmt2->bind_param("isd", $match_id, $side, $pts);
+    }
     $stmt2->execute();
+    $stmt2->close();
 }
 
 // Finalize, freezing the handicap rule this match was played under alongside

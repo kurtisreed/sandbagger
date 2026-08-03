@@ -180,13 +180,19 @@ function mp_load_match(mysqli $conn, $matchId, $orgId = null) {
     }
     $stmt->close();
 
+    // A stored result is keyed by team for Ryder Cup matches and by side ('A'
+    // or 'B') for partnership formats, which have no teams. Both shapes live in
+    // match_results; whichever is present becomes the key here, matching the
+    // keys mp_compute() produces.
     $ctx['stored_points'] = [];
-    $stmt = $conn->prepare("SELECT team_id, points FROM match_results WHERE match_id = ?");
+    $stmt = $conn->prepare("SELECT team_id, side, points FROM match_results WHERE match_id = ?");
     $stmt->bind_param('i', $matchId);
     $stmt->execute();
     $res = $stmt->get_result();
     while ($p = $res->fetch_assoc()) {
-        $ctx['stored_points'][(int) $p['team_id']] = (float) $p['points'];
+        $key = $p['team_id'] !== null ? (int) $p['team_id'] : $p['side'];
+        if ($key === null) continue;
+        $ctx['stored_points'][$key] = (float) $p['points'];
     }
     $stmt->close();
 
