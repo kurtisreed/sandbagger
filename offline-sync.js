@@ -83,29 +83,61 @@ async function applyPendingScores(matchId) {
   });
 }
 
+// Drain the queue to the server, oldest first so replay preserves the order the
+// golfer entered scores in.
+//
+// Returns { synced, failed, unauthorized }. Callers should surface a non-zero
+// `failed` — a silent drain is how this went unnoticed for ten weeks: the URL
+// below was missing its /api/ prefix after save_score.php moved in 3e49906, so
+// every attempt came back 404. A 404 is a *successful* HTTP response, so no
+// exception fired, and the old `if (res.ok)` had no else branch. Scores stayed
+// queued forever while the UI showed them as saved.
 async function syncPendingScores(apiBaseUrl) {
   const pending = await getPendingScores();
-  if (!pending.length) return 0;
+  if (!pending.length) return { synced: 0, failed: 0, unauthorized: false };
 
   pending.sort((a, b) => a.timestamp - b.timestamp);
 
   let synced = 0;
+  let failed = 0;
+  let unauthorized = false;
+
   for (const score of pending) {
+    const { id, timestamp, ...payload } = score;
+    let res;
+
     try {
-      const { id, timestamp, ...payload } = score;
-      const res = await fetch(`${apiBaseUrl}/save_score.php`, {
+      res = await fetch(`${apiBaseUrl}/api/save_score.php`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
         credentials: 'include',
       });
-      if (res.ok) {
-        await deletePendingScore(id);
-        synced++;
-      }
     } catch {
-      break; // still offline, stop draining
+      // Genuinely offline again. Stop and keep everything queued; the next
+      // reconnect picks up where this left off.
+      break;
     }
+
+    if (res.ok) {
+      await deletePendingScore(id);
+      synced++;
+      continue;
+    }
+
+    // The session died while the phone was out of range. The scores are still
+    // good - keep them queued and let the caller prompt for a re-login rather
+    // than discarding a round's work.
+    if (res.status === 401 || res.status === 403) {
+      unauthorized = true;
+      break;
+    }
+
+    // Anything else (404, 500, a rejected payload) is a real failure. Keep the
+    // score queued and report it rather than dropping it on the floor.
+    failed++;
+    console.error(`Offline sync failed for hole ${payload.hole} (HTTP ${res.status})`);
   }
-  return synced;
+
+  return { synced, failed, unauthorized };
 }

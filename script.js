@@ -148,31 +148,71 @@ function initHardwareBackButton() {
 
 // ── Offline score save helper ─────────────────────────────────────────────────
 
-function updateOfflineBanner() {
+// The banner reports two different situations, because they need different
+// things from the golfer:
+//   offline            informational — keep playing, scores are being kept
+//   online but queued  something is wrong; scores have NOT reached the server
+// Previously it rendered only while offline, so a queue that failed to drain
+// became invisible the moment signal returned.
+async function updateOfflineBanner() {
   const banner = document.getElementById('offline-banner');
   const countEl = document.getElementById('offline-pending-count');
   if (!banner) return;
 
+  const pending = await getPendingCount();
+
   if (!navigator.onLine) {
+    banner.style.backgroundColor = '#e65100';
+    banner.firstChild.textContent =
+      '\n  Offline — scores are saved locally and will sync when connected\n  ';
     banner.style.display = 'block';
-    getPendingCount().then(n => {
-      countEl.textContent = n > 0 ? ` (${n} pending)` : '';
-    });
-  } else {
-    banner.style.display = 'none';
-    countEl.textContent = '';
+    countEl.textContent = pending > 0 ? ` (${pending} pending)` : '';
+    return;
   }
+
+  if (pending > 0) {
+    banner.style.backgroundColor = '#b71c1c';
+    banner.firstChild.textContent =
+      '\n  Some scores haven’t synced yet — keep this app open\n  ';
+    banner.style.display = 'block';
+    countEl.textContent = ` (${pending} pending)`;
+    return;
+  }
+
+  banner.style.display = 'none';
+  countEl.textContent = '';
+}
+
+// Drain the queue and report honestly. `unauthorized` means the session expired
+// while the phone was out of range: the scores are fine, the golfer just needs
+// to sign in again, so we say that rather than failing silently.
+async function drainOfflineQueue(reason) {
+  if (!navigator.onLine) return;
+  const { synced, failed, unauthorized } = await syncPendingScores(API_BASE_URL);
+  if (synced > 0) console.log(`Synced ${synced} offline score(s) [${reason}]`);
+  if (failed > 0) console.error(`${failed} offline score(s) failed to sync [${reason}]`);
+  if (unauthorized) {
+    console.warn('Offline scores still queued — session expired, sign in again to sync');
+  }
+  await updateOfflineBanner();
 }
 
 function initOfflineBanner() {
   updateOfflineBanner();
 
   window.addEventListener('offline', updateOfflineBanner);
+  window.addEventListener('online', () => drainOfflineQueue('reconnected'));
 
-  window.addEventListener('online', async () => {
-    const synced = await syncPendingScores(API_BASE_URL);
-    if (synced > 0) console.log(`Synced ${synced} offline score(s)`);
-    updateOfflineBanner();
+  // Drain on startup too. The 'online' event only fires on a transition, so a
+  // queue left over from a previous session — the app killed in a dead zone,
+  // reopened later in signal — would otherwise sit there untouched.
+  drainOfflineQueue('startup');
+
+  // And whenever the app returns to the foreground, which is the common case on
+  // a course: the phone finds signal while the screen is off, firing no event
+  // the page can see.
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) drainOfflineQueue('foreground');
   });
 }
 
