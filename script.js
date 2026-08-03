@@ -6883,11 +6883,28 @@ function loadGuysTripSummary() {
   }
 
   // Fetch holes data if not already available
-  const holesPromise = holeInfo && holeInfo.length > 0
-    ? Promise.resolve(holeInfo)
-    : fetch(`${API_BASE_URL}/api/get_match_by_round.php?round_id=${roundId}&tournament_id=${tournamentId}&golfer_id=${golferId}`, { credentials: 'include' })
+  // Always load this round's own course data. This used to reuse holeInfo
+  // whenever it happened to be populated, which meant arriving from another
+  // round scored this one with the PREVIOUS course's stroke indexes — and
+  // slope, rating and handicap percentage were never refreshed at all, so they
+  // stayed at whatever the last screen left behind. Every net score below
+  // depends on all four.
+  const holesPromise =
+    fetch(`${API_BASE_URL}/api/get_match_by_round.php?round_id=${roundId}&tournament_id=${tournamentId}&golfer_id=${golferId}`, { credentials: 'include' })
         .then(res => res.json())
         .then(data => {
+          const first = (data.match && data.match[0]) || null;
+          if (first) {
+            courses = {
+              course_name: first.course_name,
+              slope: first.slope,
+              rating: first.rating,
+              par: first.par
+            };
+          }
+          if (data.tournament_handicap_pct !== undefined) {
+            tournamentHandicapPct = parseFloat(data.tournament_handicap_pct || 100);
+          }
           if (data.holes) {
             holeInfo = data.holes;
             return data.holes;
