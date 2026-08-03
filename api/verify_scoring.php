@@ -126,7 +126,10 @@ function vs_points_match(array $a, array $b) {
 $sql = "
     SELECT m.match_id, m.finalized,
            r.round_id, r.round_name, r.course_id,
-           t.tournament_id, t.name AS tournament_name, t.handicap_pct, t.handicap_mode,
+           t.tournament_id, t.name AS tournament_name, t.handicap_pct,
+           -- A finalized match carries its own frozen rule; the tournament's
+           -- current mode is only a fallback for rows predating migration 011.
+           COALESCE(m.handicap_mode_at_finalize, t.handicap_mode) AS handicap_mode,
            ct.slope, ct.rating, ct.par
     FROM matches m
     JOIN rounds      r  ON r.round_id      = m.round_id

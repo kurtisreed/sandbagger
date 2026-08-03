@@ -44,8 +44,17 @@ foreach ($points as $team_id => $pts) {
     $stmt2->execute();
 }
 
-// Update matches table to set finalized = 1
-$sql = "UPDATE matches SET finalized = 1 WHERE match_id = ?";
+// Finalize, freezing the handicap rule this match was played under alongside
+// the result. Without this a later edit to the tournament's handicap_mode would
+// silently re-score a completed match. Only stamped if not already set, so
+// re-finalizing cannot rewrite the rule of a match that is already closed.
+$sql = "
+    UPDATE matches m
+    JOIN rounds      r ON r.round_id      = m.round_id
+    JOIN tournaments t ON t.tournament_id = r.tournament_id
+    SET m.finalized = 1,
+        m.handicap_mode_at_finalize = COALESCE(m.handicap_mode_at_finalize, t.handicap_mode)
+    WHERE m.match_id = ?";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $match_id);
 $stmt->execute();
