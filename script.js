@@ -5959,7 +5959,7 @@ function calculateMatchPlayResult(matchType) {
 // Add a gold "View Match Summary" button to a finalized read-only scorecard,
 // so anyone can reopen the results modal later. `matchType` is one of
 // 'bestball' | 'tournament' | 'guystrip'.
-function addViewSummaryButton(container, matchType) {
+function addViewSummaryButton(container, matchType, serverStatus) {
   if (!container) return;
   const existing = container.querySelector('.view-summary-wrap');
   if (existing) existing.remove();
@@ -5970,7 +5970,7 @@ function addViewSummaryButton(container, matchType) {
   btn.className = 'btn btn-auto';
   btn.style.cssText = 'background:#FFC62F; color:#1a1a1a; min-width:220px; font-weight:700;';
   btn.innerHTML = '🏆 View Match Summary';
-  btn.onclick = () => showMatchResultsModal(matchType);
+  btn.onclick = () => showMatchResultsModal(matchType, null, serverStatus);
   wrap.appendChild(btn);
 
   // Place button after the header/title banner if present, otherwise at top of container
@@ -5982,21 +5982,31 @@ function addViewSummaryButton(container, matchType) {
   }
 }
 
-function showMatchResultsModal(matchType, onDone) {
+function showMatchResultsModal(matchType, onDone, serverStatus) {
   const results = buildMatchResultsData();
 
   // Determine winner headline using match play format for all contexts
   let winnerHtml = '';
-  try {
-    const { winnerNames, resultString } = calculateMatchPlayResult(matchType);
-    if (winnerNames === null) {
-      winnerHtml = `<p class="winner-display">All Square 🤝</p>`;
-    } else {
-      // "team name wins" (singular) vs "player names win" (plural)
-      const verb = matchType === 'tournament' ? 'wins' : 'win';
-      winnerHtml = `<p class="winner-display">${winnerNames} ${verb} ${resultString}! 🏆</p>`;
-    }
-  } catch (e) { /* skip if data not available */ }
+  // Prefer the server's result. It is scored under the rule frozen on the
+  // match, and for a finalized match it is the stored record rather than a
+  // recomputation — so this headline cannot contradict the Tournament tab.
+  if (serverStatus && serverStatus.text) {
+    const halved = /halved|tied/i.test(serverStatus.text);
+    winnerHtml = `<p class="winner-display">${serverStatus.text}${halved ? ' 🤝' : '! 🏆'}</p>`;
+  } else {
+    // Fallback for views the server does not yet score (Best Ball and other
+    // quick rounds, which have no stored two-sided result).
+    try {
+      const { winnerNames, resultString } = calculateMatchPlayResult(matchType);
+      if (winnerNames === null) {
+        winnerHtml = `<p class="winner-display">All Square 🤝</p>`;
+      } else {
+        // "team name wins" (singular) vs "player names win" (plural)
+        const verb = matchType === 'tournament' ? 'wins' : 'win';
+        winnerHtml = `<p class="winner-display">${winnerNames} ${verb} ${resultString}! 🏆</p>`;
+      }
+    } catch (e) { /* skip if data not available */ }
+  }
 
   // Score table — sorted by net (ascending), then gross as tiebreaker
   const withScores = results.filter(r => r.gross !== null);
@@ -6328,8 +6338,15 @@ function loadTodaySummary() {
             <div class="team-box" style="background-color:${teamB.color}; color:${pickContrastColorFromHex(teamB.color)};">${bGolfers.map(g => g.first_name).join(" & ")}</div>
           </div>`;
 
-        // Status + the leading team's actual color (black when tied / no scores)
-        const st = computeTeamMatchStatus(teamA, teamB, aGolfers, bGolfers, match.scores);
+        // Status comes from the server, which scores the match under the rule
+        // frozen on it and returns the stored result once it is finalized.
+        // This used to be computed here from mutable globals (holeInfo, courses,
+        // tournamentHandicapPct) that whichever screen loaded last left behind,
+        // using live handicaps — which is why this badge could read "Match
+        // Halved" for a match the Tournament tab showed as a win.
+        const st = match.status
+          ? { text: match.status.text, leadColor: match.status.lead_color }
+          : computeTeamMatchStatus(teamA, teamB, aGolfers, bGolfers, match.scores);
         const badgeBg   = st.leadColor || '#1a1c23';
         const statusDisplay = `<div class="match-status" style="background-color:${badgeBg}; color:${pickContrastColorFromHex(badgeBg)}; padding:var(--space-1) var(--space-3);"><span class="help-term" data-help="match-status">${st.text}</span></div>`;
         div.innerHTML = header + statusDisplay;
@@ -8365,16 +8382,32 @@ function loadMatchScorecard(match_id, container_id = "today-summary") {
         }
 
 
-      // Adjust handicaps relative to lowest — skip for Skins (straight handicaps)
-      if (!isSkinsFormat) {
-        const minHcpMatch = Math.min(...golfers.map(g => g.handicap));
-        golfers.forEach(g => { g.handicap = g.handicap - minHcpMatch; });
+      // Stroke allocation comes from the server, computed under the rule frozen
+      // on this match. Deriving it here re-scored finished matches under
+      // whatever rule was current: a match played off full handicaps in 2025
+      // was redrawn match-relative, so the dots stopped reconciling with the
+      // result shown above them.
+      //
+      // The local fallback preserves the old behaviour for a cached client
+      // talking to an older endpoint; it is not the normal path.
+      if (data.stroke_maps) {
+        strokeMaps = data.stroke_maps;
+        // Show each golfer the handicap the strokes were actually built from.
+        const isMatchRelative = data.handicap_mode !== 'full';
+        if (isMatchRelative && !isSkinsFormat) {
+          const minHcpMatch = Math.min(...golfers.map(g => g.handicap));
+          golfers.forEach(g => { g.handicap = g.handicap - minHcpMatch; });
+        }
+      } else {
+        if (!isSkinsFormat) {
+          const minHcpMatch = Math.min(...golfers.map(g => g.handicap));
+          golfers.forEach(g => { g.handicap = g.handicap - minHcpMatch; });
+        }
+        strokeMaps = {};
+        golfers.forEach(g => {
+          strokeMaps[g.id] = buildStrokeMapForGolfer(g.handicap, holeInfo);
+        });
       }
-
-      strokeMaps = {};
-      golfers.forEach(g => {
-        strokeMaps[g.id] = buildStrokeMapForGolfer(g.handicap, holeInfo);
-      });
 
 
 
@@ -8511,7 +8544,7 @@ function loadMatchScorecard(match_id, container_id = "today-summary") {
           // Finalized matches get a button to reopen the results summary anytime
           const isFinalized = matchGolfers[0] && parseInt(matchGolfers[0].finalized) === 1;
           if (isFinalized) {
-            addViewSummaryButton(container, isGuysTripFormat ? 'guystrip' : 'tournament');
+            addViewSummaryButton(container, isGuysTripFormat ? 'guystrip' : 'tournament', data.status);
           }
         });
     });
