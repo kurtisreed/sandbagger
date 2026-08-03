@@ -25,8 +25,14 @@
 -- hardcoded tournament ids, because ids differ between the local copy and
 -- production. It classifies each tournament by when it was actually scored.
 --
--- Requires MariaDB 10.0.2+ for "IF NOT EXISTS" (HostGator shared hosting is
--- MariaDB). Confirm with:  SELECT VERSION();
+-- Portable across MySQL 8.x (production, Percona) and MariaDB 10.x (local dev).
+-- "ALTER TABLE ... ADD COLUMN IF NOT EXISTS" is a MariaDB-only extension and is
+-- deliberately NOT used here; the column is added behind an information_schema
+-- guard instead so the same file runs unchanged on both engines.
+--
+-- In phpMyAdmin: select the database in the left sidebar first. The guard calls
+-- DATABASE(), which is NULL when no database is selected.
+--
 -- Safe to run more than once.
 
 
@@ -80,11 +86,23 @@ INSERT IGNORE INTO schema_migrations (version, description) VALUES
 
 -- ---------------------------------------------------------------------------
 -- STEP 2 - Schema. New tournaments default to today's rule.
+--
+-- Guarded rather than "ADD COLUMN IF NOT EXISTS" so this runs on MySQL 8 as
+-- well as MariaDB. 'DO 0' is a valid no-op statement on both engines.
 -- ---------------------------------------------------------------------------
-ALTER TABLE tournaments
-  ADD COLUMN IF NOT EXISTS handicap_mode
-    ENUM('full','match_relative') NOT NULL DEFAULT 'match_relative'
-    AFTER handicap_pct;
+SET @col_exists := (
+  SELECT COUNT(*) FROM information_schema.COLUMNS
+   WHERE TABLE_SCHEMA = DATABASE()
+     AND TABLE_NAME   = 'tournaments'
+     AND COLUMN_NAME  = 'handicap_mode'
+);
+SET @ddl := IF(@col_exists = 0,
+  'ALTER TABLE tournaments ADD COLUMN handicap_mode ENUM(''full'',''match_relative'') NOT NULL DEFAULT ''match_relative'' AFTER handicap_pct',
+  'DO 0'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 
 -- ---------------------------------------------------------------------------

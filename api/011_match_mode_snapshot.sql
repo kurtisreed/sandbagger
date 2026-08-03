@@ -17,16 +17,33 @@
 -- NULL means "not finalized yet" - such a match is still live and correctly
 -- follows the tournament's current mode.
 --
+-- Run this AFTER 010; the backfill below reads the tournament modes 010 sets.
+--
+-- Portable across MySQL 8.x (production, Percona) and MariaDB 10.x (local dev).
+-- In phpMyAdmin, select the database first - the guard calls DATABASE().
+--
 -- Safe to run more than once.
 
 
 -- ---------------------------------------------------------------------------
 -- STEP 1 - Schema. NULL until the match is finalized.
+--
+-- Guarded rather than "ADD COLUMN IF NOT EXISTS" so this runs on MySQL 8 as
+-- well as MariaDB. 'DO 0' is a valid no-op statement on both engines.
 -- ---------------------------------------------------------------------------
-ALTER TABLE matches
-  ADD COLUMN IF NOT EXISTS handicap_mode_at_finalize
-    ENUM('full','match_relative') NULL DEFAULT NULL
-    AFTER finalized;
+SET @col_exists := (
+  SELECT COUNT(*) FROM information_schema.COLUMNS
+   WHERE TABLE_SCHEMA = DATABASE()
+     AND TABLE_NAME   = 'matches'
+     AND COLUMN_NAME  = 'handicap_mode_at_finalize'
+);
+SET @ddl := IF(@col_exists = 0,
+  'ALTER TABLE matches ADD COLUMN handicap_mode_at_finalize ENUM(''full'',''match_relative'') NULL DEFAULT NULL AFTER finalized',
+  'DO 0'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 
 -- ---------------------------------------------------------------------------
