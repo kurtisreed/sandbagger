@@ -7662,6 +7662,19 @@ function renderMoneyList(parentContainer, data) {
     players.forEach(p => {
         const bgColor  = p.team_color || '';
         const txtColor = bgColor ? pickContrastColorFromHex(bgColor) : '';
+
+        // Show where the money came from. A total on its own invites the
+        // reasonable conclusion that the maths is wrong — $100 against a $50
+        // per-match setting looks like double-counting until you can see that
+        // half of it was skins.
+        const parts = [];
+        if (Number(p.match_money) > 0) parts.push(`${formatMoney(Number(p.match_money))} match`);
+        if (Number(p.skins_money) > 0) parts.push(`${formatMoney(Number(p.skins_money))} skins`);
+        if (Number(p.team_money)  > 0) parts.push(`${formatMoney(Number(p.team_money))} team`);
+        const breakdown = parts.length > 1
+          ? `<div style="font-weight:400; font-size:0.75rem; color:#666; margin-top:0.15rem;">${parts.join(' · ')}</div>`
+          : '';
+
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${p.rank}</td>
@@ -7672,7 +7685,7 @@ function renderMoneyList(parentContainer, data) {
           ">
             ${p.team_name || ''}
           </td>
-          <td style="font-weight:700;">${formatMoney(Number(p.total))}</td>
+          <td style="font-weight:700;">${formatMoney(Number(p.total))}${breakdown}</td>
         `;
         table.appendChild(row);
     });
