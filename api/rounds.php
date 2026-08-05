@@ -11,20 +11,6 @@ $method        = $_SERVER['REQUEST_METHOD'];
 $id            = isset($_GET['round_id'])      ? intval($_GET['round_id'])      : null;
 $tournament_id = isset($_GET['tournament_id']) ? intval($_GET['tournament_id']) : null;
 
-/**
- * Total dollars paid out across all skins won in a round.
- *
- * Returns null when the admin left the field blank, which get_individual_skins
- * renders as the $450 default. An explicit 0 is a different statement - "this
- * round has no skins pool" - and is preserved, so the two must not be collapsed
- * by a truthiness check. Negative values are rejected to null rather than
- * stored, since a pool cannot pay out less than nothing.
- */
-function normalizeSkinsTotal($value) {
-    if ($value === null || $value === '' || !is_numeric($value)) return null;
-    $n = (int) $value;
-    return $n < 0 ? null : $n;
-}
 
 switch ($method) {
   case 'GET':
@@ -78,16 +64,24 @@ switch ($method) {
       exit;
     }
     $checkStmt->close();
-    // Skins pool: NULL means "not set", which the scoreboard renders as the
-    // $450 default. A submitted 0 is a real answer (no pool) and is kept.
-    $skinsTotal = normalizeSkinsTotal($data['skins_total'] ?? null);
+    // A new round inherits the tournament's skins figure. The pot is agreed
+    // once for the trip on the Edit Tournament payouts card; there is no
+    // per-round input any more, so this is how a round gets its value.
+    $inherit = $conn->prepare(
+      "SELECT skins_payout_per_round FROM tournaments WHERE tournament_id = ?");
+    $inherit->bind_param('i', $data['tournament_id']);
+    $inherit->execute();
+    $row = $inherit->get_result()->fetch_assoc();
+    $inherit->close();
+    $skinsTotal = $row && $row['skins_payout_per_round'] !== null
+      ? (float) $row['skins_payout_per_round'] : null;
 
     $stmt = $conn->prepare("
       INSERT INTO rounds (tournament_id, course_id, tee_id, round_name, round_date, skins_total)
       VALUES (?, ?, ?, ?, ?, ?)
     ");
     $stmt->bind_param(
-      'iiissi',
+      'iiissd',
       $data['tournament_id'],
       $data['course_id'],
       $data['tee_id'],
@@ -103,8 +97,10 @@ switch ($method) {
     requireAdmin();
     // update an existing round (verify it belongs to this org)
     $data = json_decode(file_get_contents('php://input'), true);
-    $skinsTotal = normalizeSkinsTotal($data['skins_total'] ?? null);
-
+    // skins_total is deliberately NOT updated here. It is owned by the
+    // tournament's payouts card and cascaded down from there; letting a round
+    // edit write it would give two sources for one figure, and editing a round
+    // for an unrelated reason (fixing its date) would silently clear the pot.
     $stmt = $conn->prepare("
       UPDATE rounds r
          JOIN tournaments t ON t.tournament_id = r.tournament_id AND t.org_id = ?
@@ -112,19 +108,17 @@ switch ($method) {
              r.course_id     = ?,
              r.tee_id        = ?,
              r.round_name    = ?,
-             r.round_date    = ?,
-             r.skins_total   = ?
+             r.round_date    = ?
        WHERE r.round_id     = ?
     ");
     $stmt->bind_param(
-      'iiiissii',
+      'iiiissi',
       $currentOrgId,
       $data['tournament_id'],
       $data['course_id'],
       $data['tee_id'],
       $data['round_name'],
       $data['round_date'],
-      $skinsTotal,
       $id
     );
     $stmt->execute();

@@ -10,6 +10,20 @@ require_once 'auth_middleware.php';
 $method = $_SERVER['REQUEST_METHOD'];
 $id     = $_GET['tournament_id'] ?? null;
 
+/**
+ * A dollar figure from the payouts card.
+ *
+ * Blank means "not set", which displays as $0 rather than as an amount anyone
+ * agreed to. An explicit 0 is preserved - "there is no pot this round" is a
+ * real answer and must stay distinguishable from "nobody has said yet".
+ * Negative figures are rejected to null; a payout cannot be less than nothing.
+ */
+function normalizeMoney($value) {
+    if ($value === null || $value === '' || !is_numeric($value)) return null;
+    $n = round((float) $value, 2);
+    return $n < 0 ? null : $n;
+}
+
 switch ($method) {
   case 'GET':
       if ($id) {
@@ -77,6 +91,66 @@ switch ($method) {
     requireAdmin();
     // update existing (must belong to this org)
     $data = json_decode(file_get_contents('php://input'), true);
+
+    // Payout figures are optional and only sent by the Ryder Cup payouts card.
+    // A key that is absent leaves the stored value alone; a key present but
+    // blank clears it. Those are different intentions and must not be
+    // collapsed, or saving the Details card would wipe the payouts.
+    $hasPayouts = array_key_exists('buy_in', $data)
+               || array_key_exists('payout_per_match', $data)
+               || array_key_exists('skins_payout_per_round', $data);
+
+    if ($hasPayouts) {
+      $buyIn   = normalizeMoney($data['buy_in'] ?? null);
+      $perWin  = normalizeMoney($data['payout_per_match'] ?? null);
+      $skins   = normalizeMoney($data['skins_payout_per_round'] ?? null);
+
+      $stmt = $conn->prepare(
+        "UPDATE tournaments
+           SET name = ?, start_date = ?, end_date = ?, handicap_pct = ?,
+               buy_in = ?, payout_per_match = ?, skins_payout_per_round = ?
+         WHERE tournament_id = ?
+           AND org_id = ?"
+      );
+      $stmt->bind_param(
+        'sssdddd' . 'ii',
+        $data['name'], $data['start_date'], $data['end_date'],
+        $data['handicap_pct'], $buyIn, $perWin, $skins,
+        $id, $currentOrgId
+      );
+      $stmt->execute();
+      $affected = $stmt->affected_rows;
+
+      // Cascade the skins figure down to the rounds, which is where
+      // get_individual_skins.php reads it from.
+      //
+      // Finished rounds are left alone. A round whose matches are all
+      // finalized was played for whatever pot was agreed at the time, and
+      // editing the tournament later should not rewrite what it paid out - the
+      // same reasoning that keeps a completed match on its original handicap
+      // rule. Rounds with no matches yet, or with any match still open, follow
+      // the tournament.
+      $cascade = $conn->prepare("
+        UPDATE rounds r
+          JOIN tournaments t ON t.tournament_id = r.tournament_id AND t.org_id = ?
+           SET r.skins_total = ?
+         WHERE r.tournament_id = ?
+           AND (
+                 NOT EXISTS (SELECT 1 FROM matches m WHERE m.round_id = r.round_id)
+                 OR EXISTS (SELECT 1 FROM matches m
+                             WHERE m.round_id = r.round_id AND m.finalized = 0)
+               )
+      ");
+      $cascade->bind_param('idi', $currentOrgId, $skins, $id);
+      $cascade->execute();
+
+      echo json_encode([
+        'affected'        => $affected,
+        'rounds_cascaded' => $cascade->affected_rows,
+      ]);
+      break;
+    }
+
     $stmt = $conn->prepare(
       "UPDATE tournaments
          SET name = ?, start_date = ?, end_date = ?, handicap_pct = ?

@@ -9633,6 +9633,35 @@ async function showEditTournamentForm(tournament) {
     </div>
     ${teamsHtml}
     ${rosterHtml}
+    ${isRyderCup ? `
+    <div class="card" id="payouts-card">
+      <h3 class="edit-card-title">Payouts</h3>
+      <p style="margin:0 0 var(--space-3); font-size:var(--font-size-sm); color:var(--color-text-secondary);">
+        Agreed once for the whole trip. Leave a field blank if it doesn't apply.
+      </p>
+      <div class="field">
+        <label class="form-label" for="edit-buy-in">Buy-in per person ($)</label>
+        <input type="number" id="edit-buy-in" class="form-input" min="0" step="0.01"
+               inputmode="decimal" placeholder="0"
+               value="${tournament.buy_in ?? ''}">
+      </div>
+      <div class="field">
+        <label class="form-label" for="edit-payout-per-match">Payout per match won ($)</label>
+        <input type="number" id="edit-payout-per-match" class="form-input" min="0" step="0.01"
+               inputmode="decimal" placeholder="0"
+               value="${tournament.payout_per_match ?? ''}">
+      </div>
+      <div class="field">
+        <label class="form-label" for="edit-skins-payout">Skins pot per round ($)</label>
+        <input type="number" id="edit-skins-payout" class="form-input" min="0" step="0.01"
+               inputmode="decimal" placeholder="0"
+               value="${tournament.skins_payout_per_round ?? ''}">
+        <small style="display:block; margin-top:var(--space-1); color:var(--color-text-secondary); font-size:var(--font-size-sm);">
+          Split evenly across the skins won in each round. Applies to rounds still
+          in progress — rounds already finished keep what they paid out.
+        </small>
+      </div>
+    </div>` : ''}
     ${isQuickRound ? '' : `
     <div class="card" id="live-share-card">
       <h3 class="edit-card-title">Live Sharing</h3>
@@ -9944,11 +9973,26 @@ async function saveEditTournament(tournament, teams, isRyderCup) {
 
   try {
     // 1. Save tournament name, dates, and handicap % (−1 sentinel when manual)
+    const tournamentPayload = { name, start_date: startDate, end_date: endDate, handicap_pct: effectivePct };
+
+    // Payouts only exist on Ryder Cup tournaments. The keys are omitted
+    // entirely for other formats so the server leaves the stored values
+    // untouched, rather than reading absent inputs as "cleared".
+    if (isRyderCup) {
+      const money = id => {
+        const v = document.getElementById(id)?.value.trim();
+        return v === '' || v === undefined ? null : parseFloat(v);
+      };
+      tournamentPayload.buy_in                 = money('edit-buy-in');
+      tournamentPayload.payout_per_match       = money('edit-payout-per-match');
+      tournamentPayload.skins_payout_per_round = money('edit-skins-payout');
+    }
+
     await fetch(`${API_BASE_URL}/api/tournaments.php?tournament_id=${tournament.tournament_id}`, {
       method: 'PUT',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, start_date: startDate, end_date: endDate, handicap_pct: effectivePct }),
+      body: JSON.stringify(tournamentPayload),
     });
 
     // 2. Save team names + colors (Ryder Cup)
@@ -10134,12 +10178,6 @@ async function editRound(tournamentId, roundId) {
 
     // Set round date
     document.getElementById('add-round-date').value = roundData.round_date;
-
-    // Skins pool. Left blank when unset so the placeholder shows $0 rather
-    // than implying someone chose an amount.
-    document.getElementById('add-round-skins-total').value =
-      (roundData.skins_total === null || roundData.skins_total === undefined)
-        ? '' : roundData.skins_total;
 
     // Change button text to "Continue"
     const submitBtn = document.querySelector('#add-round-form button[type="submit"]');
@@ -14791,24 +14829,16 @@ document.addEventListener('DOMContentLoaded', () => {
       roundName = `Round ${rounds.length + 1} at ${courseName}`;
     }
 
-    // Skins pool is optional. Blank is sent as null ("no pool configured")
-    // rather than 0, so the two stay distinguishable in the database even
-    // though both currently display as $0.
-    const skinsRaw = document.getElementById('add-round-skins-total').value.trim();
-    const skinsTotal = skinsRaw === '' ? null : parseInt(skinsRaw, 10);
-    if (skinsTotal !== null && (isNaN(skinsTotal) || skinsTotal < 0)) {
-      alert('Skins pool must be a positive dollar amount, or blank for the default.');
-      return null;
-    }
-
+    // No skins field here any more — the pot is set once per tournament on the
+    // Edit Tournament payouts card and cascades down, so a round edit must not
+    // send it.
     return {
       round_id: isEditingRound ? editingRoundId : null,
       tournament_id: parseInt(tournamentId),
       course_id: parseInt(courseId),
       tee_id: parseInt(teeId),
       round_name: roundName,
-      round_date: roundDate,
-      skins_total: skinsTotal
+      round_date: roundDate
     };
   }
 
