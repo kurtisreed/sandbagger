@@ -7639,8 +7639,13 @@ function renderMoneyList(parentContainer, data) {
     const players = Array.isArray(data.players) ? data.players : [];
     if (players.length === 0) return;
 
-    // Every figure zero means nothing has been configured or nothing settled yet.
-    if (!players.some(p => Number(p.total) > 0)) return;
+    // Show the table whenever payouts are configured, even before anything has
+    // settled — an admin who has filled the card in and sees no table assumes
+    // it is broken. Only stay hidden when no money is in play at all.
+    const pay = data.payouts || {};
+    const configured = ['buy_in', 'payout_per_player_per_match', 'payout_per_player_team_win']
+      .some(k => Number(pay[k]) > 0);
+    if (!configured && !players.some(p => Number(p.total) > 0)) return;
 
     const { container } = createWidgetContainer(
         'Money List <button type="button" class="help-icon" data-help="money-list" aria-label="How the money list works">?</button>',
@@ -9565,12 +9570,32 @@ async function showEditTournamentForm(tournament) {
   const isManualMode = parseFloat(tournament.handicap_pct) < 0;
 
   // Fetch teams, all golfers, tournament golfers, and locked handicaps in parallel
-  const [teams, allGolfers, tournamentGolfers, lockedHcps] = await Promise.all([
+  const [teams, allGolfers, tournamentGolfers, lockedHcps, fullTournament] = await Promise.all([
     fetch(`${API_BASE_URL}/api/tournament_teams.php?tournament_id=${tournament.tournament_id}`, { credentials: 'include' }).then(r => r.json()),
     fetch(`${API_BASE_URL}/api/golfers.php`, { credentials: 'include' }).then(r => r.json()),
     fetch(`${API_BASE_URL}/api/tournament_golfers.php?tournament_id=${tournament.tournament_id}`, { credentials: 'include' }).then(r => r.json()),
     fetch(`${API_BASE_URL}/api/lock_handicaps.php?tournament_id=${tournament.tournament_id}`, { credentials: 'include' }).then(r => r.json()).catch(() => []),
+    // The caller hands us whatever object it happened to have — the dashboard
+    // passes a row from get_user_tournaments.php, which selects an explicit
+    // column list and does NOT include the payout fields. Reading them off that
+    // object rendered the Payouts card blank, and saving then wrote those
+    // blanks back, wiping figures that were stored correctly.
+    //
+    // tournaments.php selects t.*, so fetch the authoritative row and overlay
+    // the fields the form owns. Overlaying rather than replacing keeps the
+    // caller's shape (tournament_name, and whatever else it carries) intact.
+    fetch(`${API_BASE_URL}/api/tournaments.php?tournament_id=${tournament.tournament_id}`, { credentials: 'include' }).then(r => r.json()).catch(() => null),
   ]);
+
+  // Overlay only the payout fields — the ones the caller's row is missing.
+  // format_id and handicap_pct are left alone because isRyderCup and
+  // isManualMode were already derived from them above; re-pointing them here
+  // would let the flags and the rendered values disagree.
+  if (fullTournament && !fullTournament.error) {
+    ['buy_in', 'payout_per_player_per_match',
+     'payout_per_player_team_win', 'skins_payout_per_round']
+      .forEach(k => { if (k in fullTournament) tournament[k] = fullTournament[k]; });
+  }
 
   const assignedMap = {}; // golfer_id → team_id (or null)
   tournamentGolfers.forEach(tg => { assignedMap[tg.golfer_id] = tg.team_id || null; });
