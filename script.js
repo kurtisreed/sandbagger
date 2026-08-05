@@ -8120,7 +8120,12 @@ function renderCoursePDFLinks(parentContainer, courses) {
   let html = `<table class="scorecard-table"><tr><th>Course</th></tr>`;
   uniqueCourses.forEach(course => {
     if (course.pdf_url) {
-      html += `<tr><td><a href="${course.pdf_url}" target="_blank">${course.course_name}</a></td></tr>`;
+      // Scorecards are served from the website rather than bundled into the
+      // app — 12 MB of PDFs is a lot to ship for a link most rounds never open.
+      // pdf_url is a site-absolute path ("/pdfs/x.pdf"), which inside the native
+      // app would resolve against the local asset server and 404, so it is
+      // qualified against the API host.
+      html += `<tr><td><a href="${API_BASE_URL}${course.pdf_url}" target="_blank">${course.course_name}</a></td></tr>`;
     } else {
       html += `<tr><td>${course.course_name}</td></tr>`;
     }
