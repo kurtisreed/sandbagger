@@ -86,7 +86,9 @@ $teeSql->execute();
 $teeResult = $teeSql->get_result();
 $teeRow = $teeResult->fetch_assoc();
 $tee_id = $teeRow ? $teeRow['tee_id'] : null;
-$skins_total = $teeRow ? $teeRow['skins_total'] : 450;
+// No pool unless the admin set one. A round with no skins money configured
+// pays out nothing, rather than inventing a figure nobody agreed to.
+$skins_total = ($teeRow && $teeRow['skins_total'] !== null) ? (int) $teeRow['skins_total'] : 0;
 
 if (!$tee_id) {
     echo json_encode(['error' => 'No tee_id found for this round']);

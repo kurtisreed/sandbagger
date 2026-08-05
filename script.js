@@ -6410,7 +6410,7 @@ function loadTodaySummary() {
               .then(data => {
                 // Handle both new format (object with skins and skins_total) and old format (array)
                 const skins = Array.isArray(data) ? data : (data.skins || []);
-                const skinsTotal = data.skins_total || 450; // fallback to 450 if not set
+                const skinsTotal = data.skins_total ?? 0; // no pool unless the admin set one
                 
                 skinsContainer.innerHTML = `<h3>Individual Skins (handicap counts for 0.5)</h3>`;
                 
@@ -7027,7 +7027,7 @@ function loadGuysTripSummary() {
         .then(data => {
           // Handle both new format (object with skins and skins_total) and old format (array)
           const skins = Array.isArray(data) ? data : (data.skins || []);
-          const skinsTotal = data.skins_total || 450; // fallback to 450 if not set
+          const skinsTotal = data.skins_total ?? 0; // no pool unless the admin set one
 
           skinsContainer.innerHTML = `<h3>Individual Skins (handicap counts for 0.5)</h3>`;
 
@@ -10118,8 +10118,8 @@ async function editRound(tournamentId, roundId) {
     // Set round date
     document.getElementById('add-round-date').value = roundData.round_date;
 
-    // Skins pool. Left blank when unset so the placeholder shows the default
-    // rather than implying someone chose $450.
+    // Skins pool. Left blank when unset so the placeholder shows $0 rather
+    // than implying someone chose an amount.
     document.getElementById('add-round-skins-total').value =
       (roundData.skins_total === null || roundData.skins_total === undefined)
         ? '' : roundData.skins_total;
@@ -14774,9 +14774,9 @@ document.addEventListener('DOMContentLoaded', () => {
       roundName = `Round ${rounds.length + 1} at ${courseName}`;
     }
 
-    // Skins pool is optional. Blank means "not set", which the scoreboard
-    // renders as the $450 default — so send null rather than 0, which would be
-    // a real (and very different) answer.
+    // Skins pool is optional. Blank is sent as null ("no pool configured")
+    // rather than 0, so the two stay distinguishable in the database even
+    // though both currently display as $0.
     const skinsRaw = document.getElementById('add-round-skins-total').value.trim();
     const skinsTotal = skinsRaw === '' ? null : parseInt(skinsRaw, 10);
     if (skinsTotal !== null && (isNaN(skinsTotal) || skinsTotal < 0)) {
