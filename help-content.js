@@ -128,6 +128,14 @@ window.HELP_TOPICS = {
 <p>The app uses them to convert each player's Handicap Index into the right number of strokes for the tees being played.</p>`
   },
 
+  'money-list': {
+    category: 'Handicaps & Scoring',
+    title: 'Money List',
+    body: `<p>What each player has won, settled from the figures the commissioner set on the tournament's Payouts card.</p>
+<p>There are three sources. Every player on the winning side of a match collects the <strong>per-match payout</strong>. Every player on the winning team collects the <strong>team bonus</strong> once the whole tournament is decided. And each <strong>skin</strong> is worth that round's pot divided by the number of skins won in it.</p>
+<p><strong>Ties split.</strong> A halved match pays every player in it half the per-match amount. If the team event finishes level, every player collects half the team bonus.</p>
+<p>Only settled money appears. A match counts once it is finalized, skins once their round is finished, and the team bonus only when every match is in — so during play this is what has been banked, not a prediction.</p>`
+  },
   'gross-vs-net': {
     category: 'Handicaps & Scoring',
     title: 'Gross vs. Net',

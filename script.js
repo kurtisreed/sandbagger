@@ -7629,6 +7629,66 @@ function renderGrossLeaderboard(parentContainer, golfers) {
 }
 
 // Renders the Net Leaderboard
+// Money List — what each player has won. Ryder Cup only; other formats have no
+// per-match or team payouts to settle.
+//
+// Renders nothing at all unless there is money to show, so a tournament whose
+// admin never filled in the payouts card is not given an empty table to explain.
+function renderMoneyList(parentContainer, data) {
+    if (!data || data.error || parseInt(data.format_id) !== 3) return;
+    const players = Array.isArray(data.players) ? data.players : [];
+    if (players.length === 0) return;
+
+    // Every figure zero means nothing has been configured or nothing settled yet.
+    if (!players.some(p => Number(p.total) > 0)) return;
+
+    const { container } = createWidgetContainer(
+        'Money List <button type="button" class="help-icon" data-help="money-list" aria-label="How the money list works">?</button>',
+        'money-list');
+
+    const wrap = document.createElement('div');
+    wrap.className = 'money-list';
+    const table = document.createElement('table');
+    table.classList.add('leaderboard-table');
+    table.innerHTML = `<tr>
+        <th>Rank</th><th>Name</th><th>Team</th><th>Money</th>
+      </tr>`;
+
+    players.forEach(p => {
+        const bgColor  = p.team_color || '';
+        const txtColor = bgColor ? pickContrastColorFromHex(bgColor) : '';
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${p.rank}</td>
+          <td>${p.name}</td>
+          <td style="
+            ${bgColor  ? `background-color: ${bgColor};` : ''}
+            ${txtColor ? `color:            ${txtColor};` : ''}
+          ">
+            ${p.team_name || ''}
+          </td>
+          <td style="font-weight:700;">${formatMoney(Number(p.total))}</td>
+        `;
+        table.appendChild(row);
+    });
+
+    wrap.appendChild(table);
+
+    // While matches are still open this is money banked so far, not a
+    // projection — worth saying, since the team bonus lands only at the end.
+    if (!data.complete) {
+        const note = document.createElement('p');
+        note.style.cssText = 'margin:0.5rem 0 0; font-size:0.85rem; color:#666;';
+        const n = Number(data.open_matches) || 0;
+        note.textContent =
+          `Won so far — ${n} match${n === 1 ? '' : 'es'} still to finish, and the team bonus is not awarded until they are.`;
+        wrap.appendChild(note);
+    }
+
+    container.appendChild(wrap);
+    parentContainer.appendChild(container);
+}
+
 function renderNetLeaderboard(parentContainer, players) {
     if (!Array.isArray(players) || players.length === 0) return;
     const { container, body } = createWidgetContainer('Individual Tournament Leaderboard - Net <button type="button" class="help-icon" data-help="gross-vs-net" aria-label="Gross vs Net">?</button>', 'net-leaderboard');
@@ -8083,6 +8143,9 @@ async function loadTournamentPage(container) {
             fetch(`${API_BASE_URL}/api/get_gross_leaderboard_all.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
             fetch(`${API_BASE_URL}/api/get_net_leaderboard_all.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
             fetch(`${API_BASE_URL}/api/get_tournament_rounds.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
+            // Money List — the endpoint returns format_id so the renderer can
+            // keep itself to Ryder Cup without this page having to know.
+            fetch(`${API_BASE_URL}/api/get_money_list.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
             // The handicap table needs two fetches, so we wrap them in their own Promise.all
             Promise.all([
                 fetch(`${API_BASE_URL}/api/get_tournament_courses.php?tournament_id=${tournamentId}`, { credentials: 'include' }).then(res => res.json()),
@@ -8102,6 +8165,7 @@ async function loadTournamentPage(container) {
             grossLeaderboardResult,
             netLeaderboardResult,
             roundsResult,
+            moneyListResult,
             handicapResult
         ] = results;
 
@@ -8119,6 +8183,13 @@ async function loadTournamentPage(container) {
         } else {
             console.error("Rounds/Matchups Error:", roundsResult.reason);
             renderErrorWidget(container, 'Rounds & Matchups');
+        }
+
+        // Render Money List (Ryder Cup only; the renderer checks)
+        if (moneyListResult.status === 'fulfilled') {
+            renderMoneyList(container, moneyListResult.value);
+        } else {
+            console.error("Money List Error:", moneyListResult.reason);
         }
 
         // Render Gross Leaderboard
