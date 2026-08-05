@@ -4552,7 +4552,7 @@ function loadTodaysMatch() {
         const container = document.getElementById("score-entry-content");
         container.innerHTML = `
           <div class="no-match-card">
-            <img src="/images/verticaltitlenowords.png" alt="Sandbagger" class="no-match-img">
+            <img src="/images/verticaltitlenowords.jpg" alt="Sandbagger" class="no-match-img">
             <div class="no-match-overlay">
               <h2 class="no-match-title">No Matchups Yet</h2>
               <p class="no-match-msg">The commissioner hasn't assigned matches for this round. Check back later.</p>
@@ -4808,7 +4808,7 @@ function loadSkinsMatch() {
       if (data.error || !matchGolfers || matchGolfers.length === 0) {
         container.innerHTML = `
           <div class="no-match-card">
-            <img src="/images/verticaltitlenowords.png" alt="Sandbagger" class="no-match-img">
+            <img src="/images/verticaltitlenowords.jpg" alt="Sandbagger" class="no-match-img">
             <div class="no-match-overlay">
               <h2 class="no-match-title">No Matchups Yet</h2>
               <p class="no-match-msg">The commissioner hasn't assigned matches for this round. Check back later.</p>
@@ -5006,7 +5006,7 @@ function loadScrambleMatch() {
       if (data.error || !matchGolfers || matchGolfers.length === 0) {
         container.innerHTML = `
           <div class="no-match-card">
-            <img src="/images/verticaltitlenowords.png" alt="Sandbagger" class="no-match-img">
+            <img src="/images/verticaltitlenowords.jpg" alt="Sandbagger" class="no-match-img">
             <div class="no-match-overlay">
               <h2 class="no-match-title">No Team Yet</h2>
               <p class="no-match-msg">The commissioner hasn't set up your scramble team for this round. Check back later.</p>
@@ -5238,7 +5238,7 @@ function loadGuysTripMatch() {
         const container = document.getElementById("score-entry-content");
         container.innerHTML = `
           <div class="no-match-card">
-            <img src="/images/verticaltitlenowords.png" alt="Sandbagger" class="no-match-img">
+            <img src="/images/verticaltitlenowords.jpg" alt="Sandbagger" class="no-match-img">
             <div class="no-match-overlay">
               <h2 class="no-match-title">No Matchups Yet</h2>
               <p class="no-match-msg">The commissioner hasn't assigned matches for this round. Check back later.</p>
@@ -6418,7 +6418,7 @@ function loadTodaySummary() {
       if (!Array.isArray(matches) || matches.length === 0) {
         container.innerHTML = `
           <div class="no-match-card">
-            <img src="/images/verticaltitlenowords.png" alt="Sandbagger" class="no-match-img">
+            <img src="/images/verticaltitlenowords.jpg" alt="Sandbagger" class="no-match-img">
             <div class="no-match-overlay">
               <h2 class="no-match-title">No Matchups Yet</h2>
               <p class="no-match-msg">The commissioner hasn't assigned matches for this round. Check back later.</p>
@@ -7010,7 +7010,7 @@ function loadGuysTripSummary() {
       if (!Array.isArray(matches) || matches.length === 0) {
         container.innerHTML = `
           <div class="no-match-card">
-            <img src="/images/verticaltitlenowords.png" alt="Sandbagger" class="no-match-img">
+            <img src="/images/verticaltitlenowords.jpg" alt="Sandbagger" class="no-match-img">
             <div class="no-match-overlay">
               <h2 class="no-match-title">No Matchups Yet</h2>
               <p class="no-match-msg">The commissioner hasn't assigned matches for this round. Check back later.</p>

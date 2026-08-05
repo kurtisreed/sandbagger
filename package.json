@@ -8,7 +8,7 @@
     "copy:core": "cp index.html live.html live.js script.js help-content.js html2canvas.min.js style.css manifest.json service-worker.js offline-sync.js favicon.png favicon.ico www/ 2>/dev/null || true",
     "copy:php": "find . -maxdepth 1 -name '*.php' -not -name 'admin.php' -exec cp {} www/ \\;",
     "copy:dirs": "cp -r api icons www/ && npm run copy:images",
-    "copy:images": "mkdir -p www/images && cp images/lowerbanner.png images/verticaltitle.png images/verticaltitlenowords.png images/cartoon.png www/images/ 2>/dev/null || true",
+    "copy:images": "mkdir -p www/images && cp images/lowerbanner.png images/verticaltitle.jpg images/verticaltitlenowords.jpg images/cartoon.png www/images/ 2>/dev/null || true",
     "copy:admin": "cp admin.php tournament-assign.html www/ 2>/dev/null || true && cp -r js css www/",
     "build:user": "npm run clean && npm run copy:core && npm run copy:php && npm run copy:dirs",
     "build": "npm run build:user && npm run copy:admin",
