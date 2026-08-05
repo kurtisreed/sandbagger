@@ -9657,6 +9657,16 @@ async function showEditTournamentForm(tournament) {
         </small>
       </div>
       <div class="field">
+        <label class="form-label" for="edit-payout-team-win">Payout per player for team win ($)</label>
+        <input type="number" id="edit-payout-team-win" class="form-input" min="0" step="0.01"
+               inputmode="decimal" placeholder="0"
+               value="${tournament.payout_per_player_team_win ?? ''}">
+        <small style="display:block; margin-top:var(--space-1); color:var(--color-text-secondary); font-size:var(--font-size-sm);">
+          Bonus each player on the winning team collects for taking the
+          tournament overall.
+        </small>
+      </div>
+      <div class="field">
         <label class="form-label" for="edit-skins-payout">Skins pot per round ($)</label>
         <input type="number" id="edit-skins-payout" class="form-input" min="0" step="0.01"
                inputmode="decimal" placeholder="0"
@@ -10025,9 +10035,10 @@ async function saveEditTournament(tournament, teams, isRyderCup) {
         const v = document.getElementById(id)?.value.trim();
         return v === '' || v === undefined ? null : parseFloat(v);
       };
-      tournamentPayload.buy_in                 = money('edit-buy-in');
-      tournamentPayload.payout_per_player_per_match       = money('edit-payout-per-match');
-      tournamentPayload.skins_payout_per_round = money('edit-skins-payout');
+      tournamentPayload.buy_in                      = money('edit-buy-in');
+      tournamentPayload.payout_per_player_per_match = money('edit-payout-per-match');
+      tournamentPayload.payout_per_player_team_win  = money('edit-payout-team-win');
+      tournamentPayload.skins_payout_per_round      = money('edit-skins-payout');
     }
 
     await fetch(`${API_BASE_URL}/api/tournaments.php?tournament_id=${tournament.tournament_id}`, {
