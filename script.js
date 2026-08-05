@@ -6315,9 +6315,10 @@ function updateTotalScores() {
 
 
 
-// Format a dollar amount, dropping the cents when the split is exact.
-// 450/2 reads "$225"; 450/7 reads "$64.29".
-function formatSkinsMoney(amount) {
+// Format a dollar amount, dropping the cents when the figure is exact.
+// 450/2 reads "$225"; 450/7 reads "$64.29". Used for skins payouts and the
+// tournament prize pool.
+function formatMoney(amount) {
   const rounded = Math.round(amount * 100) / 100;
   return '$' + (Number.isInteger(rounded)
     ? rounded.toLocaleString()
@@ -6340,7 +6341,7 @@ function renderIndividualSkins(container, data, { showTeam = false } = {}) {
 
   const baseTitle = 'Individual Skins (handicap counts for 0.5)';
   const title = pot > 0
-    ? `Individual Skins — ${formatSkinsMoney(pot)} pot (handicap counts for 0.5)`
+    ? `Individual Skins — ${formatMoney(pot)} pot (handicap counts for 0.5)`
     : baseTitle;
 
   container.innerHTML = `<h3>${title}</h3>`;
@@ -6349,7 +6350,7 @@ function renderIndividualSkins(container, data, { showTeam = false } = {}) {
     // Nothing won yet. Say what the pot is worth if there is one, so players
     // know what they are playing for before the first skin lands.
     container.innerHTML += pot > 0
-      ? `<p>No skins awarded yet — ${formatSkinsMoney(pot)} still in the pot.</p>`
+      ? `<p>No skins awarded yet — ${formatMoney(pot)} still in the pot.</p>`
       : '<p>No skins awarded yet.</p>';
     return;
   }
@@ -6382,7 +6383,7 @@ function renderIndividualSkins(container, data, { showTeam = false } = {}) {
       + `<td>${skin.golfer_name}</td>`
       + teamCell
       + `<td>${skin.net_score}</td>`
-      + (showPayout ? `<td style="font-weight:700;">${formatSkinsMoney(perSkin)}</td>` : '');
+      + (showPayout ? `<td style="font-weight:700;">${formatMoney(perSkin)}</td>` : '');
     table.appendChild(row);
   });
 
@@ -6392,7 +6393,7 @@ function renderIndividualSkins(container, data, { showTeam = false } = {}) {
     const note = document.createElement('p');
     note.style.cssText = 'margin:0.5rem 0 0; font-size:0.85rem; color:#666;';
     note.textContent =
-      `${formatSkinsMoney(pot)} split across ${skins.length} skin${skins.length === 1 ? '' : 's'}.`;
+      `${formatMoney(pot)} split across ${skins.length} skin${skins.length === 1 ? '' : 's'}.`;
     container.appendChild(note);
   }
 }
@@ -9646,10 +9647,14 @@ async function showEditTournamentForm(tournament) {
                value="${tournament.buy_in ?? ''}">
       </div>
       <div class="field">
-        <label class="form-label" for="edit-payout-per-match">Payout per match won ($)</label>
+        <label class="form-label" for="edit-payout-per-match">Payout per player per match ($)</label>
         <input type="number" id="edit-payout-per-match" class="form-input" min="0" step="0.01"
                inputmode="decimal" placeholder="0"
                value="${tournament.payout_per_match ?? ''}">
+        <small style="display:block; margin-top:var(--space-1); color:var(--color-text-secondary); font-size:var(--font-size-sm);">
+          What each player on the winning side collects for a match, not the
+          amount split between them.
+        </small>
       </div>
       <div class="field">
         <label class="form-label" for="edit-skins-payout">Skins pot per round ($)</label>
@@ -9660,6 +9665,14 @@ async function showEditTournamentForm(tournament) {
           Split evenly across the skins won in each round. Applies to rounds still
           in progress — rounds already finished keep what they paid out.
         </small>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label class="form-label">Total prize pool</label>
+        <div id="total-prize-pool"
+             style="padding:var(--space-3); border-radius:var(--radius-md, 8px);
+                    background:var(--color-surface-alt, #f3f4f6); font-weight:700;
+                    font-size:var(--font-size-lg, 1.125rem);">—</div>
+        <small id="total-prize-pool-note" style="display:block; margin-top:var(--space-1); color:var(--color-text-secondary); font-size:var(--font-size-sm);"></small>
       </div>
     </div>` : ''}
     ${isQuickRound ? '' : `
@@ -9686,6 +9699,32 @@ async function showEditTournamentForm(tournament) {
     <button id="delete-tournament-btn" class="btn btn-danger">🗑 Delete This ${isQuickRound ? 'Quick Round' : 'Tournament'}</button>
   `;
 
+  // Total prize pool = buy-in × players in the tournament.
+  //
+  // Counts the golfers actually ticked on the roster above rather than the
+  // saved roster, so the figure tracks what the admin is looking at while they
+  // add or remove players — including before they hit Save.
+  function updateTotalPrizePool() {
+    const box = document.getElementById('total-prize-pool');
+    if (!box) return;
+    const note    = document.getElementById('total-prize-pool-note');
+    const buyIn   = parseFloat(document.getElementById('edit-buy-in')?.value);
+    const players = content.querySelectorAll('.golfer-checkbox:checked').length;
+
+    if (!isFinite(buyIn) || buyIn <= 0) {
+      box.textContent = '—';
+      note.textContent = players
+        ? `Enter a buy-in to see the pool for ${players} player${players === 1 ? '' : 's'}.`
+        : 'Enter a buy-in and add players to the roster.';
+      return;
+    }
+    box.textContent = formatMoney(buyIn * players);
+    note.textContent =
+      `${formatMoney(buyIn)} × ${players} player${players === 1 ? '' : 's'}.`;
+  }
+
+  document.getElementById('edit-buy-in')?.addEventListener('input', updateTotalPrizePool);
+
   // Checkbox toggles row dim + team dropdown visibility
   content.querySelectorAll('.golfer-checkbox').forEach(cb => {
     cb.addEventListener('change', function() {
@@ -9695,8 +9734,11 @@ async function showEditTournamentForm(tournament) {
         const sel = content.querySelector(`.golfer-team-select[data-golfer-id="${this.dataset.golferId}"]`);
         if (sel) sel.style.display = this.checked ? '' : 'none';
       }
+      updateTotalPrizePool();
     });
   });
+
+  updateTotalPrizePool();
 
   document.getElementById('save-edit-tournament-btn').addEventListener('click', () => {
     saveEditTournament(tournament, teams, isRyderCup);
