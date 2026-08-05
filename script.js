@@ -10118,6 +10118,12 @@ async function editRound(tournamentId, roundId) {
     // Set round date
     document.getElementById('add-round-date').value = roundData.round_date;
 
+    // Skins pool. Left blank when unset so the placeholder shows the default
+    // rather than implying someone chose $450.
+    document.getElementById('add-round-skins-total').value =
+      (roundData.skins_total === null || roundData.skins_total === undefined)
+        ? '' : roundData.skins_total;
+
     // Change button text to "Continue"
     const submitBtn = document.querySelector('#add-round-form button[type="submit"]');
     submitBtn.textContent = 'Continue';
@@ -14768,13 +14774,24 @@ document.addEventListener('DOMContentLoaded', () => {
       roundName = `Round ${rounds.length + 1} at ${courseName}`;
     }
 
+    // Skins pool is optional. Blank means "not set", which the scoreboard
+    // renders as the $450 default — so send null rather than 0, which would be
+    // a real (and very different) answer.
+    const skinsRaw = document.getElementById('add-round-skins-total').value.trim();
+    const skinsTotal = skinsRaw === '' ? null : parseInt(skinsRaw, 10);
+    if (skinsTotal !== null && (isNaN(skinsTotal) || skinsTotal < 0)) {
+      alert('Skins pool must be a positive dollar amount, or blank for the default.');
+      return null;
+    }
+
     return {
       round_id: isEditingRound ? editingRoundId : null,
       tournament_id: parseInt(tournamentId),
       course_id: parseInt(courseId),
       tee_id: parseInt(teeId),
       round_name: roundName,
-      round_date: roundDate
+      round_date: roundDate,
+      skins_total: skinsTotal
     };
   }
 

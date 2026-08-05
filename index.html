@@ -356,11 +356,19 @@
         <option value="">-- Select Course --</option>
       </select>
     </div>
-    <div style="margin-bottom:var(--space-6);">
+    <div style="margin-bottom:var(--space-4);">
       <label for="add-round-tees" class="form-label">Tees *</label>
       <select id="add-round-tees" required class="form-input form-select">
         <option value="">-- Select Tees --</option>
       </select>
+    </div>
+    <div style="margin-bottom:var(--space-6);">
+      <label for="add-round-skins-total" class="form-label">Skins Pool ($)</label>
+      <input type="number" id="add-round-skins-total" min="0" step="1" placeholder="450"
+             inputmode="numeric" class="form-input">
+      <small style="display:block; margin-top:var(--space-1); color:var(--color-text-muted, #666);">
+        Total paid out across all skins won this round. Leave blank for the default of $450.
+      </small>
     </div>
     <button type="submit" class="btn btn-primary">Continue to Matches</button>
     <button type="button" id="save-round-only-btn" class="btn btn-info">Save Round (skip matches &amp; tee times)</button>

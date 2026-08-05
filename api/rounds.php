@@ -11,6 +11,21 @@ $method        = $_SERVER['REQUEST_METHOD'];
 $id            = isset($_GET['round_id'])      ? intval($_GET['round_id'])      : null;
 $tournament_id = isset($_GET['tournament_id']) ? intval($_GET['tournament_id']) : null;
 
+/**
+ * Total dollars paid out across all skins won in a round.
+ *
+ * Returns null when the admin left the field blank, which get_individual_skins
+ * renders as the $450 default. An explicit 0 is a different statement - "this
+ * round has no skins pool" - and is preserved, so the two must not be collapsed
+ * by a truthiness check. Negative values are rejected to null rather than
+ * stored, since a pool cannot pay out less than nothing.
+ */
+function normalizeSkinsTotal($value) {
+    if ($value === null || $value === '' || !is_numeric($value)) return null;
+    $n = (int) $value;
+    return $n < 0 ? null : $n;
+}
+
 switch ($method) {
   case 'GET':
     if ($id) {
@@ -63,17 +78,22 @@ switch ($method) {
       exit;
     }
     $checkStmt->close();
+    // Skins pool: NULL means "not set", which the scoreboard renders as the
+    // $450 default. A submitted 0 is a real answer (no pool) and is kept.
+    $skinsTotal = normalizeSkinsTotal($data['skins_total'] ?? null);
+
     $stmt = $conn->prepare("
-      INSERT INTO rounds (tournament_id, course_id, tee_id, round_name, round_date)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO rounds (tournament_id, course_id, tee_id, round_name, round_date, skins_total)
+      VALUES (?, ?, ?, ?, ?, ?)
     ");
     $stmt->bind_param(
-      'iiiss',
+      'iiissi',
       $data['tournament_id'],
       $data['course_id'],
       $data['tee_id'],
       $data['round_name'],
-      $data['round_date']
+      $data['round_date'],
+      $skinsTotal
     );
     $stmt->execute();
     echo json_encode(['inserted_id' => $stmt->insert_id]);
@@ -83,6 +103,8 @@ switch ($method) {
     requireAdmin();
     // update an existing round (verify it belongs to this org)
     $data = json_decode(file_get_contents('php://input'), true);
+    $skinsTotal = normalizeSkinsTotal($data['skins_total'] ?? null);
+
     $stmt = $conn->prepare("
       UPDATE rounds r
          JOIN tournaments t ON t.tournament_id = r.tournament_id AND t.org_id = ?
@@ -90,17 +112,19 @@ switch ($method) {
              r.course_id     = ?,
              r.tee_id        = ?,
              r.round_name    = ?,
-             r.round_date    = ?
+             r.round_date    = ?,
+             r.skins_total   = ?
        WHERE r.round_id     = ?
     ");
     $stmt->bind_param(
-      'iiiissi',
+      'iiiissii',
       $currentOrgId,
       $data['tournament_id'],
       $data['course_id'],
       $data['tee_id'],
       $data['round_name'],
       $data['round_date'],
+      $skinsTotal,
       $id
     );
     $stmt->execute();
