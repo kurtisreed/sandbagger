@@ -9650,7 +9650,7 @@ async function showEditTournamentForm(tournament) {
         <label class="form-label" for="edit-payout-per-match">Payout per player per match ($)</label>
         <input type="number" id="edit-payout-per-match" class="form-input" min="0" step="0.01"
                inputmode="decimal" placeholder="0"
-               value="${tournament.payout_per_match ?? ''}">
+               value="${tournament.payout_per_player_per_match ?? ''}">
         <small style="display:block; margin-top:var(--space-1); color:var(--color-text-secondary); font-size:var(--font-size-sm);">
           What each player on the winning side collects for a match, not the
           amount split between them.
@@ -10026,7 +10026,7 @@ async function saveEditTournament(tournament, teams, isRyderCup) {
         return v === '' || v === undefined ? null : parseFloat(v);
       };
       tournamentPayload.buy_in                 = money('edit-buy-in');
-      tournamentPayload.payout_per_match       = money('edit-payout-per-match');
+      tournamentPayload.payout_per_player_per_match       = money('edit-payout-per-match');
       tournamentPayload.skins_payout_per_round = money('edit-skins-payout');
     }
 

@@ -97,18 +97,18 @@ switch ($method) {
     // blank clears it. Those are different intentions and must not be
     // collapsed, or saving the Details card would wipe the payouts.
     $hasPayouts = array_key_exists('buy_in', $data)
-               || array_key_exists('payout_per_match', $data)
+               || array_key_exists('payout_per_player_per_match', $data)
                || array_key_exists('skins_payout_per_round', $data);
 
     if ($hasPayouts) {
       $buyIn   = normalizeMoney($data['buy_in'] ?? null);
-      $perWin  = normalizeMoney($data['payout_per_match'] ?? null);
+      $perWin  = normalizeMoney($data['payout_per_player_per_match'] ?? null);
       $skins   = normalizeMoney($data['skins_payout_per_round'] ?? null);
 
       $stmt = $conn->prepare(
         "UPDATE tournaments
            SET name = ?, start_date = ?, end_date = ?, handicap_pct = ?,
-               buy_in = ?, payout_per_match = ?, skins_payout_per_round = ?
+               buy_in = ?, payout_per_player_per_match = ?, skins_payout_per_round = ?
          WHERE tournament_id = ?
            AND org_id = ?"
       );
