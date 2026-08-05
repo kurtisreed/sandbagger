@@ -6315,6 +6315,88 @@ function updateTotalScores() {
 
 
 
+// Format a dollar amount, dropping the cents when the split is exact.
+// 450/2 reads "$225"; 450/7 reads "$64.29".
+function formatSkinsMoney(amount) {
+  const rounded = Math.round(amount * 100) / 100;
+  return '$' + (Number.isInteger(rounded)
+    ? rounded.toLocaleString()
+    : rounded.toFixed(2));
+}
+
+// Render the individual-skins table.
+//
+// Shared by the Round tab and the Guys Trip summary, which previously carried
+// near-identical copies of this markup. The payout column only appears when the
+// round actually has a pool; with no money on the line a column of "$0" is
+// noise. The pot is split evenly across the skins won — no rollover weighting,
+// so every skin is worth the same.
+//
+// `showTeam` adds the team colour column, which the Guys Trip view omits
+// because its golfers have no team assignment.
+function renderIndividualSkins(container, data, { showTeam = false } = {}) {
+  const skins = Array.isArray(data) ? data : (data.skins || []);
+  const pot   = Number(data && data.skins_total) || 0;
+
+  const baseTitle = 'Individual Skins (handicap counts for 0.5)';
+  const title = pot > 0
+    ? `Individual Skins — ${formatSkinsMoney(pot)} pot (handicap counts for 0.5)`
+    : baseTitle;
+
+  container.innerHTML = `<h3>${title}</h3>`;
+
+  if (!Array.isArray(skins) || skins.length === 0) {
+    // Nothing won yet. Say what the pot is worth if there is one, so players
+    // know what they are playing for before the first skin lands.
+    container.innerHTML += pot > 0
+      ? `<p>No skins awarded yet — ${formatSkinsMoney(pot)} still in the pot.</p>`
+      : '<p>No skins awarded yet.</p>';
+    return;
+  }
+
+  const showPayout = pot > 0;
+  const perSkin = showPayout ? pot / skins.length : 0;
+
+  const table = document.createElement('table');
+  table.classList.add('skins-table');
+
+  const header = document.createElement('tr');
+  header.innerHTML =
+      '<th>Hole</th><th>Player</th>'
+    + (showTeam ? '<th>Team</th>' : '')
+    + '<th>Net Score</th>'
+    + (showPayout ? '<th>Payout</th>' : '');
+  table.appendChild(header);
+
+  skins.forEach(skin => {
+    const row = document.createElement('tr');
+    let teamCell = '';
+    if (showTeam) {
+      const bgColor  = skin.team_color || '';
+      const txtColor = bgColor ? pickContrastColorFromHex(bgColor) : '';
+      teamCell = `<td style="${bgColor ? `background-color:${bgColor};` : ''}`
+               + `${txtColor ? `color:${txtColor};` : ''}">${skin.team || ''}</td>`;
+    }
+    row.innerHTML =
+        `<td>${skin.hole}</td>`
+      + `<td>${skin.golfer_name}</td>`
+      + teamCell
+      + `<td>${skin.net_score}</td>`
+      + (showPayout ? `<td style="font-weight:700;">${formatSkinsMoney(perSkin)}</td>` : '');
+    table.appendChild(row);
+  });
+
+  container.appendChild(table);
+
+  if (showPayout) {
+    const note = document.createElement('p');
+    note.style.cssText = 'margin:0.5rem 0 0; font-size:0.85rem; color:#666;';
+    note.textContent =
+      `${formatSkinsMoney(pot)} split across ${skins.length} skin${skins.length === 1 ? '' : 's'}.`;
+    container.appendChild(note);
+  }
+}
+
 // functionality for Today Tab
 function loadTodaySummary() {
   const roundId = sessionStorage.getItem('selected_round_id');
@@ -6408,44 +6490,7 @@ function loadTodaySummary() {
             fetch(`${API_BASE_URL}/api/get_individual_skins.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' })
               .then(res => res.json())
               .then(data => {
-                // Handle both new format (object with skins and skins_total) and old format (array)
-                const skins = Array.isArray(data) ? data : (data.skins || []);
-                const skinsTotal = data.skins_total ?? 0; // no pool unless the admin set one
-                
-                skinsContainer.innerHTML = `<h3>Individual Skins (handicap counts for 0.5)</h3>`;
-                
-                if (!Array.isArray(skins) || skins.length === 0) {
-                  skinsContainer.innerHTML += "<p>No skins awarded yet.</p>";
-                  return;
-                }
-            
-                const table = document.createElement("table");
-                table.classList.add("skins-table");
-            
-                const header = document.createElement("tr");
-                header.innerHTML = "<th>Hole</th><th>Player</th><th>Team</th><th>Net Score</th>";
-                table.appendChild(header);
-
-                skins.forEach(skin => {
-                  let bgColor = skin.team_color || ""; // Use dynamic team color
-                  let txtColor = pickContrastColorFromHex(bgColor);
-                  const row = document.createElement("tr");
-                  row.innerHTML = `
-                    <td>${skin.hole}</td>
-                    <td>${skin.golfer_name}</td>
-                    <td style="
-                      ${bgColor  ? `background-color: ${bgColor};` : ""}
-                      ${txtColor ? `color:            ${txtColor};` : ""}
-                    ">
-                      ${skin.team}
-                    </td>
-                    <td>${skin.net_score}</td>
-                  `;
-                  table.appendChild(row);
-                });
-            
-                skinsContainer.innerHTML = `<h3>Individual Skins (handicap counts for 0.5)</h3>`;
-                skinsContainer.appendChild(table);
+                renderIndividualSkins(skinsContainer, data, { showTeam: true });
               })
               .catch(err => {
                 console.error("Error loading skins:", err);
@@ -7025,36 +7070,8 @@ function loadGuysTripSummary() {
       fetch(`${API_BASE_URL}/api/get_individual_skins.php?round_id=${roundId}&tournament_id=${tournamentId}`, { credentials: 'include' })
         .then(res => res.json())
         .then(data => {
-          // Handle both new format (object with skins and skins_total) and old format (array)
-          const skins = Array.isArray(data) ? data : (data.skins || []);
-          const skinsTotal = data.skins_total ?? 0; // no pool unless the admin set one
-
-          skinsContainer.innerHTML = `<h3>Individual Skins (handicap counts for 0.5)</h3>`;
-
-          if (!Array.isArray(skins) || skins.length === 0) {
-            skinsContainer.innerHTML += "<p>No skins awarded yet.</p>";
-            return;
-          }
-
-          const table = document.createElement("table");
-          table.classList.add("skins-table");
-
-          const header = document.createElement("tr");
-          header.innerHTML = "<th>Hole</th><th>Player</th><th>Net Score</th>";
-          table.appendChild(header);
-
-          skins.forEach(skin => {
-            const row = document.createElement("tr");
-            row.innerHTML = `
-              <td>${skin.hole}</td>
-              <td>${skin.golfer_name}</td>
-              <td>${skin.net_score}</td>
-            `;
-            table.appendChild(row);
-          });
-
-          skinsContainer.innerHTML = `<h3>Individual Skins (handicap counts for 0.5)</h3>`;
-          skinsContainer.appendChild(table);
+          // Guys Trip golfers have no team assignment, so no team column.
+          renderIndividualSkins(skinsContainer, data);
         })
         .catch(err => {
           console.error("Error loading skins:", err);
